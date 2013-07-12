@@ -7,73 +7,207 @@ class ActionsMultidevise
       *  @param      action             current action (if set). Generally create or edit or null 
       *  @return       void 
       */ 
+    
+    function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
+    {
+		/*echo '<pre>';
+		print_r($object);
+		echo '</pre>';*/
+    	global $db, $user,$conf;
+		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
+		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
+		
+		if (in_array('thirdpartycard',explode(':',$parameters['context']))
+			|| in_array('propalcard',explode(':',$parameters['context']))
+			|| in_array('ordercard',explode(':',$parameters['context']))
+			|| in_array('invoicecard',explode(':',$parameters['context']))){
+			
+			if(in_array('thirdpartycard',explode(':',$parameters['context'])))
+				$table = "societe";
+			if(in_array('propalcard',explode(':',$parameters['context'])))
+				$table = "propal";
+			if(in_array('ordercard',explode(':',$parameters['context'])))
+				$table = "commande";
+			if(in_array('invoicecard',explode(':',$parameters['context'])))
+				$table = "facture";
+			
+	    	//VIEW
+	    	if($action == "view" || $action == "" || $action == "addline" || $action == "editline"){
+	    		$sql = 'SELECT fk_devise';
+	    		$sql .= ($table != "societe") ? ', devise_taux, devise_mt_total' : "";
+	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->id;
+				
+	    		$resql = $db->query($sql);
+				$res = $db->fetch_object($resql);
+				if($res->fk_devise){
+					print '<tr><td>Devise</td><td colspan="3">';
+					print currency_name($res->fk_devise,1);
+					print ' ('.$res->fk_devise.')</td></tr>';
+					if($table != "societe"){
+						print '<tr><td>Taux Devise</td><td colspan="3">'.$res->devise_taux.'</td></tr>';
+						print '<tr><td>Montant Devise</td><td colspan="3">'.$res->devise_mt_total.'</td></tr>';
+					}
+				}
+				else{
+					print '<tr><td>Devise</td><td colspan="3">';
+					print currency_name($conf->currency,1);
+					print ' ('.$conf->currency.')</td></tr>';
+					if($table != "societe"){
+						print '<tr><td>Taux Devise</td><td colspan="3"></td></tr>';
+						print '<tr><td>Montant Devise</td><td colspan="3"></td></tr>';
+					}
+				}
+	    	}
+	    	//EDIT
+	    	elseif($action == "edit" || $action == "create"){
+	    		$sql = 'SELECT fk_devise';
+	    		$sql .= ($table != "societe") ? ', devise_taux, devise_mt_total' : "";
+	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$_REQUEST['socid'];
+				
+	    		$resql = $db->query($sql);
+				$res = $db->fetch_object($resql);
+				if($res->fk_devise){
+					$form=new Form($db);
+					print '<tr><td>Devise</td><td>';
+					print $form->select_currency($res->fk_devise,"currency");
+					print '</td></tr>';
+				}
+				else{
+					$form=new Form($db);
+					print '<tr><td>Devise</td><td colspan="3">';
+					print $form->select_currency($conf->currency,"currency");
+					print '</td></tr>';
+				}
+	    	}
+		}
+		return 0;
+	}  
+    
+	function formAddObjectLine($parameters, &$object, &$action, $hookmanager){
+		/*echo '<pre>';
+		print_r($object);
+		echo '</pre>';*/
+		global $db, $user,$conf;
+		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
+		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
+		
+		if (in_array('propalcard',explode(':',$parameters['context']))
+			|| in_array('ordercard',explode(':',$parameters['context']))
+			|| in_array('invoicecard',explode(':',$parameters['context']))){
+			
+			if(in_array('propalcard',explode(':',$parameters['context']))){
+				$table = "propal";
+				$tabledet = "propaldet";
+			}
+			if(in_array('ordercard',explode(':',$parameters['context']))){
+				$table = "commande";
+				$tabledet = "commandedet";
+			}
+			if(in_array('invoicecard',explode(':',$parameters['context']))){
+				$table = "facture";
+				$tabledet = "facturedet";
+			}
+			
+			if($action != "create"){
+				?>
+				<script type="text/javascript">
+					<?php
+					foreach($object->lines as $line){
+	         				$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet." WHERE rowid = ".$line->rowid);
+							$res = $db->fetch_object($resql);
+	         				echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
+							echo "$('#row-".$line->rowid."').children().eq(6).after('<td class=\"nowrap\" align=\"right\">".$res->devise_mt_ligne."</td>');";
+							if($line->error != '') echo "alert('".$line->error."');";
+	         			}
+					?>
+					$('#tablelines .liste_titre > td').each(function(){
+		         		if($(this).html() == "Qté")
+		         			$(this).before('<td align="right" width="140">P.U. Devise</td>');
+		         		if($(this).html() == "Total HT")
+		         			$(this).after('<td align="right" width="140">Total Devise</td>');
+	         		});
+	         		$('#np_desc').parent().after('<td align="right"><input type="text" value="" name="np_pu_devise" size="6"></td>');
+					$('#dp_desc').parent().next().next().after('<td align="right"><input type="text" value="" name="dp_pu_devise" size="6"></td>');
+		     		<?php
+					$resql = $db->query('SELECT devise_taux FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->id);
+					$res = $db->fetch_object($resql);
+					if($res->devise_taux){
+						?>
+						$("input[name=price_ht]").change(function(){
+							$("#dp_pu_devise").val(this.val() * <?= $res->devise_taux; ?>);
+						});
+						$('#idprod').change( function(){
+							$.ajax({
+								type: "POST"
+								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/ajax.getproductprice.php"
+								,dataType: "json"
+								,data: {fk_product: $('#idprod').val()}
+								},"json").then(function(select){
+									if(select.price != ""){
+										$("#dp_pu_devise").val(select.price * <?= $res->devise_taux; ?>);
+									}
+								});
+						});
+		         		<?php
+					}
+			    	?>
+			    </script>	
+		    	<?php
+	    	}
+	    }
+		return 0;
+	}
+	
     function formEditProductOptions($parameters, &$object, &$action, $hookmanager) 
     {
     	/*ini_set('dysplay_errors','On');
 			error_reporting(E_ALL); */
-    	/*global $db;
-		include_once(DOL_DOCUMENT_ROOT."/commande/class/commande.class.php");
-		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
-		include_once(DOL_DOCUMENT_ROOT."/comm/propal/class/propal.class.php");
+    	global $db, $user,$conf;
+		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
+		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
 		
-    	if (in_array('propalcard',explode(':',$parameters['context'])) || in_array('ordercard',explode(':',$parameters['context'])) || in_array('invoicecard',explode(':',$parameters['context'])))
-        {
-        	
-			/*
-			 * AJOUT DU CHAMPS POIDS
-			 */
-        	/*if(in_array('propalcard',explode(':',$parameters['context']))){
-        		$instance = new Propal($db);
-				$instance->fetch($_GET['id']);
-				$table = "propaldet";
-        	}
-			elseif(in_array('ordercard',explode(':',$parameters['context']))){
-				$instance = new Commande($db);
-				$instance->fetch($_GET['id']);
-				$table = "commandedet";
+		if (in_array('propalcard',explode(':',$parameters['context']))
+			|| in_array('ordercard',explode(':',$parameters['context']))
+			|| in_array('invoicecard',explode(':',$parameters['context']))){
+			
+			if(in_array('propalcard',explode(':',$parameters['context']))){
+				$table = "propal";
+				$tabledet = "propaldet";
 			}
-        	elseif(in_array('invoicecard',explode(':',$parameters['context']))){
-        		$instance = new Facture($db);
-				$instance->fetch($_GET['id']);
-				$table = "facturedet";
-        	}
+			if(in_array('ordercard',explode(':',$parameters['context']))){
+				$table = "commande";
+				$tabledet = "commandedet";
+			}
+			if(in_array('invoicecard',explode(':',$parameters['context']))){
+				$table = "facture";
+				$tabledet = "facturedet";
+			}
 			
 			if($action == "editline"){
-				
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
+						$('#tablelines .liste_titre > td').each(function(){
+			         		if($(this).html() == "Qté")
+			         			$(this).before('<td align="right" width="140">P.U. Devise</td>');
+			         		if($(this).html() == "Total HT")
+			         			$(this).after('<td align="right" width="140">Total Devise</td>');
+	         			});
 						<?php
-						foreach($instance->lines as $line){
-	         				$resql = $db->query("SELECT tarif_poids, poids FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ".$line->rowid);
+						foreach($object->lines as $line){
+	         				$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet." WHERE rowid = ".$line->rowid);
 							$res = $db->fetch_object($resql);
-							switch($res->poids){
-								case -6:
-									$unite = "mg";
-									break;
-								case -3:
-									$unite = "g";
-									break;
-								case 0:
-									$unite = "kg";
-									break;
-							}
 							
 							if($line->rowid == $_REQUEST['lineid']){
 								?>
-								$('input[name=qty]').parent().after('<td align="right"><input id="poidsAff" type="text" value="<?php if(!is_null($res->tarif_poids)) echo $res->tarif_poids; ?>" name="poidsAff" size="6"><select class="flat" name="weight_unitsAff" id="weight_unitsAff"><option value="-6" <?php if($unite == "mg") echo ' selected="selected" '; ?>>mg</option><option value="-3" <?php if($unite == "g") echo ' selected="selected" '; ?>>g</option><option value="0" <?php if($unite == "kg") echo ' selected="selected" '; ?>>kg</option></select></td>');
-								$('#tablelines').children().first().children().first().children().last().prev().prev().prev().prev().prev().after('<td align=\"right\" width=\"100\">Poids</td>');
-								$('input[name=token]').prev().append('<input id="poids" type="hidden" value="0" name="poids" size="3">');
-					         	$('input[name=token]').prev().append('<input id="weight_units" type="hidden" value="0" name="weight_units" size="3">');
-					         	$('#savelinebutton').click(function() {
-					         		$('#poids').val( $('#poidsAff').val() );
-					         		$('#weight_units').val( $('#weight_unitsAff option:selected').val() );
-					         		return true;
-					         	});
+								$('#product_desc').parent().next().next().after('<td align="right"><input type="text" value="<?php echo $res->devisqe_pu; ?>" name="dp_pu_devise" size="6"></td>');
+								$('#product_desc').parent().next().next().next().next().next().after('<td align="right"></td>');
 								<?php
 							}
 							else{
-								echo "$('#row-".$line->rowid."').children().last().prev().prev().prev().prev().prev().after('<td align=\"right\">".((!is_null($res->tarif_poids))?number_format($res->tarif_poids,2)." ".$unite:"")."</td>');";
+								echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
+								echo "$('#row-".$line->rowid."').children().eq(6).after('<td class=\"nowrap\" align=\"right\">".$res->devise_mt_ligne."</td>');";
+								if($line->error != '') echo "alert('".$line->error."');";
 							}
 				        }
 						?>
@@ -84,103 +218,6 @@ class ActionsMultidevise
 			
 			$this->resprints='';
 		}
-        return 0;*/
+        return 0;
     }
-
-
-	function formBuilddocOptions ($parameters, &$object, &$action, $hookmanager) {
-		
-		/*global $db;
-		include_once(DOL_DOCUMENT_ROOT."/commande/class/commande.class.php");
-		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
-		include_once(DOL_DOCUMENT_ROOT."/comm/propal/class/propal.class.php");
-		include_once(DOL_DOCUMENT_ROOT."/core/lib/functions.lib.php");
-		
-		if (in_array('propalcard',explode(':',$parameters['context'])) || in_array('ordercard',explode(':',$parameters['context'])) || in_array('invoicecard',explode(':',$parameters['context']))) 
-        {
-        	if(in_array('propalcard',explode(':',$parameters['context']))){
-        		$instance = new Propal($db);
-	        	$instance->fetch($_GET['id']);
-				$table = "propaldet";
-        	}
-			elseif(in_array('ordercard',explode(':',$parameters['context']))){
-				$instance = new Commande($db);
-	        	$instance->fetch($_GET['id']);
-				$table = "commandedet";
-			}
-        	elseif(in_array('invoicecard',explode(':',$parameters['context']))){
-        		$instance = new Facture($db);
-	        	$instance->fetch((isset($_GET['facid']))?$_GET['facid']:$_GET['id']);
-				$table = "facturedet";
-        	}
-			//echo count($instance->lines);
-			
-			/*echo '<pre>';
-			print_r($object);
-			echo '</pre>';*/
-			
-			/*if($object->line->error)
-				dol_htmloutput_mesg($object->line->error,'', 'error');
-        	?>
-         	<script type="text/javascript">
-         		<?php
-         			//echo (count($instance->lines) >0)? "$('#tablelines').children().first().children().first().children().last().prev().prev().prev().prev().prev().after('<td align=\"right\" width=\"50\">Poids</td>');" : '' ;
-         			foreach($instance->lines as $line){
-         				$resql = $db->query("SELECT tarif_poids, poids FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ".$line->rowid);
-						$res = $db->fetch_object($resql);
-						switch($res->poids){
-							case -6:
-								$unite = "mg";
-								break;
-							case -3:
-								$unite = "g";
-								break;
-							case 0:
-								$unite = "kg";
-								break;
-						}
-         				echo "$('#row-".$line->rowid."').children().eq(3).after('<td align=\"right\">".((!is_null($res->tarif_poids))? number_format($res->tarif_poids,2)." ".$unite : "")."</td>');";
-						if($line->error != '') echo "alert('".$line->error."');";
-         			}
-         		?>
-	         	$('#tablelines .liste_titre > td').each(function(){
-	         		if($(this).html() == "Qté")
-	         			$(this).after('<td align="right" width="140">Poids</td>');
-	         	});
-	         	$('#np_desc').parent().next().after('<td align="right"><input class="poidsAff" type="text" value="0" name="poidsAff" size="6"><select class="flat weight_unitsAff" name="weight_unitsAff"><option value="-6">mg</option><option value="-3">g</option><option selected="selected" value="0">kg</option></select></td>');
-	         	$('#dp_desc').parent().next().next().next().after('<td align="right"><input class="poidsAff" type="text" value="0" name="poidsAff" size="6"><select class="flat weight_unitsAff" name="weight_unitsAff"><option value="-6">mg</option><option value="-3">g</option><option value="0">kg</option></select></td>');
-	         	$('#addpredefinedproduct').append('<input class="poids" type="hidden" value="0" name="poids" size="3">');
-	         	$('#addpredefinedproduct').append('<input class="weight_units" type="hidden" value="0" name="weight_units" size="3">');
-	         	$('#addproduct').append('<input class="poids" type="hidden" value="0" name="poids" size="3">');
-	         	$('#addproduct').append('<input class="weight_units" type="hidden" value="0" name="weight_units" size="3">');
-	         	$('input[name=addline]').click(function() {
-	         		$('.poids').val( $(this).parent().prev().prev().find('> .poidsAff').val() );
-	         		$('.weight_units').val( $(this).parent().prev().prev().find('> .weight_unitsAff option:selected').val() );
-	         		return true;
-	         	});
-	         	
-	         	//Sélection automatique de l'unité de mesure associé au produit sélectionné
-	         	$('#idprod').change( function(){
-					$.ajax({
-						type: "POST"
-						,url: "<?=DOL_URL_ROOT; ?>/custom/tarif/script/ajax.unite_poids.php"
-						,dataType: "json"
-						,data: {fk_product: $('#idprod').val()}
-						},"json").then(function(select){
-							if(select.unite != ""){
-								$('.weight_unitsAff:last option:selected').removeAttr('selected');
-								$('.weight_unitsAff:last option[value='+select.unite+']').attr('selected','selected');
-							}
-							else{
-								$('.weight_unitsAff:last option:selected').removeAttr('selected');
-								$('.weight_unitsAff:last option[value=0]').attr('selected','selected');
-							}
-						});
-				});
-         	</script>
-         	<?php
-        }
-
-		return 0;*/
-	}
 }

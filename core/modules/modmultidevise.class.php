@@ -46,7 +46,7 @@ class modmultidevise extends DolibarrModules
 
 		// Id for module (must be unique).
 		// Use here a free id (See in Home -> System information -> Dolibarr for list of used modules id).
-		$this->numero = 210006;
+		$this->numero = 210089;
 		// Key text used to identify module (for permissions, menus, etc...)
 		$this->rights_class = 'multidevise';
 
@@ -88,7 +88,7 @@ class modmultidevise extends DolibarrModules
 		//							'dir' => array('output' => 'othermodulename'),      // To force the default directories names
 		//							'workflow' => array('WORKFLOW_MODULE1_YOURACTIONTYPE_MODULE2'=>array('enabled'=>'! empty($conf->module1->enabled) && ! empty($conf->module2->enabled)', 'picto'=>'yourpicto@mymodule')) // Set here all workflow context managed by module
 		//	                       );
-		//$this->module_parts = array('hooks'=>array('ordersuppliercard','propalcard', 'ordercard', 'invoicecard'),'triggers' => 1);
+		$this->module_parts = array('hooks'=>array('thirdpartycard','propalcard', 'ordercard', 'invoicecard'));
 
 		// Data directories to create when module is enabled.
 		// Example: this->dirs = array("/mymodule/temp");

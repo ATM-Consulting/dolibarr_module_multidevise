@@ -1,13 +1,10 @@
 <?
 
 	require('../../config.php');
+	include(ROOT.'custom/multidevise/class/class.currency.php');
 	
-	$id_entity = $_REQUEST['id_entity'] or die('id_entity ?');
-	
-	$local_conf = &$user->conf[$id_entity];
-	
-	$url_list = $local_conf['TCurrenty_list_source'];
-	$url_rate =  strtr($local_conf['TCurrenty_rate_source'],array('{app_id}'=>$local_conf['TCurrenty_app_id']));
+	$url_list = TCurrenty_list_source;
+	$url_rate =  strtr(TCurrenty_rate_source,array('{app_id}'=>TCurrenty_app_id));
 	
 	$TCurrency = json_decode( file_get_contents($url_list) );
 		
@@ -27,7 +24,7 @@
 	}
 
 	$TRate = json_decode( file_get_contents($url_rate) );
-	list($from, $to) = explode('-', $local_conf['TCurrenty_from_to_rate']);
+	list($from, $to) = explode('-', TCurrenty_from_to_rate);
 	
 	$fromRate = 0;
 	$toRate = 0;

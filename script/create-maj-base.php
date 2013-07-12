@@ -7,7 +7,7 @@
 	
 	require('../config.php');
 	require('../class/multidevise.class.php');
-	require('../class/currency.class.php');
+	require('../class/class.currency.php');
 
 	$ATMdb=new TPDOdb;
 	$ATMdb->debug=true;
@@ -15,7 +15,7 @@
 	$o=new TMultideviseClient;
 	$o->init_db_by_vars($ATMdb);
 	
-	$o=new TMultidevisePorpal;
+	$o=new TMultidevisePropal;
 	$o->init_db_by_vars($ATMdb);
 	
 	$o=new TMultidevisePropaldet;

@@ -79,7 +79,7 @@ class TCurrencyRate extends TObjetStd {
 	
 	function __construct() {
 		
-		parent::set_table(DB_PREFIX.'currency_rate');
+		parent::set_table(MAIN_DB_PREFIX.'currency_rate');
 		
 		parent::add_champs('rate','type=float;');
 		parent::add_champs('id_currency','type=entier;index;');
