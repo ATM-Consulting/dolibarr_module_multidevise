@@ -5,6 +5,7 @@ class TMultideviseClient extends TObjetStdDolibarr {
 		
 		parent::set_table(MAIN_DB_PREFIX.'societe');
 		parent::add_champs('fk_devise','type=entier;');
+		parent::add_champs('devise_code','type=chaine;');
 		
 		parent::_init_vars();
 		parent::start();
@@ -18,6 +19,7 @@ class TMultidevisePropal extends TObjetStdDolibarr {
 		parent::set_table(MAIN_DB_PREFIX.'propal');
 		parent::add_champs('fk_devise','type=entier;');
 		parent::add_champs('devise_taux,devise_mt_total','type=float;');
+		parent::add_champs('devise_code','type=chaine;');
 		
 		parent::_init_vars();
 		parent::start();
@@ -31,6 +33,7 @@ class TMultidevisePropaldet extends TObjetStdDolibarr {
 		parent::set_table(MAIN_DB_PREFIX.'propaldet');
 		parent::add_champs('fk_devise','type=entier;');
 		parent::add_champs('devise_pu,devise_mt_ligne','type=float;');
+		parent::add_champs('devise_code','type=chaine;');
 		
 		parent::_init_vars();
 		parent::start();
@@ -44,6 +47,7 @@ class TMultideviseFacture extends TObjetStdDolibarr {
 		parent::set_table(MAIN_DB_PREFIX.'facture');
 		parent::add_champs('fk_devise','type=entier;');
 		parent::add_champs('devise_taux,devise_mt_total','type=float;');
+		parent::add_champs('devise_code','type=chaine;');
 		
 		parent::_init_vars();
 		parent::start();
@@ -56,6 +60,7 @@ class TMultideviseFacturedet extends TObjetStdDolibarr {
 		parent::set_table(MAIN_DB_PREFIX.'facturedet');
 		parent::add_champs('fk_devise','type=entier;');
 		parent::add_champs('devise_pu,devise_mt_ligne','type=float;');
+		parent::add_champs('devise_code','type=chaine;');
 		
 		parent::_init_vars();
 		parent::start();
@@ -69,6 +74,7 @@ class TMultideviseCommande extends TObjetStdDolibarr {
 		parent::set_table(MAIN_DB_PREFIX.'commande');
 		parent::add_champs('fk_devise','type=entier;');
 		parent::add_champs('devise_taux,devise_mt_total','type=float;');
+		parent::add_champs('devise_code','type=chaine;');
 		
 		parent::_init_vars();
 		parent::start();
@@ -82,6 +88,7 @@ class TMultideviseCommandedet extends TObjetStdDolibarr {
 		parent::set_table(MAIN_DB_PREFIX.'commandedet');
 		parent::add_champs('fk_devise','type=entier;');
 		parent::add_champs('devise_pu,devise_mt_ligne','type=float;');
+		parent::add_champs('devise_code','type=chaine;');
 		
 		parent::_init_vars();
 		parent::start();
@@ -94,6 +101,7 @@ class TMultidevisePaiement extends TObjetStdDolibarr {
 		
 		parent::set_table(MAIN_DB_PREFIX.'paiement');
 		parent::add_champs('devise_taux,devise_mt_paiement','type=float;');
+		parent::add_champs('devise_code','type=chaine;');
 		
 		parent::_init_vars();
 		parent::start();

@@ -33,16 +33,16 @@ class ActionsMultidevise
 			
 	    	//VIEW
 	    	if($action == "view" || $action == "" || $action == "addline" || $action == "editline"){
-	    		$sql = 'SELECT fk_devise';
+	    		$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ($table != "societe") ? ', devise_taux, devise_mt_total' : "";
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->id;
 				
 	    		$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
-				if($res->fk_devise){
+				if($res->fk_devise && !is_null($res->devise_code)){
 					print '<tr><td>Devise</td><td colspan="3">';
-					print currency_name($res->fk_devise,1);
-					print ' ('.$res->fk_devise.')</td></tr>';
+					print currency_name($res->devise_code,1);
+					print ' ('.$res->devise_code.')</td></tr>';
 					if($table != "societe"){
 						print '<tr><td>Taux Devise</td><td colspan="3">'.$res->devise_taux.'</td></tr>';
 						print '<tr><td>Montant Devise</td><td colspan="3">'.$res->devise_mt_total.'</td></tr>';
@@ -60,16 +60,15 @@ class ActionsMultidevise
 	    	}
 	    	//EDIT
 	    	elseif($action == "edit" || $action == "create"){
-	    		$sql = 'SELECT fk_devise';
-	    		$sql .= ($table != "societe") ? ', devise_taux, devise_mt_total' : "";
-	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$_REQUEST['socid'];
+	    		$sql = 'SELECT fk_devise, devise_code';
+	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$_REQUEST['socid'];
 				
 	    		$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
-				if($res->fk_devise){
+				if($res->fk_devise && !is_null($res->devise_code)){
 					$form=new Form($db);
 					print '<tr><td>Devise</td><td>';
-					print $form->select_currency($res->fk_devise,"currency");
+					print $form->select_currency($res->devise_code,"currency");
 					print '</td></tr>';
 				}
 				else{
@@ -83,14 +82,12 @@ class ActionsMultidevise
 		return 0;
 	}  
     
+	
+	
+	
 	function formAddObjectLine($parameters, &$object, &$action, $hookmanager){
-		/*echo '<pre>';
-		print_r($object);
-		echo '</pre>';*/
-		global $db, $user,$conf;
-		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
-		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
 		
+		global $db,$user,$conf;
 		if (in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
 			|| in_array('invoicecard',explode(':',$parameters['context']))){
@@ -128,29 +125,39 @@ class ActionsMultidevise
 	         		});
 	         		$('#np_desc').parent().after('<td align="right"><input type="text" value="" name="np_pu_devise" size="6"></td>');
 					$('#dp_desc').parent().next().next().after('<td align="right"><input type="text" value="" name="dp_pu_devise" size="6"></td>');
-		     		<?php
-					$resql = $db->query('SELECT devise_taux FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->id);
-					$res = $db->fetch_object($resql);
-					if($res->devise_taux){
-						?>
-						$("input[name=price_ht]").change(function(){
-							$("#dp_pu_devise").val(this.val() * <?= $res->devise_taux; ?>);
-						});
-						$('#idprod').change( function(){
-							$.ajax({
-								type: "POST"
-								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/ajax.getproductprice.php"
-								,dataType: "json"
-								,data: {fk_product: $('#idprod').val()}
-								},"json").then(function(select){
-									if(select.price != ""){
-										$("#dp_pu_devise").val(select.price * <?= $res->devise_taux; ?>);
-									}
-								});
-						});
-		         		<?php
-					}
-			    	?>
+					$('input[name=addline]').parent().attr('colspan','5');
+					$('.tabBar td').each(function(){
+						if($(this).html() == "Taux Devise"){
+							taux = $(this).next().html();
+						}
+					});
+					$('#idprod').change( function(){
+						$.ajax({
+							type: "POST"
+							,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/ajax.getproductprice.php"
+							,dataType: "json"
+							,data: {fk_product: $('#idprod').val()}
+							},"json").then(function(select){
+								if(select.price != ""){
+									$("input[name=np_pu_devise]").val(select.price * taux);
+									$("input[name=np_pu_devise]").attr('value',select.price * taux);
+									$('input[name=pu_devise_product]').val(select.price * taux);
+								}
+							});
+					});
+					$('input[name=price_ht]').blur(function(){
+						$(this).parent().next().children().val($(this).val() * taux);
+						$(this).parent().next().children().attr('value',$(this).val() * taux);
+						$('input[name=pu_devise_libre]').val($(this).val() * taux);
+					})
+					$('#addpredefinedproduct').append('<input type="hidden" value="0" name="pu_devise_product" size="3">');
+		         	$('#addproduct').append('<input type="hidden" value="0" name="pu_devise_libre" size="3">');
+		         	$('imput[name=dp_pu_devise]').change(function() {
+		         		$('input[name=pu_devise_libre]').val($('imput[name=dp_pu_devise]').val() );	
+		         	});
+		         	$('imput[name=np_pu_devise]').change(function() {
+		         		$('input[name=pu_devise_product]').val($('imput[name=np_pu_devise]').val() );
+		         	});
 			    </script>	
 		    	<?php
 	    	}

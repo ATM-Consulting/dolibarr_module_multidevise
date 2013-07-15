@@ -106,139 +106,125 @@ class InterfaceMultideviseWorkflow
      */
 	function run_trigger($action,$object,$user,$langs,$conf)
 	{
-		/*
+		global $db, $user, $conf;
 		if(!defined('INC_FROM_DOLIBARR'))define('INC_FROM_DOLIBARR',true);
 		dol_include_once('/tarif/config.php');
 		dol_include_once('/commande/class/commande.class.php');
-		dol_include_once('/fourn/class/fournisseur.commande.class.php');
 		dol_include_once('/compta/facture/class/facture.class.php');
 		dol_include_once('/comm/propal/class/propal.class.php');
+		dol_include_once("/societe/class/societe.class.php");
 		
+		/*
+		 * ASSOCIATION DEVISE PAR SOCIETE
+		 */
+		if($action == "COMPANY_CREATE" || $action =="COMPANY_MODIFY"){
+			if(isset($_REQUEST['currency']) && !empty($_REQUEST['currency'])){
+				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$_REQUEST['currency'].'" LIMIT 1');
+				if($res = $db->fetch_object($resql)){
+					$db->query('UPDATE '.MAIN_DB_PREFIX.'societe SET fk_devise = '.$res->rowid.', devise_code = "'.$_REQUEST['currency'].'" WHERE rowid = '.$object->id);
+				}
+			}
+				
+		}
+		
+		/*
+		 * ASOCIATION DEVISE, TAUX PAR COMMANDE, PROPAL OU FACTURE
+		 */
+		if($action == "ORDER_CREATE" || $action == "PROPAL_CREATE" || $action =="BILL_CREATE" ){
+			
+			if($action == "ORDER_CREATE")
+				$table = "commande";
+			elseif($action == "PROPAL_CREATE")
+				$table = "propal";
+			elseif($action =="BILL_CREATE")
+				$table = "facture";
+			
+			if(isset($_REQUEST['currency']) && !empty($_REQUEST['currency'])){
+				$resql = $db->query('SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
+									 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
+									 WHERE c.code = "'.$_REQUEST['currency'].'" ORDER BY cr.dt_sync DESC LIMIT 1');
+				if($res = $db->fetch_object($resql)){
+					$db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET fk_devise = '.$res->rowid.', devise_code = "'.$res->code.'", devise_taux = '.$res->rate.' WHERE rowid = '.$object->id);
+				}
+			}
+		}
+		
+		/*
+		 * P.U. DEVISE + TOTAL DEVISE PAR LIGNE DE COMMANDE, PROPAL OU FACTURE
+		 */
 		if ($action == 'LINEORDER_INSERT' || $action == 'LINEORDER_UPDATE' ||
 			$action == 'LINEPROPAL_INSERT' || $action == 'LINEPROPAL_UPDATE' ||
 			$action == 'LINEBILL_INSERT' || $action == 'LINEBILL_UPDATE') {
 			
-			$prix = 0;
-			$tva_tx = 0;
-			$remise = !empty($_POST['remise_percent']) ? $_POST['remise_percent'] : 0;
-			$poids = 0;
-			$weight_units = 0;
+			/*echo '<pre>';
+			print_r($object);
+			echo '</pre>';exit;*/
 			
+			if($action == "LINEORDER_INSERT" || $action == 'LINEORDER_UPDATE'){
+				$table = "commande";
+				$tabledet = "commandedet";
+				$object->update(true);
+			}
+			elseif($action == 'LINEPROPAL_INSERT' || $action == 'LINEPROPAL_UPDATE'){
+				$table = "propal";
+				$tabledet = "propaldet";
+				$object->update(true);
+			}
+			elseif($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_UPDATE'){
+				$table = "facture";
+				$tabledet = "facturedet";
+				$object->update($user,true);
+			}
 			
-			//Création a partir d'un objet d'origine (propale ou commande)
-			if((!empty($object->origin) && !empty($object->origin_id)) || (!empty($_POST['origin']) && !empty($_POST['originid']))){
-				
-				if($_POST['origin'] == "propal"){
-					$table = "propaldet";
-					$propal = new Propal($this->db);
-					$propal->fetch($_POST['originid']);
-					
-					foreach($propal->lines as $line){
-						if($line->rang == $object->rang)
-							$originid = $line->rowid;
-					}
-	        	}
-				elseif($object->origin == "commande"){
-					$table = "commandedet";
-					$originid = $object->origin_id;
-				}
-				
-				$prix = $object->subprice;
-				$tva_tx = $object->tva_tx;
-				$remise = $object->remise_percent;
-				$idProd = $object->fk_product;
-				
-				$resql = $this->db->query("SELECT poids, tarif_poids FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ".$originid);
-				$res = $this->db->fetch_object($resql);
-				
-				$poids = $res->tarif_poids;
-				$weight_units = $res->poids;
-				
-				$qte_totale = $object->qty * $poids * pow(10, $weight_units);
+			$idProd = 0;
+			if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
+			if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
 			
-			}//Création directement a partir du formulaire pour addline
-			elseif(!empty($_POST['poids'])){ // Si poids renseigné alors recherche prix par conditionnement
-				$poids = $_POST['poids'];
-				$weight_units = $_POST['weight_units'];
-				$idProd = 0;
-				if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
-				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
-				
-				// Ajout d'un produit/service existant
-				if(!empty($idProd)){
-					
-					// Quantité totale de produit ajoutée dans la ligne
-					$qte_totale = $_POST['qty'] * $poids * pow(10, $weight_units);
-					
-					$sql = "SELECT quantite, unite, prix, unite_value, tva_tx, remise_percent
-							FROM ".MAIN_DB_PREFIX."tarif_conditionnement
-							WHERE fk_product = ".$idProd."
-							ORDER BY unite_value DESC, quantite DESC";
-					
-					$resql = $this->db->query($sql);
-					if($resql) { // Prix par conditionnement
-						$found = false;
-						while($res = $this->db->fetch_object($resql)){
-							$qte_totale_grille = $res->quantite * pow(10, $res->unite_value);
-							if($qte_totale_grille <= $qte_totale) {
-								//Récupération de la remise
-								
-								if(!empty($res->remise_percent) && empty($remise))
-									$remise = $res->remise_percent;
-								elseif($remise != $res->remise_percent)
-									$remise = $res->remise_percent;
-								
-								$prix = $res->prix;
-								$tva_tx = $res->tva_tx;
-								
-								$found = true;
-								break;
-							}
-						}
-						
-						//Quantité en dehors de la grille alors retourner erreur
-						if(!$found) {
-							$this->db->rollback();
-							$this->db->rollback();
-							$object->error = "Quantité trop faible";
-							return -1;
-						}
-					} else { // Pas de grille de tarif, on prend le prix unitaire
-						$prix = $object->price;
-						$tva_tx = $object->tva_tx;
-					}
-				}
-			}/* else if (false) { // TODO : Prix par quantité
-				
-			}*/
+			//Nouvelle ligne libre
+			if(!empty($idProd) && $idProd != 0 && isset($_REQUEST['pu_devise_libre']) && !empty($_REQUEST['pu_devise_libre'])){
+				$devise_mt_ligne = $_REQUEST['pu_devise_libre'] * $_REQUEST['qty'];
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise_libre'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+			}
+			//Ligne de produit/service existant
+			elseif(isset($_REQUEST['pu_devise_product']) && !empty($_REQUEST['pu_devise_product'])){
+				$devise_mt_ligne = $_REQUEST['pu_devise_product'] * $_REQUEST['qty'];
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise_product'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+			}
 			
-			/*$product = new Product($this->db);
-			$product->fetch($idProd);
-			
-			$object->subprice = $prix;
-			$object->price = $prix; // Deprecated in Dolibarr
-			$object->tva_tx = $tva_tx;
-			$object->fk_parent_line = NULL;
-			$object->remise_percent = $remise;
-			$object->remise = $remise; // Deprecated in Dolibarr
-			
-			if(get_class($object) == 'FactureLigne') $object->update($user, true);
-			else $object->update(true);
-			
-			//MAJ des totaux de la ligne de commande
-			$object->total_ht = ($qte_totale * $prix / pow(10, $product->weight_units)) * (1 - $remise / 100);
-			$object->total_tva = ($object->total_ht * (1 + ($tva_tx/100))) - $object->total_ht;
-			$object->total_ttc = $object->total_ht + $object->total_tva;
-			$object->update_total();
-			
-			if(get_class($object) == 'PropaleLigne') $table = 'propaldet';
-			if(get_class($object) == 'OrderLine') $table = 'commandedet';
-			if(get_class($object) == 'FactureLigne') $table = 'facturedet'; 
-			$this->db->query("UPDATE ".MAIN_DB_PREFIX.$table." SET tarif_poids = ".$poids.", poids = ".$weight_units." WHERE rowid = ".$object->rowid);
-			
-			dol_syslog("Trigger '".$this->name."' for action '$action' launched by ".__FILE__.". id=".$object->rowid);
+			//MAJ du total devise de la commande/facture/propale
+			$resql = $this->db->query('SELECT devise_taux, total_ht FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->{'fk_'.$table});
+			$res = $this->db->fetch_object($resql);
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.(($res->total_ht * $res->devise_taux) + $devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100)))." WHERE rowid = ".$object->{'fk_'.$table});
 		}
-
-		return 1;*/
+	
+		/*
+		 * SUPPRESSION LIGNE DE COMMANDE, PROPAL OU FACTURE = MAJ DU MONTANT TOTAL DEVISE
+		 */
+		if ($action == 'LINEORDER_DELETE' || $action == 'LINEPROPAL_DELETE' || $action == 'LINEBILL_DELETE') {
+			
+			/*echo '<pre>';
+			print_r($object);
+			echo '</pre>';exit;*/
+			
+			if($action == "LINEORDER_DELETE"){
+				$table = "commande";
+				$tabledet = "commandedet";
+			}
+			elseif($action == 'LINEPROPAL_DELETE'){
+				$table = "propal";
+				$tabledet = "propaldet";
+			}
+			elseif($action == 'LINEBILL_DELETE'){
+				$table = "facture";
+				$tabledet = "facturedet";
+			}
+			
+			$resql = $this->db->query('SELECT devise_mt_total, devise_taux FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->{'fk_'.$table});
+			$res = $this->db->fetch_object($resql);
+			$montant_total = $res->devise_mt_total;
+			
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.($res->devise_mt_total - ($res->devise_taux * $object->total_ht))." WHERE rowid = ".$object->{'fk_'.$table});
+		}
+		return 1;
 	}
 }
