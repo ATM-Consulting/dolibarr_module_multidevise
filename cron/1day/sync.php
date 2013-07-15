@@ -7,7 +7,7 @@
 	$url_rate =  strtr(TCurrenty_rate_source,array('{app_id}'=>TCurrenty_app_id));
 	
 	$TCurrency = json_decode( file_get_contents($url_list) );
-		
+	
 	$db=new TPDOdb;	
 		
 	foreach($TCurrency as $currency=>$label) {
@@ -37,11 +37,11 @@
 
 	$coefRate = $fromRate / $toRate; // transform USD cof to EUR coef
 
-	print "$from = $fromRate, $to = $toRate :: coef = $coefRate";
+	print "$from = $fromRate, $to = $toRate :: coef = $coefRate<br>";
 	foreach($TRate->rates as $currency=>$rate) {
 
 		$rate = $rate * $coefRate;
-		
+		print "$rate = $rate * $coefRate<br>";
 		$c=new TCurrency;
 	
 		if($c->loadByCode($db, $currency)) {

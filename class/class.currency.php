@@ -22,9 +22,10 @@ class TCurrency extends TObjetStd {
 	
 	function addRate($rate, $date='') {
 		if(empty($date))$date = date('Y-m-d');
-		foreach($this->TCurrencyRate as &$rate) {
-			if($rate->get_date('dt_sync','Y-m-d') == $date) {
-				return false;
+		foreach($this->TCurrencyRate as &$row) {
+			if($row->get_date('dt_sync','Y-m-d') == $date) {
+				$row->rate = $rate;
+				return true;
 			}
 		}
 		
@@ -32,7 +33,7 @@ class TCurrency extends TObjetStd {
 		
 		$this->TCurrencyRate[$k]->rate = $rate;
 		$this->TCurrencyRate[$k]->dt_sync = strtotime($date);
-		
+		return $k;
 	}
 	
 	static function getRate(&$db, $code, $date='') {
