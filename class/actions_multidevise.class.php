@@ -108,6 +108,7 @@ class ActionsMultidevise
 
 			}
 		}
+
 		return 0;
 	}
 	
@@ -175,6 +176,7 @@ class ActionsMultidevise
 		    	<?php
 	    	}
 	    }
+		
 		return 0;
 	}
 	
@@ -249,4 +251,25 @@ class ActionsMultidevise
 		}
         return 0;
     }
+
+	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
+		echo '<pre>';
+		print_r($object);
+		echo '</pre>';
+		
+		if(in_array('paiementcard',explode(':',$parameters['context']))){
+			
+			$resql = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$object->id);
+			$res = $db->fetch_object($resql);
+			?>
+			<script type="text/javascript">
+				$(document).ready(function(){
+					$('.liste_titre').children().eq(4).after('<td align="right" >Reste à encaisser devise</td>');
+					$('.liste_titre > td:last-child').before('<td align="right" >Montant règlement devise</td>');
+				});
+		    </script>
+	    	<?php
+		}
+		return 0;
+	}
 }
