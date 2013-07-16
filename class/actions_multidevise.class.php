@@ -31,9 +31,28 @@ class ActionsMultidevise
 			if(in_array('invoicecard',explode(':',$parameters['context'])))
 				$table = "facture";
 			
-	    	//VIEW
-	    	if($action == "view" || $action == "" || $action == "addline" || $action == "editline"){
+	    	//EDIT
+	    	if($action == "edit" || $action == "create"){
 	    		$sql = 'SELECT fk_devise, devise_code';
+	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$_REQUEST['socid'];
+				
+	    		$resql = $db->query($sql);
+				$res = $db->fetch_object($resql);
+				if($res->fk_devise && !is_null($res->devise_code)){
+					$form=new Form($db);
+					print '<tr><td>Devise</td><td>';
+					print $form->select_currency($res->devise_code,"currency");
+					print '</td></tr>';
+				}
+				else{
+					$form=new Form($db);
+					print '<tr><td>Devise</td><td colspan="3">';
+					print $form->select_currency($conf->currency,"currency");
+					print '</td></tr>';
+				}
+	    	}
+			else{
+				$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ($table != "societe") ? ', devise_taux, devise_mt_total' : "";
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->id;
 				
@@ -57,27 +76,7 @@ class ActionsMultidevise
 						print '<tr><td>Montant Devise</td><td colspan="3"></td></tr>';
 					}
 				}
-	    	}
-	    	//EDIT
-	    	elseif($action == "edit" || $action == "create"){
-	    		$sql = 'SELECT fk_devise, devise_code';
-	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$_REQUEST['socid'];
-				
-	    		$resql = $db->query($sql);
-				$res = $db->fetch_object($resql);
-				if($res->fk_devise && !is_null($res->devise_code)){
-					$form=new Form($db);
-					print '<tr><td>Devise</td><td>';
-					print $form->select_currency($res->devise_code,"currency");
-					print '</td></tr>';
-				}
-				else{
-					$form=new Form($db);
-					print '<tr><td>Devise</td><td colspan="3">';
-					print $form->select_currency($conf->currency,"currency");
-					print '</td></tr>';
-				}
-	    	}
+			}
 		}
 		return 0;
 	}  
@@ -200,16 +199,25 @@ class ActionsMultidevise
 			         		if($(this).html() == "Total HT")
 			         			$(this).after('<td align="right" width="140">Total Devise</td>');
 	         			});
+	         			$('.tabBar td').each(function(){
+							if($(this).html() == "Taux Devise"){
+								taux = $(this).next().html();
+							}
+						});
+	         			$('#price_ht').change(function(){
+	         				$('input[name=dp_pu_devise]').val($('#price_ht').val() * taux);
+	         				$('input[name=pu_devise]').val($('#price_ht').val() * taux);
+	         			});
+	         			$('input[name=action]').prev().prev().append('<input type="hidden" value="0" name="pu_devise" size="3">');
 						<?php
 						foreach($object->lines as $line){
 	         				$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet." WHERE rowid = ".$line->rowid);
 							$res = $db->fetch_object($resql);
 							
 							if($line->rowid == $_REQUEST['lineid']){
-								?>
-								$('#product_desc').parent().next().next().after('<td align="right"><input type="text" value="<?php echo $res->devisqe_pu; ?>" name="dp_pu_devise" size="6"></td>');
-								$('#product_desc').parent().next().next().next().next().next().after('<td align="right"></td>');
-								<?php
+								echo "$('#product_desc').parent().next().next().after('<td align=\"right\"><input type=\"text\" value=\"".$res->devise_pu."\" name=\"dp_pu_devise\" size=\"6\"></td>');";
+								echo "$('input[name=pu_devise]').val(".$res->devise_pu.");";
+								echo "$('#product_desc').parent().next().next().next().next().next().after('<td align=\"right\"></td>');";
 							}
 							else{
 								echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
