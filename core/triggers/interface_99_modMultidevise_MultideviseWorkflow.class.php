@@ -147,6 +147,25 @@ class InterfaceMultideviseWorkflow
 					$db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET fk_devise = '.$res->rowid.', devise_code = "'.$res->code.'", devise_taux = '.$res->rate.' WHERE rowid = '.$object->id);
 				}
 			}
+			
+			//Création a partir d'un objet d'origine (propale ou commande)
+			if((!empty($object->origin) && !empty($object->origin_id)) || (!empty($_POST['origin']) && !empty($_POST['originid']))){
+				
+				if($_POST['origin'] == "propal"){
+					$table_origin = "propal";
+					$tabledet_origin = "propaldet";
+					$originid = $object->origin_id;
+	        	}
+				elseif($object->origin == "commande"){
+					$table_origin = "commande";
+					$tabledet_origin = "commandedet";
+					$originid = $object->origin_id;
+				}
+				
+				$resql = $this->db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
+				$res = $this->db->fetch_object($resql);
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
+			}
 		}
 		
 		/*
@@ -155,8 +174,8 @@ class InterfaceMultideviseWorkflow
 		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT') {
 			
 			/*echo '<pre>';
-			print_r($_REQUEST);
-			echo '</pre>';*/
+			print_r($object);
+			echo '</pre>';exit;*/
 			
 			if($action == "LINEORDER_INSERT" || $action == 'LINEORDER_UPDATE'){
 				$table = "commande";
@@ -177,27 +196,60 @@ class InterfaceMultideviseWorkflow
 				$champ_total = "total";
 			}
 			
-			$idProd = 0;
-			if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
-			if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
-			
-			//Ligne de produit/service existant
-			if(!empty($idProd) && $idProd != 0 && isset($_REQUEST['pu_devise_product']) && !empty($_REQUEST['pu_devise_product'])){
-				$devise_mt_ligne = $_REQUEST['pu_devise_product'] * $_REQUEST['qty'];
-				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise_product'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+			//Création a partir d'un objet d'origine (propale ou commande)
+			if((!empty($object->origin) && !empty($object->origin_id)) || (!empty($_POST['origin']) && !empty($_POST['originid']))){
+				
+				/*echo '<pre>';
+				print_r($object);
+				echo '</pre>';*/
+				
+				if($_POST['origin'] == "propal"){
+					$table_origin = "propal";
+					$tabledet_origin = "propaldet";
+					$propal = new Propal($this->db);
+					$propal->fetch($_POST['originid']);
+					
+					foreach($propal->lines as $line){
+						if($line->rang == $object->rang)
+							$originid = $line->rowid;
+					}
+	        	}
+				elseif($object->origin == "commande"){
+					$table_origin = "commande";
+					$tabledet_origin = "commandedet";
+					$originid = $object->origin_id;
+				}
+				
+				$resql = $this->db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet_origin." WHERE rowid = ".$originid);
+				$res = $this->db->fetch_object($resql);
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' WHERE rowid = '.$object->rowid);
+				
+				
 			}
-			//Ligne libre
-			elseif(isset($_REQUEST['pu_devise_libre']) && !empty($_REQUEST['pu_devise_libre'])){
-				$devise_mt_ligne = $_REQUEST['pu_devise_libre'] * $_REQUEST['qty'];
-				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise_libre'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
-			}
+			else{//Création standard
 			
-			//MAJ du total devise de la commande/facture/propale
-			$resql = $this->db->query('SELECT devise_taux, '.$champ_total.' FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->{'fk_'.$table});
-			$res = $this->db->fetch_object($resql);
-			$total_devise = $res->{$champ_total} * $res->devise_taux;
-			$total_ligne_devise = $devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100));
-			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.($total_devise + $total_ligne_devise)." WHERE rowid = ".$object->{'fk_'.$table});
+				$idProd = 0;
+				if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
+				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
+				
+				//Ligne de produit/service existant
+				if(!empty($idProd) && $idProd != 0 && isset($_REQUEST['pu_devise_product']) && !empty($_REQUEST['pu_devise_product'])){
+					$devise_mt_ligne = $_REQUEST['pu_devise_product'] * $_REQUEST['qty'];
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise_product'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				}
+				//Ligne libre
+				elseif(isset($_REQUEST['pu_devise_libre']) && !empty($_REQUEST['pu_devise_libre'])){
+					$devise_mt_ligne = $_REQUEST['pu_devise_libre'] * $_REQUEST['qty'];
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise_libre'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				}
+				
+				//MAJ du total devise de la commande/facture/propale
+				$resql = $this->db->query('SELECT devise_taux, '.$champ_total.' FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->{'fk_'.$table});
+				$res = $this->db->fetch_object($resql);
+				$total_devise = $res->{$champ_total} * $res->devise_taux;
+				$total_ligne_devise = $devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100));
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.($total_devise + $total_ligne_devise)." WHERE rowid = ".$object->{'fk_'.$table});
+			}
 		}
 	
 		/*
@@ -269,6 +321,22 @@ class InterfaceMultideviseWorkflow
 			
 			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.($res->devise_mt_total - ($res->devise_taux * $object->total_ht))." WHERE rowid = ".$object->{'fk_'.$table});
 		}
+		
+		
+		/*
+		 * AJOUT D'UN PAIEMENT 
+		 */
+		if($action == "PAYMENT_CUSTOMER_CREATE" ){
+			echo '<pre>';
+			print_r($object);
+			echo '</pre>';
+			
+			echo '<pre>';
+			print_r($_REQUEST);
+			echo '</pre>';
+			exit;
+		}
+		
 		return 1;
 	}
 }
