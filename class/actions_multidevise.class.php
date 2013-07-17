@@ -104,8 +104,6 @@ class ActionsMultidevise
 				    	<?php
 			    	}
 				}
-
-
 			}
 		}
 
@@ -136,7 +134,6 @@ class ActionsMultidevise
 			if($action != "create"){
 				?>
 				<script type="text/javascript">
-					
 	         		$('#np_desc').parent().after('<td align="right"><input type="text" value="" name="np_pu_devise" size="6"></td>');
 					$('#dp_desc').parent().next().next().after('<td align="right"><input type="text" value="" name="dp_pu_devise" size="6"></td>');
 					$('input[name=addline]').parent().attr('colspan','5');
@@ -175,7 +172,45 @@ class ActionsMultidevise
 			    </script>	
 		    	<?php
 	    	}
+			else{
+				?>
+				<script type="text/javascript">
+						$('#tablelines .liste_titre > td').each(function(){
+			         		if($(this).html() == "Qté")
+			         			$(this).before('<td align="right" width="140">P.U. Devise</td>');
+			         		if($(this).html() == "Total HT")
+			         			$(this).after('<td align="right" width="140">Total Devise</td>');
+	         			});
+				</script>
+				<?php
+			}
 	    }
+	    
+		if(in_array('paiementcard',explode(':',$parameters['context']))){
+			?>
+			<script type="text/javascript">
+				$(document).ready(function(){
+					$('.liste_titre').children().eq(1).after('<td align="right" >Devise</td>');
+					$('.liste_titre').children().eq(2).after('<td align="right" >Taux Devise actuel</td>');
+					$('.liste_titre').children().eq(5).after('<td align="right" >Reçu devise</td>');
+					$('.liste_titre').children().eq(7).after('<td align="right" >Reste à encaisser devise</td>');
+					$('.liste_titre > td:last-child').before('<td align="right" >Montant règlement devise</td>');
+					$('tr[class=impair], tr[class=pair]').each(function(){
+						$(this).children().eq(1).after('<td align="right" class="devise"></td>');
+						$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
+						$(this).children().eq(5).after('<td align="right" class="recu_devise"></td>');
+						$(this).children().eq(7).after('<td align="right" class="reste_devise"></td>');
+						$(this).children().eq(9).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(9).children().attr('name')+']" size="8"></td>');
+					});
+					$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
+					$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
+					$('tr[class=liste_total]').children().eq(4).after('<td align="right" class="total_recu_devise"></td>');
+					$('tr[class=liste_total]').children().eq(6).after('<td align="right" class="total_reste_devise">0</td>');
+					$('tr[class=liste_total]').children().eq(8).after('<td align="right" class="total_montant_devise"></td>');
+				});
+		    </script>
+	    	<?php
+		}
 		
 		return 0;
 	}
@@ -253,22 +288,64 @@ class ActionsMultidevise
     }
 
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
-		echo '<pre>';
-		print_r($object);
-		echo '</pre>';
 		
+		/*echo '<pre>';
+		print_r($object);
+		echo '</pre>';*/
+		
+		global $db, $user, $conf;
+		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
+				
 		if(in_array('paiementcard',explode(':',$parameters['context']))){
+			$facture = new Facture($db);
+			$facture->fetch($object->facid);
 			
-			$resql = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$object->id);
+			//Récupération des règlements déjà effectué
+			$resql = $db->query('SELECT SUM(p.devise_mt_paiement) as total_paiement
+								 FROM '.MAIN_DB_PREFIX.'paiement as p
+								 	LEFT JOIN '.MAIN_DB_PREFIX.'paiement_facture as pf ON (pf.fk_paiement = p.rowid)
+								 WHERE pf.fk_facture = '.$facture->id);
 			$res = $db->fetch_object($resql);
-			?>
-			<script type="text/javascript">
-				$(document).ready(function(){
-					$('.liste_titre').children().eq(4).after('<td align="right" >Reste à encaisser devise</td>');
-					$('.liste_titre > td:last-child').before('<td align="right" >Montant règlement devise</td>');
-				});
-		    </script>
-	    	<?php
+			if($res->total_paiement)
+				$total_recu_devise = $res->total_paiement;
+			else
+				$total_recu_devise = "0,00";
+						
+			$resql = $db->query('SELECT f.total as total, c.code as code, c.name as name, cr.rate as taux
+									   FROM '.MAIN_DB_PREFIX.'facture as f
+									    LEFT JOIN '.MAIN_DB_PREFIX.'currency as c ON (c.rowid = f.fk_devise)
+									    LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate as cr ON (cr.id_currency = c.rowid)
+									   WHERE f.rowid = '.$facture->id.'
+									   ORDER BY cr.dt_sync DESC LIMIT 1');
+			
+			$res = $db->fetch_object($resql);
+			if($res->code){
+				?>
+				<script type="text/javascript">
+					$(document).ready(function(){
+						ligne = $('input[name=remain_<?php echo $facture->id; ?>]').parent().parent();
+						$(ligne).find('> td[class=devise]').append('<?php echo $res->name.' ('.$res->code.')'; ?>');
+						$(ligne).find('> td[class=taux_devise]').append('<?php echo $res->taux; ?>');
+						$(ligne).find('> td[class=recu_devise]').append('<?php echo $total_recu_devise; ?>');
+						reste = $(ligne).children().eq(7).html();
+						reste_devise = parseFloat(reste.replace(',','.')) * <?php echo number_format($res->taux,5,'.',''); ?>;
+						$(ligne).find('> td[class=reste_devise]').append(reste_devise);
+						$('td[class=total_recu_devise]').html($('td[class=total_recu_devise]').val() + <?php echo $total_recu_devise; ?>);
+						total_reste_devise = $('td[class=total_reste_devise]').html();
+						$('td[class=total_reste_devise]').html(parseFloat(total_reste_devise.replace(',','.')) + reste_devise);
+						
+						$("#payment_form").find("input[name*=\"devise[remain_\"]").keyup(function() {
+							total = 0;
+							$("#payment_form").find("input[name*=\"devise[remain_\"]").each(function(){
+								if( $(this).val() != "") total += parseFloat($(this).val().replace(',','.'));
+							});
+							$('td[class=total_montant_devise]').html(total);
+							$('#payment_form').find("input[name=amount_"+$(this).attr('name').substring($(this).attr('name').length -2,$(this).attr('name').length -1)+"]").val($(this).val() / <?php echo $res->taux; ?>).keyup();
+						});
+					});
+				</script>
+				<?php
+			}
 		}
 		return 0;
 	}
