@@ -76,34 +76,28 @@ class ActionsMultidevise
 						print '<tr><td>Montant Devise</td><td colspan="3"></td></tr>';
 					}
 				}
-				
-				if($action != "editline"){
-					$resql = $db->query('SELECT COUNT(rowid) as nb_ligne FROM '.MAIN_DB_PREFIX.$table.'det WHERE fk_'.$table.' = '.$object->id);
-					$res = $db->fetch_object($resql);
-					if($res->nb_ligne > 0){
+
+				?>
+				<script type="text/javascript">
+					$(document).ready(function(){
+						$('#tablelines .liste_titre > td').each(function(){
+			         		if($(this).html() == "Qté")
+			         			$(this).before('<td align="right" width="140">P.U. Devise</td>');
+			         		if($(this).html() == "Total HT")
+			         			$(this).after('<td align="right" width="140">Total Devise</td>');
+		         		});
+						<?php
+						foreach($object->lines as $line){
+		         				$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
+								$res = $db->fetch_object($resql);
+		         				echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
+								echo "$('#row-".$line->rowid."').children().eq(6).after('<td class=\"nowrap\" align=\"right\">".$res->devise_mt_ligne."</td>');";
+								if($line->error != '') echo "alert('".$line->error."');";
+		         			}
 						?>
-						<script type="text/javascript">
-							$(document).ready(function(){
-								$('#tablelines .liste_titre > td').each(function(){
-					         		if($(this).html() == "Qté")
-					         			$(this).before('<td align="right" width="140">P.U. Devise</td>');
-					         		if($(this).html() == "Total HT")
-					         			$(this).after('<td align="right" width="140">Total Devise</td>');
-				         		});
-								<?php
-								foreach($object->lines as $line){
-				         				$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
-										$res = $db->fetch_object($resql);
-				         				echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
-										echo "$('#row-".$line->rowid."').children().eq(6).after('<td class=\"nowrap\" align=\"right\">".$res->devise_mt_ligne."</td>');";
-										if($line->error != '') echo "alert('".$line->error."');";
-				         			}
-								?>
-							});
-					    </script>	
-				    	<?php
-			    	}
-				}
+					});
+			    </script>	
+		    	<?php
 			}
 		}
 
@@ -134,56 +128,46 @@ class ActionsMultidevise
 			if($action != "create"){
 				?>
 				<script type="text/javascript">
-	         		$('#np_desc').parent().after('<td align="right"><input type="text" value="" name="np_pu_devise" size="6"></td>');
-					$('#dp_desc').parent().next().next().after('<td align="right"><input type="text" value="" name="dp_pu_devise" size="6"></td>');
-					$('input[name=addline]').parent().attr('colspan','5');
-					$('.tabBar td').each(function(){
-						if($(this).html() == "Taux Devise"){
-							taux = $(this).next().html();
-						}
-					});
-					$('#idprod').change( function(){
-						$.ajax({
-							type: "POST"
-							,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/ajax.getproductprice.php"
-							,dataType: "json"
-							,data: {fk_product: $('#idprod').val()}
-							},"json").then(function(select){
-								if(select.price != ""){
-									$("input[name=np_pu_devise]").val(select.price * taux);
-									$("input[name=np_pu_devise]").attr('value',select.price * taux);
-									$('input[name=pu_devise_product]').val(select.price * taux);
-								}
-							});
-					});
-					$('input[name=price_ht]').blur(function(){
-						$(this).parent().next().children().val($(this).val() * taux);
-						$(this).parent().next().children().attr('value',$(this).val() * taux);
-						$('input[name=pu_devise_libre]').val($(this).val() * taux);
-					})
-					$('#addpredefinedproduct').append('<input type="hidden" value="0" name="pu_devise_product" size="3">');
-		         	$('#addproduct').append('<input type="hidden" value="0" name="pu_devise_libre" size="3">');
-		         	$('imput[name=dp_pu_devise]').change(function() {
-		         		$('input[name=pu_devise_libre]').val($('imput[name=dp_pu_devise]').val() );	
-		         	});
-		         	$('imput[name=np_pu_devise]').change(function() {
-		         		$('input[name=pu_devise_product]').val($('imput[name=np_pu_devise]').val() );
-		         	});
+					$(document).ready(function(){
+		         		$('#np_desc').parent().after('<td align="right"><input type="text" value="" name="np_pu_devise" size="6"></td>');
+						$('#dp_desc').parent().next().next().after('<td align="right"><input type="text" value="" name="dp_pu_devise" size="6"></td>');
+						$('input[name=addline]').parent().attr('colspan','5');
+						$('.tabBar td').each(function(){
+							if($(this).html() == "Taux Devise"){
+								taux = $(this).next().html();
+							}
+						});
+						$('#idprod').change( function(){
+							$.ajax({
+								type: "POST"
+								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/ajax.getproductprice.php"
+								,dataType: "json"
+								,data: {fk_product: $('#idprod').val()}
+								},"json").then(function(select){
+									if(select.price != ""){
+										$("input[name=np_pu_devise]").val(select.price * taux);
+										$("input[name=np_pu_devise]").attr('value',select.price * taux);
+										$('input[name=pu_devise_product]').val(select.price * taux);
+									}
+								});
+						});
+						$('input[name=price_ht]').blur(function(){
+							$(this).parent().next().children().val($(this).val() * taux);
+							$(this).parent().next().children().attr('value',$(this).val() * taux);
+							$('input[name=pu_devise_libre]').val($(this).val() * taux);
+						})
+						$('#addpredefinedproduct').append('<input type="hidden" value="0" name="pu_devise_product" size="3">');
+			         	$('#addproduct').append('<input type="hidden" value="0" name="pu_devise_libre" size="3">');
+			         	$('imput[name=dp_pu_devise]').change(function() {
+			         		$('input[name=pu_devise_libre]').val($('imput[name=dp_pu_devise]').val() );	
+			         	});
+			         	$('imput[name=np_pu_devise]').change(function() {
+			         		$('input[name=pu_devise_product]').val($('imput[name=np_pu_devise]').val() );
+			         	});
+			     	});
 			    </script>	
 		    	<?php
 	    	}
-			else{
-				?>
-				<script type="text/javascript">
-						$('#tablelines .liste_titre > td').each(function(){
-			         		if($(this).html() == "Qté")
-			         			$(this).before('<td align="right" width="140">P.U. Devise</td>');
-			         		if($(this).html() == "Total HT")
-			         			$(this).after('<td align="right" width="140">Total Devise</td>');
-	         			});
-				</script>
-				<?php
-			}
 	    }
 	    
 		if(in_array('paiementcard',explode(':',$parameters['context']))){
@@ -244,12 +228,6 @@ class ActionsMultidevise
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
-						$('#tablelines .liste_titre > td').each(function(){
-			         		if($(this).html() == "Qté")
-			         			$(this).before('<td align="right" width="140">P.U. Devise</td>');
-			         		if($(this).html() == "Total HT")
-			         			$(this).after('<td align="right" width="140">Total Devise</td>');
-	         			});
 	         			$('.tabBar td').each(function(){
 							if($(this).html() == "Taux Devise"){
 								taux = $(this).next().html();
