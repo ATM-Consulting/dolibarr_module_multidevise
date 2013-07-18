@@ -64,7 +64,7 @@ class ActionsMultidevise
 					print ' ('.$res->devise_code.')</td></tr>';
 					if($table != "societe"){
 						print '<tr><td>Taux Devise</td><td colspan="3">'.$res->devise_taux.'</td></tr>';
-						print '<tr><td>Montant Devise</td><td colspan="3">'.$res->devise_mt_total.'</td></tr>';
+						print '<tr><td>Montant Devise</td><td colspan="3">'.price2num($res->devise_mt_total,'MT').'</td></tr>';
 					}
 				}
 				else{
@@ -91,7 +91,7 @@ class ActionsMultidevise
 		         				$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
 								$res = $db->fetch_object($resql);
 		         				echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
-								echo "$('#row-".$line->rowid."').children().eq(6).after('<td class=\"nowrap\" align=\"right\">".$res->devise_mt_ligne."</td>');";
+								echo "$('#row-".$line->rowid."').children().eq(6).after('<td class=\"nowrap\" align=\"right\">".price2num($res->devise_mt_ligne,'MT')."</td>');";
 								if($line->error != '') echo "alert('".$line->error."');";
 		         			}
 						?>
@@ -151,7 +151,7 @@ class ActionsMultidevise
 									}
 								});
 						});
-						$('input[name=price_ht]').blur(function(){
+						$('input[name=price_ht]').keyup(function(){
 							$(this).parent().next().children().val($(this).val() * taux);
 							$(this).parent().next().children().attr('value',$(this).val() * taux);
 							$('input[name=pu_devise_libre]').val($(this).val() * taux);
@@ -233,7 +233,7 @@ class ActionsMultidevise
 								taux = $(this).next().html();
 							}
 						});
-	         			$('#price_ht').change(function(){
+	         			$('#price_ht').keyup(function(){
 	         				$('input[name=dp_pu_devise]').val($('#price_ht').val() * taux);
 	         				$('input[name=pu_devise]').val($('#price_ht').val() * taux);
 	         			});
@@ -250,7 +250,7 @@ class ActionsMultidevise
 							}
 							else{
 								echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
-								echo "$('#row-".$line->rowid."').children().eq(6).after('<td class=\"nowrap\" align=\"right\">".$res->devise_mt_ligne."</td>');";
+								echo "$('#row-".$line->rowid."').children().eq(6).after('<td class=\"nowrap\" align=\"right\">".price2num($res->devise_mt_ligne,'MT')."</td>');";
 								if($line->error != '') echo "alert('".$line->error."');";
 							}
 				        }

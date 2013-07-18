@@ -113,6 +113,7 @@ class InterfaceMultideviseWorkflow
 		dol_include_once('/compta/facture/class/facture.class.php');
 		dol_include_once('/comm/propal/class/propal.class.php');
 		dol_include_once("/societe/class/societe.class.php");
+		dol_include_once("/core/lib/functions.lib.class.php");
 		
 		/*
 		 * ASSOCIATION DEVISE PAR SOCIETE
@@ -227,7 +228,10 @@ class InterfaceMultideviseWorkflow
 				
 			}
 			else{//Création standard
-			
+				/*echo '<pre>';
+				print_r($object);
+				echo '</pre>';*/
+				 
 				$idProd = 0;
 				if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
 				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
@@ -244,11 +248,12 @@ class InterfaceMultideviseWorkflow
 				}
 				
 				//MAJ du total devise de la commande/facture/propale
-				$resql = $this->db->query('SELECT devise_taux, '.$champ_total.' FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->{'fk_'.$table});
+				$resql = $this->db->query('SELECT devise_taux, '.$champ_total.', tva  FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->{'fk_'.$table});
 				$res = $this->db->fetch_object($resql);
 				$total_devise = $res->{$champ_total} * $res->devise_taux;
 				$total_ligne_devise = $devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100));
-				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.($total_devise + $total_ligne_devise)." WHERE rowid = ".$object->{'fk_'.$table});
+				$total_tva_devise = ($res->tva * $res->devise_taux) + ($total_ligne_devise * ($object->tva_tx/100));
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.($total_devise + $total_ligne_devise + $total_tva_devise)." WHERE rowid = ".$object->{'fk_'.$table});
 			}
 		}
 	
@@ -315,11 +320,14 @@ class InterfaceMultideviseWorkflow
 				$tabledet = "facturedet";
 			}
 			
-			$resql = $this->db->query('SELECT devise_mt_total, devise_taux FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->{'fk_'.$table});
+			$resql = $this->db->query('SELECT m.devise_mt_total as total_devise, f.devise_mt_ligne as total_ligne 
+					²				   FROM '.MAIN_DB_PREFIX.$tabledet.' as f LEFT JOIN '.MAIN_DB_PREFIX.$table.' as m ON (f.fk_'.$table.' = m.rowid)
+									   WHERE m.rowid = '.$object->{'fk_'.$table});
 			$res = $this->db->fetch_object($resql);
-			$montant_total = $res->devise_mt_total;
+			$total_devise = $res->total_devise;
+			$total_ligne_devise = $res->total_ligne;
 			
-			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.($res->devise_mt_total - ($res->devise_taux * $object->total_ht))." WHERE rowid = ".$object->{'fk_'.$table});
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.($total_devise - $total_ligne_devise)." WHERE rowid = ".$object->{'fk_'.$table});
 		}
 		
 		
