@@ -281,7 +281,7 @@ class ActionsMultidevise
 			$res = $db->fetch_object($resql);
 			$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0,00";
 			
-			$resql = $db->query('SELECT f.total as total, c.code as code, c.name as name, cr.rate as taux
+			$resql = $db->query('SELECT f.total as total, c.code as code, c.name as name, cr.rate as taux, f.devise_mt_total as total_devise
 									   FROM '.MAIN_DB_PREFIX.'facture as f
 									    LEFT JOIN '.MAIN_DB_PREFIX.'currency as c ON (c.rowid = f.fk_devise)
 									    LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate as cr ON (cr.id_currency = c.rowid)
@@ -292,25 +292,50 @@ class ActionsMultidevise
 			if($res->code){
 				?>
 				<script type="text/javascript">
+				function number_format (number, decimals, dec_point, thousands_sep) {
+				  number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
+				  var n = !isFinite(+number) ? 0 : +number,
+				    prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+				    sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
+				    dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
+				    s = '',
+				    toFixedFix = function (n, prec) {
+				      var k = Math.pow(10, prec);
+				      return '' + Math.round(n * k) / k;
+				    };
+				  // Fix for IE parseFloat(0.55).toFixed(0) = 0;
+				  s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+				  if (s[0].length > 3) {
+				    s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
+				  }
+				  if ((s[1] || '').length < prec) {
+				    s[1] = s[1] || '';
+				    s[1] += new Array(prec - s[1].length + 1).join('0');
+				  }
+				  return s.join(dec);
+				}
+
 					$(document).ready(function(){
 						ligne = $('input[name=remain_<?php echo $facture->id; ?>]').parent().parent();
 						$(ligne).find('> td[class=devise]').append('<?php echo $res->name.' ('.$res->code.')'; ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<?php echo $res->taux; ?>');
 						$(ligne).find('> td[class=recu_devise]').append('<?php echo $total_recu_devise; ?>');
-						reste = $(ligne).children().eq(7).html();
-						reste_devise = parseFloat(reste.replace(',','.')) * <?php echo number_format($res->taux,5,'.',''); ?>;
-						$(ligne).find('> td[class=reste_devise]').append(reste_devise);
-						$('td[class=total_recu_devise]').html($('td[class=total_recu_devise]').val() + <?php echo $total_recu_devise; ?>);
-						total_reste_devise = $('td[class=total_reste_devise]').html();
-						$('td[class=total_reste_devise]').html(parseFloat(total_reste_devise.replace(',','.')) + reste_devise);
+						$(ligne).find('> td[class=reste_devise]').append('<?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>');
+						
+						if($('td[class=total_reste_devise]').length > 0){
+							$('td[class=total_recu_devise]').html($('td[class=total_recu_devise]').val() + <?php echo $total_recu_devise; ?>);
+							total_reste_devise = $('td[class=total_reste_devise]').html();
+							$('td[class=total_reste_devise]').html(parseFloat(total_reste_devise.replace(',','.')) + <?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>);
+						}
 						
 						$("#payment_form").find("input[name*=\"devise[remain_\"]").keyup(function() {
 							total = 0;
 							$("#payment_form").find("input[name*=\"devise[remain_\"]").each(function(){
 								if( $(this).val() != "") total += parseFloat($(this).val().replace(',','.'));
 							});
-							$('td[class=total_montant_devise]').html(total);
-							$('#payment_form').find("input[name=amount_"+$(this).attr('name').substring($(this).attr('name').length -2,$(this).attr('name').length -1)+"]").val($(this).val() / <?php echo $res->taux; ?>).keyup();
+							if($('td[class=total_reste_devise]').length > 0) $('td[class=total_montant_devise]').html(total);
+							mt_devise = parseFloat($(this).val().replace(',','.'));
+							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise / <?php echo $res->taux; ?>,2,',','')).keyup();
 						});
 					});
 				</script>
