@@ -248,11 +248,6 @@ class ActionsMultidevise
 								echo "$('input[name=pu_devise]').val(".$res->devise_pu.");";
 								echo "$('#product_desc').parent().next().next().next().next().next().after('<td align=\"right\"></td>');";
 							}
-							else{
-								echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
-								echo "$('#row-".$line->rowid."').children().eq(6).after('<td class=\"nowrap\" align=\"right\">".price2num($res->devise_mt_ligne,'MT')."</td>');";
-								if($line->error != '') echo "alert('".$line->error."');";
-							}
 				        }
 						?>
 					});
@@ -284,11 +279,8 @@ class ActionsMultidevise
 								 	LEFT JOIN '.MAIN_DB_PREFIX.'paiement_facture as pf ON (pf.fk_paiement = p.rowid)
 								 WHERE pf.fk_facture = '.$facture->id);
 			$res = $db->fetch_object($resql);
-			if($res->total_paiement)
-				$total_recu_devise = $res->total_paiement;
-			else
-				$total_recu_devise = "0,00";
-						
+			$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0,00";
+			
 			$resql = $db->query('SELECT f.total as total, c.code as code, c.name as name, cr.rate as taux
 									   FROM '.MAIN_DB_PREFIX.'facture as f
 									    LEFT JOIN '.MAIN_DB_PREFIX.'currency as c ON (c.rowid = f.fk_devise)
