@@ -49,10 +49,26 @@
 		print "$from = $fromRate, $to = $toRate :: coef = $coefRate<br>";
 		
 		//Récupération des devises activent
-		$TRateActivate = explode(',',TCurrenty_activate);
-		foreach($TRate->rates as $currency=>$rate) {
-			
-			if(in_array($currency, $TRateActivate)){
+		if(strpos(TCurrenty_activate, ',')){
+			$TRateActivate = explode(',',TCurrenty_activate);
+			foreach($TRate->rates as $currency=>$rate) {
+				
+				if(in_array($currency, $TRateActivate)){
+					echo "$currency $id_entity<br>";
+					$rate = $rate * $coefRate;
+					
+					$c=new TCurrency;
+				
+					if($c->loadByCode($db, $currency)) {
+						$c->addRate($rate,$id_entity);
+						
+						$c->save($db);
+					}
+				}
+			}
+		}
+		else{ // Toutes les devises
+			foreach($TRate->rates as $currency=>$rate) {
 				echo "$currency $id_entity<br>";
 				$rate = $rate * $coefRate;
 				
