@@ -1,5 +1,8 @@
 <?
-
+	
+	//TODO récupérer les taux pour chaque entité en fonction de leur devise respective
+	//TODO récupérer les taux de conversion uniquement pour les devises sélectionné en conf
+	
 	require('../../config.php');
 	include(ROOT.'custom/multidevise/class/class.currency.php');
 	
@@ -24,30 +27,42 @@
 	}
 
 	$TRate = json_decode( file_get_contents($url_rate) );
-	list($from, $to) = explode('-', TCurrenty_from_to_rate);
 	
-	$fromRate = 0;
-	$toRate = 0;
-	$coefRate = 0;
-	//print_r($TRate);
-	foreach($TRate->rates as $currency=>$rate) {
-		if($currency==$from) $fromRate = $rate;
-		if($currency==$to) $toRate = $rate;
-	}
-
-	$coefRate = $fromRate / $toRate; // transform USD cof to EUR coef
-
-	print "$from = $fromRate, $to = $toRate :: coef = $coefRate<br>";
-	foreach($TRate->rates as $currency=>$rate) {
-
-		$rate = $rate * $coefRate;
-		print "$rate = $rate * $coefRate<br>";
-		$c=new TCurrency;
+	//Récupération des devises à convertir
+	$TFromTo = explode(',',TCurrenty_from_to_rate);
 	
-		if($c->loadByCode($db, $currency)) {
-			$c->addRate($rate);
-			
-			$c->save($db);
+	foreach($TFromTo as $fromto){
+		echo "$fromto<br>";
+		list($from, $to, $id_entity) = explode('-', $fromto);
+		
+		$fromRate = 0;
+		$toRate = 0;
+		$coefRate = 0;
+		//print_r($TRate);
+		foreach($TRate->rates as $currency=>$rate) {
+			if($currency==$from) $fromRate = $rate;
+			if($currency==$to) $toRate = $rate;
 		}
-
+	
+		$coefRate = $fromRate / $toRate; // transform $from cof to $to coef
+	
+		print "$from = $fromRate, $to = $toRate :: coef = $coefRate<br>";
+		
+		//Récupération des devises activent
+		$TRateActivate = explode(',',TCurrenty_activate);
+		foreach($TRate->rates as $currency=>$rate) {
+			
+			if(in_array($currency, $TRateActivate)){
+				echo "$currency $id_entity<br>";
+				$rate = $rate * $coefRate;
+				
+				$c=new TCurrency;
+			
+				if($c->loadByCode($db, $currency)) {
+					$c->addRate($rate,$id_entity);
+					
+					$c->save($db);
+				}
+			}
+		}
 	}	

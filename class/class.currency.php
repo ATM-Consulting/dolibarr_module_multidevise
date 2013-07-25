@@ -20,10 +20,10 @@ class TCurrency extends TObjetStd {
 		
 	}
 	
-	function addRate($rate, $date='') {
+	function addRate($rate, $id_entity, $date='') {
 		if(empty($date))$date = date('Y-m-d');
 		foreach($this->TCurrencyRate as &$row) {
-			if($row->get_date('dt_sync','Y-m-d') == $date) {
+			if($row->get_date('dt_sync','Y-m-d') == $date && $row->id_entity == $id_entity) {
 				$row->rate = $rate;
 				return true;
 			}
@@ -33,6 +33,7 @@ class TCurrency extends TObjetStd {
 		
 		$this->TCurrencyRate[$k]->rate = $rate;
 		$this->TCurrencyRate[$k]->dt_sync = strtotime($date);
+		$this->TCurrencyRate[$k]->id_entity = $id_entity;
 		return $k;
 	}
 	
@@ -83,7 +84,7 @@ class TCurrencyRate extends TObjetStd {
 		parent::set_table(MAIN_DB_PREFIX.'currency_rate');
 		
 		parent::add_champs('rate','type=float;');
-		parent::add_champs('id_currency','type=entier;index;');
+		parent::add_champs('id_currency, id_entity','type=entier;index;');
 		parent::add_champs('dt_sync','type=date;index;');
 
 		parent::start();
