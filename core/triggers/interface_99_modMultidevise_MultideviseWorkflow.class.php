@@ -331,7 +331,43 @@ class InterfaceMultideviseWorkflow
 			echo '<pre>';
 			print_r($_REQUEST);
 			echo '</pre>';
-			exit;
+			
+			if(!empty($_REQUEST['devise'])){
+				$this->db->commit();
+				$this->db->commit();
+				
+				$note = "";
+				$somme = 0.00;
+				foreach($_REQUEST['devise'] as  $id_fac => $mt_devise){
+					$id_fac = explode('_', $id_fac);
+					$id_fac = $id_fac[1];
+					$somme += str_replace(',','.',$mt_devise);
+					
+					$facture = new Facture($db);
+					$facture->fetch($id_fac);
+					
+					$resql = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$facture->id);
+					$res = $db->fetch_object($resql);
+					
+					//Règlement total
+					if($res->devise_mt_total == $mt_devise){
+						$facture->set_paid($user);
+						
+						//Ajout de la note si des écarts sont lié aux conversions de devises
+						if($_REQUEST['amount_'.$facture->id] < $facture->total_ttc)
+							$note .= "facture : ".$facture->facnumber." => PERTE après conversion : ".($facture->total_ttc - $_REQUEST['amount_'.$facture->id]);
+						elseif($_REQUEST['amount_'.$facture->id] > $facture->total_ttc)
+							$note .= "facture : ".$facture->facnumber." => GAIN après conversion : ".($_REQUEST['amount_'.$facture->id] - $facture->total_ttc);
+					}
+					
+					//MAJ du montant paiement_facture
+					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'"
+						WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
+				}
+				//MAJ du montant paiement
+				$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement SET devise_mt_paiement = "'.$somme.'", devise_taux = "'.$_REQUEST['taux_devise'].'"
+							WHERE rowid = '.$object->id);
+			}
 		}
 		
 		return 1;

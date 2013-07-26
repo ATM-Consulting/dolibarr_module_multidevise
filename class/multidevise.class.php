@@ -107,3 +107,15 @@ class TMultidevisePaiement extends TObjetStdDolibarr {
 		parent::start();
 	}
 }
+
+class TMultidevisePaiementFacture extends TObjetStdDolibarr {
+	function __construct() { /* declaration */
+		global $langs;
+		
+		parent::set_table(MAIN_DB_PREFIX.'paiement_facture');
+		parent::add_champs('devise_mt_paiement','type=float;');
+		
+		parent::_init_vars();
+		parent::start();
+	}
+}

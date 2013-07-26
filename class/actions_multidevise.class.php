@@ -286,10 +286,14 @@ class ActionsMultidevise
 									    LEFT JOIN '.MAIN_DB_PREFIX.'currency as c ON (c.rowid = f.fk_devise)
 									    LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate as cr ON (cr.id_currency = c.rowid)
 									   WHERE f.rowid = '.$facture->id.'
+									   AND cr.id_entity = '.$conf->entity.'
 									   ORDER BY cr.dt_sync DESC LIMIT 1');
 			
 			$res = $db->fetch_object($resql);
 			if($res->code){
+				
+				$champ = ($action == "add_paiement") ? "amount" : "remain";
+				
 				?>
 				<script type="text/javascript">
 					function number_format (number, decimals, dec_point, thousands_sep) {
@@ -316,9 +320,21 @@ class ActionsMultidevise
 					}
 
 					$(document).ready(function(){
-						ligne = $('input[name=remain_<?php echo $facture->id; ?>]').parent().parent();
+						
+						<?php
+						if(!empty($_REQUEST['devise'])){
+							foreach($_REQUEST['devise'] as $id_input => $mt_devise){
+								$id_input = str_replace("remain", "amount", $id_input);
+								echo "$('input[name=\"devise[".$id_input."_disabled]\"]').attr('value','".str_replace('.', ',', $mt_devise)."').attr('disabled','disabled');";
+								echo "$('input[name=\"devise[".$id_input."_disabled]\"]').parent().append('<input type=\"hidden\" value=\"".str_replace('.', ',', $mt_devise)."\" name=\"devise[".$id_input."]\" />');";
+							}
+						}
+						?>
+						
+						ligne = $('input[name=<?php echo $champ."_".$facture->id; ?>]').parent().parent();
 						$(ligne).find('> td[class=devise]').append('<?php echo $res->name.' ('.$res->code.')'; ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<?php echo $res->taux; ?>');
+						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $res->taux; ?>" name="taux_devise" />');
 						$(ligne).find('> td[class=recu_devise]').append('<?php echo $total_recu_devise; ?>');
 						$(ligne).find('> td[class=reste_devise]').append('<?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>');
 						
@@ -328,40 +344,9 @@ class ActionsMultidevise
 							$('td[class=total_reste_devise]').html(parseFloat(total_reste_devise.replace(',','.')) + <?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>);
 						}
 						
-						$("#payment_form").find("input[name*=\"devise[remain_\"]").keyup(function() {
+						$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").keyup(function() {
 							total = 0;
-							$("#payment_form").find("input[name*=\"devise[remain_\"]").each(function(){
-								if( $(this).val() != "") total += parseFloat($(this).val().replace(',','.'));
-							});
-							if($('td[class=total_reste_devise]').length > 0) $('td[class=total_montant_devise]').html(total);
-							mt_devise = parseFloat($(this).val().replace(',','.'));
-							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise / <?php echo $res->taux; ?>,2,',','')).keyup();
-						});
-					});
-				</script>
-				<?php
-			}
-
-			if($action == 'add_paiement'){
-				?>
-				<script type="text/javascript">
-
-					$(document).ready(function(){
-						ligne = $('input[name=remain_<?php echo $facture->id; ?>]').parent().parent();
-						$(ligne).find('> td[class=devise]').append('<?php echo $res->name.' ('.$res->code.')'; ?>');
-						$(ligne).find('> td[class=taux_devise]').append('<?php echo $res->taux; ?>');
-						$(ligne).find('> td[class=recu_devise]').append('<?php echo $total_recu_devise; ?>');
-						$(ligne).find('> td[class=reste_devise]').append('<?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>');
-						
-						if($('td[class=total_reste_devise]').length > 0){
-							$('td[class=total_recu_devise]').html($('td[class=total_recu_devise]').val() + <?php echo $total_recu_devise; ?>);
-							total_reste_devise = $('td[class=total_reste_devise]').html();
-							$('td[class=total_reste_devise]').html(parseFloat(total_reste_devise.replace(',','.')) + <?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>);
-						}
-						
-						$("#payment_form").find("input[name*=\"devise[remain_\"]").keyup(function() {
-							total = 0;
-							$("#payment_form").find("input[name*=\"devise[remain_\"]").each(function(){
+							$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").each(function(){
 								if( $(this).val() != "") total += parseFloat($(this).val().replace(',','.'));
 							});
 							if($('td[class=total_reste_devise]').length > 0) $('td[class=total_montant_devise]').html(total);
