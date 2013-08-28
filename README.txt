@@ -37,4 +37,19 @@ TODO
 	4 ) ligne 734 environ => juste avant la fermeture de </tr> dans la boucle affichant les lignes de paiement déjà effectué
 	
 		$parameters=array();
-		$reshook=$hookmanager->executeHooks('printObjectLine',$parameters,$objp,$action); // Note that $action and $object may have been modified by hook 
+		$reshook=$hookmanager->executeHooks('printObjectLine',$parameters,$objp,$action); // Note that $action and $object may have been modified by hook
+	
+	
+	AJOUTER L'APPEL DE DU DOACTION POUR LE HOOK EXPEDITION htdocs/expedition/fiche.php
+	
+	
+	1 ) Ligne 75 environ => juste avant le traitement des différentes actions
+	
+		(GETPOST('id'))? $object->fetch(GETPOST('id')): "" ;
+	 	
+	 	/*
+		  * Actions
+		 */
+	 	
+		$reshook=$hookmanager->executeHooks('doActions',$parameters,$object,$action);    // Note that $action and $object may have been modified by some hooks
+ 

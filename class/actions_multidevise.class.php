@@ -158,11 +158,11 @@ class ActionsMultidevise
 						})
 						$('#addpredefinedproduct').append('<input type="hidden" value="0" name="pu_devise_product" size="3">');
 			         	$('#addproduct').append('<input type="hidden" value="0" name="pu_devise_libre" size="3">');
-			         	$('imput[name=dp_pu_devise]').change(function() {
-			         		$('input[name=pu_devise_libre]').val($('imput[name=dp_pu_devise]').val() );	
+			         	$('input[name=dp_pu_devise]').change(function() {
+			         		$('input[name=pu_devise_libre]').val($('input[name=dp_pu_devise]').val() );	
 			         	});
-			         	$('imput[name=np_pu_devise]').change(function() {
-			         		$('input[name=pu_devise_product]').val($('imput[name=np_pu_devise]').val() );
+			         	$('input[name=np_pu_devise]').change(function() {
+			         		$('input[name=pu_devise_product]').val($('input[name=np_pu_devise]').val() );
 			         	});
 			     	});
 			    </script>	
