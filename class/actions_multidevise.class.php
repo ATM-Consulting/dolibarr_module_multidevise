@@ -31,27 +31,31 @@ class ActionsMultidevise
 			if(in_array('invoicecard',explode(':',$parameters['context'])))
 				$table = "facture";
 			
+			/*echo '<pre>';
+			print_r($object);
+			echo '</pre>';exit;*/
 	    	//EDIT
 	    	if($action == "edit" || $action == "create"){
 	    		$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$_REQUEST['socid'];
 				
-	    		$resql = $db->query($sql);
-				$res = $db->fetch_object($resql);
-				if($res->fk_devise && !is_null($res->devise_code)){
-					$form=new Form($db);
-					print '<tr><td>Devise</td><td>';
-					print $form->select_currency($res->devise_code,"currency");
-					print '</td></tr>';
-				}
-				else{
-					$form=new Form($db);
-					print '<tr><td>Devise</td><td colspan="3">';
-					print $form->select_currency($conf->currency,"currency");
-					print '</td></tr>';
+	    		if($resql = $db->query($sql)){
+					$res = $db->fetch_object($resql);
+					if($res->fk_devise && !is_null($res->devise_code)){
+						$form=new Form($db);
+						print '<tr><td>Devise</td><td>';
+						print $form->select_currency($res->devise_code,"currency");
+						print '</td></tr>';
+					}
+					else{
+						$form=new Form($db);
+						print '<tr><td>Devise</td><td colspan="3">';
+						print $form->select_currency($conf->currency,"currency");
+						print '</td></tr>';
+					}
 				}
 	    	}
-			elseif(!in_array('thirdpartycard',explode(':',$parameters['context']))){
+			else{
 				$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ($table != "societe") ? ', devise_taux, devise_mt_total' : "";
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->id;
@@ -156,6 +160,10 @@ class ActionsMultidevise
 							$(this).parent().next().children().attr('value',$(this).val() * taux);
 							$('input[name=pu_devise_libre]').val($(this).val() * taux);
 						})
+						$('input[name=dp_pu_devise]').keyup(function(){
+							$(this).parent().prev().children().val($(this).val() / taux);
+							$(this).parent().prev().children().attr('value',$(this).val() / taux);
+						})
 						$('#addpredefinedproduct').append('<input type="hidden" value="0" name="pu_devise_product" size="3">');
 			         	$('#addproduct').append('<input type="hidden" value="0" name="pu_devise_libre" size="3">');
 			         	$('input[name=dp_pu_devise]').change(function() {
@@ -203,6 +211,10 @@ class ActionsMultidevise
     {
     	/*ini_set('dysplay_errors','On');
 			error_reporting(E_ALL); */
+		/*echo '</pre>';
+		print_r($object);
+		echo '</pre>';*/
+		
     	global $db, $user,$conf;
 		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
@@ -230,12 +242,21 @@ class ActionsMultidevise
 					$(document).ready(function(){
 	         			$('.tabBar td').each(function(){
 							if($(this).html() == "Taux Devise"){
-								taux = $(this).next().html();
+								taux = parseFloat($(this).next().html());
 							}
 						});
-	         			$('#price_ht').keyup(function(){
-	         				$('input[name=dp_pu_devise]').val($('#price_ht').val() * taux);
-	         				$('input[name=pu_devise]').val($('#price_ht').val() * taux);
+	         			$('#price_ht').blur(function(){
+	         				var pu_devise = (parseFloat($('#price_ht').val().replace(",", ".")) * (1 + (parseFloat($('#tva_tx').val())/100))) * taux;
+	         				$('input[name=dp_pu_devise]').val(Math.round(pu_devise*100000)/100000);
+	         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val());
+	         			});
+	         			
+	         			$('input[name=dp_pu_devise]').ready(function(){
+	         				$('input[name=dp_pu_devise]').keyup(function(){
+	         					var pu_ht = ((parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) / taux) / (1 + (parseFloat($('#tva_tx').val())/100)));
+		         				$('#price_ht').val(Math.round(pu_ht*100000)/100000);
+	         				});
+	         				//$('#price_ht').val($(this).html() / taux);
 	         			});
 	         			$('input[name=action]').prev().prev().append('<input type="hidden" value="0" name="pu_devise" size="3">');
 						<?php
