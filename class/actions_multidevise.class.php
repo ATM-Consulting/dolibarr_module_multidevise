@@ -36,6 +36,9 @@ class ActionsMultidevise
 			echo '</pre>';exit;*/
 	    	//EDIT
 	    	if($action == "edit" || $action == "create"){
+	    		
+				$id = (in_array('thirdpartycard',explode(':',$parameters['context']))) ? $_REQUEST['socid'] : $object->id ;
+				
 	    		$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$object->id;
 				
