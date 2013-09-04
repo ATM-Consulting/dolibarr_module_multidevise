@@ -40,7 +40,7 @@ class ActionsMultidevise
 				$id = (in_array('thirdpartycard',explode(':',$parameters['context']))) ? $_REQUEST['socid'] : $object->id ;
 				
 	    		$sql = 'SELECT fk_devise, devise_code';
-	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$object->id;
+	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$id;
 				
 	    		if($resql = $db->query($sql)){
 					$res = $db->fetch_object($resql);
@@ -84,29 +84,27 @@ class ActionsMultidevise
 					}
 				}
 
-				if($object->lines){
-					?>
-					<script type="text/javascript">
-						$(document).ready(function(){
-							$('#tablelines .liste_titre > td').each(function(){
-				         		if($(this).html() == "Qté")
-				         			$(this).before('<td align="right" width="140">P.U. Devise</td>');
-				         		if($(this).html() == "Total HT")
-				         			$(this).after('<td align="right" width="140">Total Devise</td>');
-			         		});
-							<?php
-							foreach($object->lines as $line){
-			         				$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
-									$res = $db->fetch_object($resql);
-			         				echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
-									echo "$('#row-".$line->rowid."').children().eq(7).after('<td class=\"nowrap\" align=\"right\">".price2num($res->devise_mt_ligne,'MT')."</td>');";
-									if($line->error != '') echo "alert('".$line->error."');";
-			         			}
-							?>
-						});
-				    </script>	
-			    	<?php
-		    	}
+				?>
+				<script type="text/javascript">
+					$(document).ready(function(){
+						$('#tablelines .liste_titre > td').each(function(){
+			         		if($(this).html() == "Qté")
+			         			$(this).before('<td align="right" width="140">P.U. Devise</td>');
+			         		if($(this).html() == "Total HT")
+			         			$(this).after('<td align="right" width="140">Total Devise</td>');
+		         		});
+						<?php
+						foreach($object->lines as $line){
+		         				$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
+								$res = $db->fetch_object($resql);
+		         				echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
+								echo "$('#row-".$line->rowid."').children().eq(7).after('<td class=\"nowrap\" align=\"right\">".price2num($res->devise_mt_ligne,'MT')."</td>');";
+								if($line->error != '') echo "alert('".$line->error."');";
+		         			}
+						?>
+					});
+			    </script>	
+		    	<?php
 			}
 		}
 
