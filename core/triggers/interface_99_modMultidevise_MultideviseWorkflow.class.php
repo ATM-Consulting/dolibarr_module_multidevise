@@ -341,13 +341,13 @@ class InterfaceMultideviseWorkflow
 		 * AJOUT D'UN PAIEMENT 
 		 */
 		if($action == "PAYMENT_CUSTOMER_CREATE" ){
-			echo '<pre>';
+			/*echo '<pre>';
 			print_r($object);
 			echo '</pre>';
 			
 			echo '<pre>';
 			print_r($_REQUEST);
-			echo '</pre>';
+			echo '</pre>';*/
 			
 			if(!empty($_REQUEST['devise'])){
 				$this->db->commit();
