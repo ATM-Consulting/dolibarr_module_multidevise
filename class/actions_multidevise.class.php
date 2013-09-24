@@ -37,6 +37,10 @@ class ActionsMultidevise
 	    	//EDIT
 	    	if($action == "edit" || $action == "create"){
 	    		
+				/*echo '<pre>';
+				print_r($object);
+				echo '</pre>';*/
+				
 				$id = (in_array('thirdpartycard',explode(':',$parameters['context']))) ? $_REQUEST['socid'] : $object->id ;
 				
 	    		$sql = 'SELECT fk_devise, devise_code';
@@ -50,12 +54,12 @@ class ActionsMultidevise
 						print $form->select_currency($res->devise_code,"currency");
 						print '</td></tr>';
 					}
-					else{
-						$form=new Form($db);
-						print '<tr><td>Devise</td><td colspan="3">';
-						print $form->select_currency($conf->currency,"currency");
-						print '</td></tr>';
-					}
+				}
+				else{
+					$form=new Form($db);
+					print '<tr><td>Devise</td><td colspan="3">';
+					print $form->select_currency($conf->currency,"currency");
+					print '</td></tr>';
 				}
 	    	}
 			else{
