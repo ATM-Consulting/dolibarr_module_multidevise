@@ -46,17 +46,21 @@ class ActionsMultidevise
 	    		$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$id;
 				
+				$form=new Form($db);
 	    		if($resql = $db->query($sql)){
 					$res = $db->fetch_object($resql);
 					if($res->fk_devise && !is_null($res->devise_code)){
-						$form=new Form($db);
 						print '<tr><td>Devise</td><td>';
 						print $form->select_currency($res->devise_code,"currency");
 						print '</td></tr>';
 					}
+					else{
+						print '<tr><td>Devise</td><td colspan="3">';
+						print $form->select_currency($conf->currency,"currency");
+						print '</td></tr>';
+					}
 				}
 				else{
-					$form=new Form($db);
 					print '<tr><td>Devise</td><td colspan="3">';
 					print $form->select_currency($conf->currency,"currency");
 					print '</td></tr>';
