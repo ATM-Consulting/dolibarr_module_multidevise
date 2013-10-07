@@ -16,6 +16,7 @@ class ActionsMultidevise
     	global $db, $user,$conf;
 		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
+		include_once(DOL_DOCUMENT_ROOT."/core/lib/functions.lib.php");
 		
 		if (in_array('thirdpartycard',explode(':',$parameters['context']))
 			|| in_array('propalcard',explode(':',$parameters['context']))
@@ -71,8 +72,8 @@ class ActionsMultidevise
 					print currency_name($res->devise_code,1);
 					print ' ('.$res->devise_code.')</td></tr>';
 					if($table != "societe"){
-						print '<tr><td>Taux Devise</td><td colspan="3">'.$res->devise_taux.'</td></tr>';
-						print '<tr><td>Montant Devise</td><td colspan="3">'.price2num($res->devise_mt_total,'MT').'</td></tr>';
+						print '<tr><td>Taux Devise</td><td colspan="3">'.price($res->devise_taux,0,'',1,2,2).'</td></tr>';
+						print '<tr><td>Montant Devise</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
 					}
 				}
 				else{
@@ -98,8 +99,8 @@ class ActionsMultidevise
 						foreach($object->lines as $line){
 		         				$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
 								$res = $db->fetch_object($resql);
-		         				echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".$res->devise_pu."</td>');";
-								echo "$('#row-".$line->rowid."').children().eq(7).after('<td class=\"nowrap\" align=\"right\">".price2num($res->devise_mt_ligne,'MT')."</td>');";
+		         				echo "$('#row-".$line->rowid."').children().eq(2).after('<td class=\"nowrap\" align=\"right\">".price($res->devise_pu,0,'',1,2,2)."</td>');";
+								echo "$('#row-".$line->rowid."').children().eq(7).after('<td class=\"nowrap\" align=\"right\">".price($res->devise_mt_ligne,0,'',1,2,2)."</td>');";
 								if($line->error != '') echo "alert('".$line->error."');";
 		         			}
 						?>
@@ -153,9 +154,9 @@ class ActionsMultidevise
 								,data: {fk_product: $('#idprod').val()}
 								},"json").then(function(select){
 									if(select.price != ""){
-										$("input[name=np_pu_devise]").val(select.price * taux);
-										$("input[name=np_pu_devise]").attr('value',select.price * taux);
-										$('input[name=pu_devise_product]').val(select.price * taux);
+										$("input[name=np_pu_devise]").val(select.price * taux.replace(",","."));
+										$("input[name=np_pu_devise]").attr('value',select.price * taux.replace(",","."));
+										$('input[name=pu_devise_product]').val(select.price * taux.replace(",","."));
 									}
 								});
 						});
@@ -259,6 +260,7 @@ class ActionsMultidevise
 	         				$('input[name=dp_pu_devise]').keyup(function(){
 	         					var pu_ht = ((parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) / taux) / (1 + (parseFloat($('#tva_tx').val())/100)));
 		         				$('#price_ht').val(Math.round(pu_ht*100000)/100000);
+		         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				});
 	         				//$('#price_ht').val($(this).html() / taux);
 	         			});
@@ -269,8 +271,8 @@ class ActionsMultidevise
 							$res = $db->fetch_object($resql);
 							
 							if($line->rowid == $_REQUEST['lineid']){
-								echo "$('#product_desc').parent().next().next().after('<td align=\"right\"><input type=\"text\" value=\"".$res->devise_pu."\" name=\"dp_pu_devise\" size=\"6\"></td>');";
-								echo "$('input[name=pu_devise]').val(".$res->devise_pu.");";
+								echo "$('#product_desc').parent().next().next().after('<td align=\"right\"><input type=\"text\" value=\"".price($res->devise_pu,0,'',1,2,2)."\" name=\"dp_pu_devise\" size=\"6\"></td>');";
+								echo "$('input[name=pu_devise]').val(".price($res->devise_pu,0,'',1,2,2).");";
 								echo "$('#product_desc').parent().next().next().next().next().next().after('<td align=\"right\"></td>');";
 							}
 				        }
