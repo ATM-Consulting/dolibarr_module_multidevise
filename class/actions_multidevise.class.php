@@ -272,7 +272,7 @@ class ActionsMultidevise
 							
 							if($line->rowid == $_REQUEST['lineid']){
 								echo "$('#product_desc').parent().next().next().after('<td align=\"right\"><input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\"></td>');";
-								echo "$('input[name=pu_devise]').val(".price($res->devise_pu,0,'',1,2,2).");";
+								echo "$('input[name=pu_devise]').val(".price2num($res->devise_pu,2).");";
 								echo "$('#product_desc').parent().next().next().next().next().next().after('<td align=\"right\"></td>');";
 							}
 				        }
