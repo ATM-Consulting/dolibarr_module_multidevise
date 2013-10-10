@@ -72,7 +72,7 @@ class ActionsMultidevise
 					print currency_name($res->devise_code,1);
 					print ' ('.$res->devise_code.')</td></tr>';
 					if($table != "societe"){
-						print '<tr><td>Taux Devise</td><td colspan="3">'.price($res->devise_taux,0,'',1,2,2).'</td></tr>';
+						print '<tr><td>Taux Devise</td><td colspan="3">'.price($res->devise_taux,0,'',1,2,2).'</td><input type="hidden" id="taux_devise" value="'.$res->devise_taux.'"></tr>';
 						print '<tr><td>Montant Devise</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
 					}
 				}
@@ -141,11 +141,7 @@ class ActionsMultidevise
 		         		$('#np_desc').parent().after('<td align="right"><input type="text" value="" name="np_pu_devise" size="6"></td>');
 						$('#dp_desc').parent().next().next().after('<td align="right"><input type="text" value="" name="dp_pu_devise" size="6"></td>');
 						$('input[name=addline]').parent().attr('colspan','5');
-						$('.tabBar td').each(function(){
-							if($(this).html() == "Taux Devise"){
-								taux = $(this).next().html();
-							}
-						});
+						var taux = $('#taux_devise').val();
 						$('#idprod').change( function(){
 							$.ajax({
 								type: "POST"
@@ -161,13 +157,13 @@ class ActionsMultidevise
 								});
 						});
 						$('input[name=price_ht]').keyup(function(){
-							$(this).parent().next().children().val($(this).val() * taux);
-							$(this).parent().next().children().attr('value',$(this).val() * taux);
-							$('input[name=pu_devise_libre]').val($(this).val() * taux);
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
+							$('input[name=dp_pu_devise]').val(mt);
+							$('input[name=pu_devise_libre]').val(mt);
 						})
 						$('input[name=dp_pu_devise]').keyup(function(){
-							$(this).parent().prev().children().val($(this).val() / taux);
-							$(this).parent().prev().children().attr('value',$(this).val() / taux);
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
+							$('input[name=price_ht]').val(mt);
 						})
 						$('#addpredefinedproduct').append('<input type="hidden" value="0" name="pu_devise_product" size="3">');
 			         	$('#addproduct').append('<input type="hidden" value="0" name="pu_devise_libre" size="3">');
