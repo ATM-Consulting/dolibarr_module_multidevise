@@ -254,7 +254,7 @@ class ActionsMultidevise
 								$('input[name=price_ht]').val(mt);
 							});
 	         			});
-	         			/*$('#price_ht').change(function(){
+	         			$('#price_ht').change(function(){
 	         				var pu_devise = (parseFloat($('#price_ht').val().replace(",", ".")) * (1 + (parseFloat($('#tva_tx').val())/100))) * taux;
 	         				$('input[name=dp_pu_devise]').val(Math.round(pu_devise*100000)/100000);
 	         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val());
@@ -267,7 +267,7 @@ class ActionsMultidevise
 		         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				});
 	         				//$('#price_ht').val($(this).html() / taux);
-	         			});*/
+	         			});
 	         			$('input[name=action]').prev().prev().append('<input type="hidden" value="0" name="pu_devise" size="3">');
 						<?php
 						foreach($object->lines as $line){
