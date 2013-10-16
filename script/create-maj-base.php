@@ -33,9 +33,6 @@
 	$o=new TMultideviseCommandedet;
 	$o->init_db_by_vars($ATMdb);
 	
-	$o=new TMultidevisePaiement;
-	$o->init_db_by_vars($ATMdb);
-	
 	$o=new TMultidevisePaiementFacture;
 	$o->init_db_by_vars($ATMdb);
 	

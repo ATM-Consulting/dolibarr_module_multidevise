@@ -351,11 +351,8 @@ class InterfaceMultideviseWorkflow
 		 * AJOUT D'UN PAIEMENT 
 		 */
 		if($action == "PAYMENT_CUSTOMER_CREATE" ){
-			/*echo '<pre>';
-			print_r($object);
-			echo '</pre>';
 			
-			echo '<pre>';
+			/*echo '<pre>';
 			print_r($_REQUEST);
 			echo '</pre>';*/
 			
@@ -373,7 +370,7 @@ class InterfaceMultideviseWorkflow
 					$facture = new Facture($db);
 					$facture->fetch($id_fac);
 					
-					$resql = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$facture->id);
+					$resql = $db->query('SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$facture->id);
 					$res = $db->fetch_object($resql);
 					
 					//Règlement total
@@ -386,14 +383,11 @@ class InterfaceMultideviseWorkflow
 						elseif($_REQUEST['amount_'.$facture->id] > $facture->total_ttc)
 							$note .= "facture : ".$facture->facnumber." => GAIN après conversion : ".($_REQUEST['amount_'.$facture->id] - $facture->total_ttc);
 					}
-					
+
 					//MAJ du montant paiement_facture
-					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'"
-						WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
+					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$_REQUEST['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+								WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
 				}
-				//MAJ du montant paiement
-				$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement SET devise_mt_paiement = "'.$somme.'", devise_taux = "'.$_REQUEST['taux_devise'].'"
-							WHERE rowid = '.$object->id);
 			}
 		}
 		

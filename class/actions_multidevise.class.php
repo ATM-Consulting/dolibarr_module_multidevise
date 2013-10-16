@@ -109,6 +109,9 @@ class ActionsMultidevise
 		    	<?php
 			}
 		}
+		elseif (in_array('paiementcard',explode(':',$parameters['context']))){
+			
+		}
 
 		return 0;
 	}
@@ -193,7 +196,7 @@ class ActionsMultidevise
 						$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
 						$(this).children().eq(5).after('<td align="right" class="recu_devise"></td>');
 						$(this).children().eq(7).after('<td align="right" class="reste_devise"></td>');
-						$(this).children().eq(9).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(9).children().attr('name')+']" size="8"></td>');
+						$(this).children().eq(9).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(9).children().next().attr('name')+']" size="8"></td>');
 					});
 					$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
 					$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
@@ -305,9 +308,8 @@ class ActionsMultidevise
 			$facture->fetch($object->facid);
 			
 			//Récupération des règlements déjà effectué
-			$resql = $db->query('SELECT SUM(p.devise_mt_paiement) as total_paiement
-								 FROM '.MAIN_DB_PREFIX.'paiement as p
-								 	LEFT JOIN '.MAIN_DB_PREFIX.'paiement_facture as pf ON (pf.fk_paiement = p.rowid)
+			$resql = $db->query('SELECT SUM(pf.devise_mt_paiement) as total_paiement
+								 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
 								 WHERE pf.fk_facture = '.$facture->id);
 			$res = $db->fetch_object($resql);
 			$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0,00";
@@ -323,7 +325,14 @@ class ActionsMultidevise
 			$res = $db->fetch_object($resql);
 			if($res->code){
 				
-				$champ = ($action == "add_paiement") ? "amount" : "remain";
+				if($action == "add_paiement"){
+					$champ = "amount";
+					$champ2 = "remain";
+				}
+				else{
+					$champ = "remain";
+					$champ2 = "amount";
+				}
 				
 				?>
 				<script type="text/javascript">
@@ -356,8 +365,8 @@ class ActionsMultidevise
 						if(!empty($_REQUEST['devise'])){
 							foreach($_REQUEST['devise'] as $id_input => $mt_devise){
 								$id_input = str_replace("remain", "amount", $id_input);
-								echo "$('input[name=\"devise[".$id_input."_disabled]\"]').attr('value','".str_replace('.', ',', $mt_devise)."').attr('disabled','disabled');";
-								echo "$('input[name=\"devise[".$id_input."_disabled]\"]').parent().append('<input type=\"hidden\" value=\"".str_replace('.', ',', $mt_devise)."\" name=\"devise[".$id_input."]\" />');";
+								echo "$('input[name=\"devise[".$id_input."]\"]').attr('value','".str_replace('.', ',', $mt_devise)."').attr('disabled','disabled');";
+								echo "$('input[name=\"devise[".$id_input."]\"]').parent().append('<input type=\"hidden\" value=\"".str_replace('.', ',', $mt_devise)."\" name=\"devise[".$id_input."]\" />');";
 							}
 						}
 						?>
@@ -384,10 +393,15 @@ class ActionsMultidevise
 							mt_devise = parseFloat($(this).val().replace(',','.'));
 							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise / <?php echo $res->taux; ?>,2,',','')).keyup();
 						});
+						
+						$("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").change(function() {
+							mt_rglt = parseFloat($(this).val().replace(',','.'));
+							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt * <?php echo $res->taux; ?>,2,',','')).change();
+						});
 					});
 				</script>
 				<?php
-			}
+				}
 		}
 		return 0;
 	}
