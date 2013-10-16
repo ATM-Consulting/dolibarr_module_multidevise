@@ -391,12 +391,16 @@ class ActionsMultidevise
 							});
 							if($('td[class=total_reste_devise]').length > 0) $('td[class=total_montant_devise]').html(total);
 							mt_devise = parseFloat($(this).val().replace(',','.'));
-							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise / <?php echo $res->taux; ?>,2,',','')).keyup();
+							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise / <?php echo $res->taux; ?>,2,',',''));
 						});
 						
-						$("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").change(function() {
+						$("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").keyup(function() {
 							mt_rglt = parseFloat($(this).val().replace(',','.'));
-							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt * <?php echo $res->taux; ?>,2,',','')).change();
+							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt * <?php echo $res->taux; ?>,2,',',''));
+						});
+						
+						$("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").parent().children().click(function(){
+							setTimeout(function() { $("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").keyup(); }, 1000);
 						});
 					});
 				</script>
