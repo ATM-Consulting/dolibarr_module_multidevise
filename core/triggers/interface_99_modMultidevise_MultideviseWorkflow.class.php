@@ -225,9 +225,6 @@ class InterfaceMultideviseWorkflow
 				
 			}
 			else{//Création standard
-				/*echo '<pre>';
-				print_r($object);
-				echo '</pre>';exit;*/
 				 
 				$idProd = 0;
 				if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
@@ -250,14 +247,13 @@ class InterfaceMultideviseWorkflow
 					if($subprice != $object->subprice){
 						$class = ucfirst($table);
 						$parent_object = new $class($this->db);
-						$parent_object->fetch($object->fk_{$table});
-						
+						$parent_object->fetch($object->{"fk_".$table}); 
 						switch($table){
 							case 'commande':
-								$parent_object->updateline($object->rowid, $object->description, $subprice, $object->qty, $object->remise_percent, $object->tva_tx);
+								$parent_object->updateline($object->rowid, $object->desc, $subprice, $object->qty, $object->remise_percent, $object->tva_tx);
 								break;
 							case 'facture':
-								$parent_object->updateline($object->rowid, $object->description, $subprice, $object->qty, $object->remise_percent, $object->date_start, $object->date_end, $object->tva_tx);
+								$parent_object->updateline($object->rowid, $object->desc, $subprice, $object->qty, $object->remise_percent, $object->date_start, $object->date_end, $object->tva_tx);
 								break;
 							case 'propal':
 								$parent_object->updateline($object->rowid, $subprice, $object->qty, $object->remise_percent, $object->tva_tx);
