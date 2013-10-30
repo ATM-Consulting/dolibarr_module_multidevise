@@ -1,5 +1,5 @@
 <?php
-class TMultideviseClient extends TObjetStdDolibarr {
+class TMultideviseClient extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;
 		
@@ -12,7 +12,7 @@ class TMultideviseClient extends TObjetStdDolibarr {
 	}
 }
 
-class TMultidevisePropal extends TObjetStdDolibarr {
+class TMultidevisePropal extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;
 		
@@ -26,7 +26,7 @@ class TMultidevisePropal extends TObjetStdDolibarr {
 	}
 }
 
-class TMultidevisePropaldet extends TObjetStdDolibarr {
+class TMultidevisePropaldet extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;
 		
@@ -40,7 +40,7 @@ class TMultidevisePropaldet extends TObjetStdDolibarr {
 	}
 }
 
-class TMultideviseFacture extends TObjetStdDolibarr {
+class TMultideviseFacture extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;
 		
@@ -53,7 +53,7 @@ class TMultideviseFacture extends TObjetStdDolibarr {
 		parent::start();
 	}
 }
-class TMultideviseFacturedet extends TObjetStdDolibarr {
+class TMultideviseFacturedet extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;
 		
@@ -67,7 +67,7 @@ class TMultideviseFacturedet extends TObjetStdDolibarr {
 	}
 }
 
-class TMultideviseCommande extends TObjetStdDolibarr {
+class TMultideviseCommande extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;
 		
@@ -81,7 +81,7 @@ class TMultideviseCommande extends TObjetStdDolibarr {
 	}
 }
 
-class TMultideviseCommandedet extends TObjetStdDolibarr {
+class TMultideviseCommandedet extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;
 		
@@ -95,7 +95,7 @@ class TMultideviseCommandedet extends TObjetStdDolibarr {
 	}
 }
 
-class TMultidevisePaiementFacture extends TObjetStdDolibarr {
+class TMultidevisePaiementFacture extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;
 		
