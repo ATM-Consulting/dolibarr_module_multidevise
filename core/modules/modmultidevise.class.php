@@ -250,7 +250,12 @@ class modmultidevise extends DolibarrModules
 
 		$result=$this->load_tables();
 
-		$url ='http://'.$_SERVER['SERVER_NAME']. DOL_URL_ROOT_ALT."/multidevise/script/create-maj-base.php";
+		// Création des tables
+		$url = dol_buildpath('/multidevise/script/create-maj-base.php',2);
+		file_get_contents($url);
+		
+		// 1ère récupération des taux
+		$url = dol_buildpath('/multidevise/cron/1day/sync.php',2);
 		file_get_contents($url);
 
 		return $this->_init($sql, $options);

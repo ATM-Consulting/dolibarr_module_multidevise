@@ -1,2 +1,7 @@
-Module104030Name=Multi-devises
-Module104030Desc=Gestion de devises multiples
+Module104030Name = Multi-devise
+Module104030Desc = Gestion de plusieurs devises
+
+# ADMIN
+MulticurrencySetupPage = Configuration du module multi-devise
+MulticurrencyExchangeRatesSetup = Configuration des taux de change
+ExchangeRate = Taux de change

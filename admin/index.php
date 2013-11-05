@@ -2,8 +2,8 @@
 
 $res=@include("../config.php");						// For root directory
 
-require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
-include('../class/class.currency.php');
+require_once DOL_DOCUMENT_ROOT . "/core/lib/admin.lib.php";
+include_once('../class/class.currency.php');
 
 $langs->load("admin");
 $langs->load('multidevise@multidevise');
@@ -22,10 +22,10 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == "modtaux"){
 	foreach($_REQUEST['id_devise'] as $id_devise){
 		if(isset($_REQUEST["newtaux_currency_".$id_devise])){
 			$Trate = new TCurrencyRate();
-			$Trate->rate = $_REQUEST["newtaux_currency_".$id_devise];
+			$Trate->rate = price2num($_REQUEST["newtaux_currency_".$id_devise]);
 			$Trate->id_currency = $id_devise;
 			$Trate->id_entity = $conf->entity;
-			$Trate->dt_sync = strtotime(date('Y-m-d'));
+			$Trate->dt_sync = time();
 			$Trate->save($ATMdb);
 		}
 	}
@@ -34,10 +34,10 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == "modtaux"){
  * View
  */
 
-llxHeader('',$langs->trans("Multidevises"));
+llxHeader('',$langs->trans("MulticurrencySetupPage"));
 
 $linkback='<a href="'.DOL_URL_ROOT.'/admin/modules.php">'.$langs->trans("BackToModuleList").'</a>';
-print_fiche_titre($langs->trans("Multidevises"),$linkback,'multidevise@multidevise');
+print_fiche_titre($langs->trans("MulticurrencyExchangeRatesSetup"),$linkback,'multidevise@multidevise');
 
 print '<br>';
 
@@ -61,10 +61,9 @@ print '<form method="post" action="">';
 print '<input type="hidden" name="action" value="modtaux" />';
 print '<table class="noborder" width="100%">';
 print '<tr class="liste_titre">';
-print '<td>'.$langs->trans("Devises").'</td>'."\n";
-print '<td align="center" width="20">&nbsp;</td>';
-print '<td align="center" width="100">'.$langs->trans("Taux de Conversions").'</td>'."\n";
-print '<td align="center" width="200">Action</td>';
+print '<td>'.$langs->trans("Currency").'</td>'."\n";
+print '<td align="center" width="100">'.$langs->trans("ExchangeRate").'</td>'."\n";
+print '<td align="center" width="200">'.$langs->trans("Action").'</td>'."\n";
 print '</tr>';
 
 $sql = "SELECT cr.id_currency, cr.rowid, c.name, c.code, cr.rate, cr.dt_sync
@@ -77,21 +76,18 @@ $sql = "SELECT cr.id_currency, cr.rowid, c.name, c.code, cr.rate, cr.dt_sync
 		
 $ATMdb->Execute($sql);
 
-$cpt = 0;
+$var = true;
 while($ATMdb->Get_line()){
-	$class = ($cpt%2) ? "pair" : "impair";
-	print '<tr class="'.$class.'">';
-	print '<td>'.$ATMdb->Get_field('name').' ('.$ATMdb->Get_field('code').')</td>';
-	print '<td align="center" width="20">&nbsp;</td>';
-	
-	print '<td align="center" width="100">'.$ATMdb->Get_field('rate').'</td>';
-	print '<td align="center" width="100">';
-	print '<a id="currency_'.$ATMdb->Get_field('id_currency').'" onclick="modTaux($(this).attr(\'id\'));">
-		   	<img border="0" title="Modifier" alt="Modifier" src="'.DOL_URL_ROOT.'/theme/eldy/img/edit.png">
-		   </a>';
+	$var=!$var;
+	print '<tr '.$bc[$var].'>';
+	print '<td>'.$ATMdb->Get_field('name').' ('.$ATMdb->Get_field('code').')</td>'."\n";
+	print '<td align="center">'.price($ATMdb->Get_field('rate')).'</td>'."\n";
+	print '<td align="center">'."\n";
+	print '<a id="currency_'.$ATMdb->Get_field('id_currency').'" onclick="modTaux($(this).attr(\'id\'));" href="#currency_'.$ATMdb->Get_field('id_currency').'">';
+	print img_edit();
+	print '</a>';
 	print '</td>';
 	print '</tr>';
-	$cpt++;
 }
 
 print '</table>';
