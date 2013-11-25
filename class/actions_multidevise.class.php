@@ -10,9 +10,6 @@ class ActionsMultidevise
     
     function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
     {
-		/*echo '<pre>';
-		print_r($object);
-		echo '</pre>';*/
     	global $db, $user,$conf;
 		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
@@ -32,16 +29,9 @@ class ActionsMultidevise
 			if(in_array('invoicecard',explode(':',$parameters['context'])))
 				$table = "facture";
 			
-			/*echo '<pre>';
-			print_r($action);
-			echo '</pre>';exit;*/
 	    	//EDIT
 	    	if($action == "edit" || $action == "create"){
 	    		
-				/*echo '<pre>';
-				print_r($object);
-				echo '</pre>'; exit;*/
-				
 				$cur = $conf->currency;
 				$id = (!empty($_REQUEST['socid'])) ? $_REQUEST['socid'] : 0 ;
 				
@@ -112,39 +102,42 @@ class ActionsMultidevise
 									
 								});
 								if($('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').length) {
-									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').after('<td align="right" width="140" numeroColonne="2b"></td>');	
+									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').after('<td align="right" numeroColonne="2b"></td>');	
 								}
 								else {
-									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=0]').after('<td align="right" width="140" numeroColonne="2b"></td>');
+									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=0]').after('<td align="right" numeroColonne="2c"></td>');
 								}
-
+								
 								if($('tr[numeroLigne='+iLigne+'] td[numeroColonne=5]').length) {
-									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=5]').after('<td align="right" width="140" numeroColonne="5b"></td>');	
+									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=5]').after('<td align="right" numeroColonne="5b"></td>');	
 								}
 								else {
-									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=0]').after('<td align="right" width="140" numeroColonne="5b"></td>');
+									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=0]').after('<td align="right" numeroColonne="5c"></td>');
 								}
 								
 						});
 							
 							
 		         		$('#tablelines .liste_titre > td[numeroColonne=2b]').html('P.U. Devise');
-		         		$('#tablelines .liste_titre > td[numeroColonne=5b]').html('Total Devise');
+		         		$('#tablelines .liste_titre > td[numeroColonne=5b]').each(function(){
+		         			if($(this).parent().attr('numeroligne') < <?php echo count($object->lines) + 2 ; ?>)
+		         				$(this).html('Total Devise');
+		         		});
+		         		
 	         			<?php
 						foreach($object->lines as $line){
 							
-								$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
-								$res = $db->fetch_object($resql);
-								
-								if($line->product_type!=9) {
+							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
+							$res = $db->fetch_object($resql);
+							
+							if($line->product_type!=9) {
 		         				echo "$('#row-".$line->rowid." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
 								echo "$('#row-".$line->rowid." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
-									
-								}
+							}
+						
 							
-								
-								if($line->error != '') echo "alert('".$line->error."');";
-		         			}
+							if($line->error != '') echo "alert('".$line->error."');";
+	         			}
 						?>
 					});
 			    </script>	
@@ -183,9 +176,9 @@ class ActionsMultidevise
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
-		         		$('#np_desc').parent().after('<td align="right"><input type="text" value="" name="np_pu_devise" size="6"></td>');
-						$('#dp_desc').parent().next().next().after('<td align="right"><input type="text" value="" name="dp_pu_devise" size="6"></td>');
-						$('input[name=addline]').parent().attr('colspan','5');
+		         		$('#np_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="np_pu_devise" size="6">');
+						$('#dp_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="dp_pu_devise" size="6">');
+						//$('input[name=addline]').parent().attr('colspan','5');
 						var taux = $('#taux_devise').val();
 						$('#idprod').change( function(){
 							$.ajax({
@@ -255,11 +248,6 @@ class ActionsMultidevise
 	
     function formEditProductOptions($parameters, &$object, &$action, $hookmanager) 
     {
-    	/*ini_set('dysplay_errors','On');
-			error_reporting(E_ALL); */
-		/*echo '</pre>';
-		print_r($object);
-		echo '</pre>';*/
 		
     	global $db, $user,$conf;
 		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
@@ -314,18 +302,21 @@ class ActionsMultidevise
 	         				//$('#price_ht').val($(this).html() / taux);
 	         			});
 	         			$('input[name=action]').prev().prev().append('<input type="hidden" value="0" name="pu_devise" size="3">');
-						<?php
-						foreach($object->lines as $line){
-	         				$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet." WHERE rowid = ".$line->rowid);
+
+	         			<?php
+						foreach($object->lines as $k=>$line){
+							
+							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
 							$res = $db->fetch_object($resql);
 							
-							if($line->rowid == $_REQUEST['lineid']){
-								echo "$('#product_desc').parent().next().next().after('<td align=\"right\"><input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\"></td>');";
-								echo "$('input[name=pu_devise]').val(".price2num($res->devise_pu,2).");";
-								echo "$('#product_desc').parent().next().next().next().next().next().after('<td align=\"right\"></td>');";
+							if($line->product_type!=9 && $line->rowid == $_REQUEST['lineid']) {
+								echo "$('#".$line->rowid."').parent().parent().find(' > td[numerocolonne=5]').attr('colspan','4'); ";
+		         				echo "$('#".$line->rowid."').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($line->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
 							}
-				        }
-						?>
+							
+							if($line->error != '') echo "alert('".$line->error."');";
+	         			}
+				       ?> 
 					});
 				</script>
 				<?php
@@ -337,10 +328,6 @@ class ActionsMultidevise
     }
 
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
-		
-		/*echo '<pre>';
-		print_r($object);
-		echo '</pre>';*/
 		
 		global $db, $user, $conf;
 		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
