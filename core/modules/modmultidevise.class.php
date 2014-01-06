@@ -137,7 +137,7 @@ class modmultidevise extends DolibarrModules
 
         // Dictionnaries
         if (! isset($conf->multidevise->enabled)){
-        	$conf->multidevise->enabled=0;
+        	@$conf->multidevise->enabled=0;
 		}
 		$this->dictionnaries=array();
         /* Example:
