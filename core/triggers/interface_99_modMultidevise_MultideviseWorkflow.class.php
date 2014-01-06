@@ -348,36 +348,61 @@ class InterfaceMultideviseWorkflow
 		 */
 		if($action == "PAYMENT_CUSTOMER_CREATE" ){
 			
-			/*echo '<pre>';
-			print_r($_REQUEST);
-			echo '</pre>';*/
+			/*pre($_REQUEST);
+			exit;*/
 			
-			if(!empty($_REQUEST['devise'])){
+			$TDevise=array();
+			foreach($_REQUEST as $key=>$value) {
+				
+				$mask = 'amount_';
+				if(strpos($key, $mask)===0) {
+					
+					$id_facture = (int)substr($key, strlen($mask));
+					
+			
+					$TDevise[$id_facture] = $value; // On récupère la liste des factures et le montant du paiement
+					
+				}
+				
+			}
+			
+			if(!empty($TDevise)){
 				$this->db->commit();
 				$this->db->commit();
 				
 				$note = "";
 				$somme = 0.00;
-				foreach($_REQUEST['devise'] as  $id_fac => $mt_devise){
-					$id_fac = explode('_', $id_fac);
-					$id_fac = $id_fac[1];
-					$somme += str_replace(',','.',$mt_devise);
+				foreach($TDevise  as $id_fac => $mt_devise){
+					$somme += str_replace(',','.',$mt_devise); //TODO à quoi ça sert?
 					
 					$facture = new Facture($db);
 					$facture->fetch($id_fac);
 					
-					$resql = $db->query('SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$facture->id);
+					$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$facture->id;					
+					$resql = $db->query($sql);
 					$res = $db->fetch_object($resql);
 					
+					$account = new Account($db);
+					$account->fetch($_REQUEST['accountid']);
+					
+					/*echo "\$account->currency_code : ".$account->currency_code."<br />";
+					echo "\$facture->devise_code : ".$res->devise_code;*/
+					
 					//Règlement total
-					if($res->devise_mt_total == $mt_devise){
+					if($res->devise_mt_total == $mt_devise){ // TODO pourquoi ne passer ce test que si le montant d'un paiement est égal au total de la facture ?
 						$facture->set_paid($user);
 						
-						//Ajout de la note si des écarts sont lié aux conversions de devises
-						if($_REQUEST['amount_'.$facture->id] < $facture->total_ttc)
-							$note .= "facture : ".$facture->facnumber." => PERTE après conversion : ".($facture->total_ttc - $_REQUEST['amount_'.$facture->id]);
-						elseif($_REQUEST['amount_'.$facture->id] > $facture->total_ttc)
-							$note .= "facture : ".$facture->facnumber." => GAIN après conversion : ".($_REQUEST['amount_'.$facture->id] - $facture->total_ttc);
+						if($account->currency_code == $res->devise_code) {
+							return null;
+						} else {
+							// TODO Ecriture comptable à enregistrer dans un compte. En dessous la note n'a pas de sens : ($_REQUEST['amount_'.$facture->id] - $facture->total_ttc) ne correspond jamais à un gain ou à une perte suite à une conversion
+							
+							//Ajout de la note si des écarts sont lié aux conversions de devises
+							if($_REQUEST['amount_'.$facture->id] < $facture->total_ttc)
+								$note .= "facture : ".$facture->facnumber." => PERTE après conversion : ".($facture->total_ttc - $_REQUEST['amount_'.$facture->id]);
+							elseif($_REQUEST['amount_'.$facture->id] > $facture->total_ttc)
+								$note .= "facture : ".$facture->facnumber." => GAIN après conversion : ".($_REQUEST['amount_'.$facture->id] - $facture->total_ttc);
+						}
 					}
 
 					//MAJ du montant paiement_facture
