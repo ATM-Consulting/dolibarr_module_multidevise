@@ -87,7 +87,7 @@ class ActionsMultidevise
 								
 								var iColonne=0;
 								
-								$(this).find('td').each(function() {
+								$(this).find('>td').each(function() {
 									
 									if(!$(this).attr('numeroColonne')) {
 										$(this).attr('numeroColonne', iColonne);	
@@ -294,6 +294,7 @@ class ActionsMultidevise
 	         			});
 	         			
 	         			$('input[name=dp_pu_devise]').ready(function(){
+	         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				$('input[name=dp_pu_devise]').keyup(function(){
 	         					var pu_ht = ((parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) / taux) / (1 + (parseFloat($('#tva_tx').val())/100)));
 		         				$('#price_ht').val(Math.round(pu_ht*100000)/100000);
@@ -310,8 +311,9 @@ class ActionsMultidevise
 							$res = $db->fetch_object($resql);
 							
 							if($line->product_type!=9 && $line->rowid == $_REQUEST['lineid']) {
+								
 								echo "$('#".$line->rowid."').parent().parent().find(' > td[numerocolonne=5]').attr('colspan','4'); ";
-		         				echo "$('#".$line->rowid."').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($line->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
+		         				echo "$('#".$line->rowid."').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
 							}
 							
 							if($line->error != '') echo "alert('".$line->error."');";

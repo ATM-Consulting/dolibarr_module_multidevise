@@ -8,8 +8,10 @@ $ATMdb = new Tdb;
 $Tres = array();
 
 $sql = "SELECT price_ttc
-		FROM ".MAIN_DB_PREFIX."product
-		WHERE rowid = ".$id;
+		FROM ".MAIN_DB_PREFIX."product_price
+		WHERE fk_product = ".$id."
+		ORDER BY date_price DESC
+		LIMIT 1";
 
 $ATMdb->Execute($sql);
 
