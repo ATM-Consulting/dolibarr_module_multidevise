@@ -97,10 +97,7 @@ class ActionsMultidevise
 										iColonne++;	
 									}
 									else {
-										if(iColonne < 2 && $(this).attr('colspan') > 2)
-											iColonne+=1;
-										else
-											iColonne+=parseInt($(this).attr('colspan'));
+										iColonne+=parseInt($(this).attr('colspan'));
 									}
 									
 								});
