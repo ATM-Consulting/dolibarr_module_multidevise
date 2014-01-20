@@ -62,7 +62,7 @@ class ActionsMultidevise
 					print currency_name($res->devise_code,1);
 					print ' ('.$res->devise_code.')</td></tr>';
 					if($table != "societe"){
-						print '<tr><td>Taux Devise</td><td colspan="3">'.price($res->devise_taux,0,'',1,2,2).'</td><input type="hidden" id="taux_devise" value="'.$res->devise_taux.'"></tr>';
+						print '<tr><td>Taux Devise</td><td colspan="3">'.price($res->devise_taux,0,'',1,2,2).'</td><input type="hidden" id="taux_devise" value="'.price2num(price($res->devise_taux,0,'',1,2,2)).'"></tr>';
 						print '<tr><td>Montant Devise</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
 					}
 				}
