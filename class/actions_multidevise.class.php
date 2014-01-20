@@ -97,7 +97,10 @@ class ActionsMultidevise
 										iColonne++;	
 									}
 									else {
-										iColonne+=parseInt($(this).attr('colspan'));
+										if(iColonne < 2 && $(this).attr('colspan') > 2)
+											iColonne+=parseInt($(this).attr('colspan') - 1);
+										else
+											iColonne+=parseInt($(this).attr('colspan'));
 									}
 									
 								});
@@ -116,8 +119,7 @@ class ActionsMultidevise
 								}
 								
 						});
-							
-							
+
 		         		$('#tablelines .liste_titre > td[numeroColonne=2b]').html('P.U. Devise');
 		         		$('#tablelines .liste_titre > td[numeroColonne=5b]').each(function(){
 		         			if($(this).parent().attr('numeroligne') < <?php echo count($object->lines) + 2 ; ?>)
