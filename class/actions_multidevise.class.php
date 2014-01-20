@@ -96,12 +96,12 @@ class ActionsMultidevise
 									if(!$(this).attr('colspan')) {
 										iColonne++;	
 									}
-									else {
+									/*else {
 										if(iColonne < 2 && $(this).attr('colspan') > 2)
 											iColonne+=parseInt($(this).attr('colspan') - 1);
 										else
 											iColonne+=parseInt($(this).attr('colspan'));
-									}
+									}*/
 									
 								});
 								if($('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').length) {
