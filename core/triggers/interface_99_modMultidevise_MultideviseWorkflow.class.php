@@ -230,19 +230,37 @@ class InterfaceMultideviseWorkflow
 				if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
 				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
 				
+				/*echo '<pre>';
+				print_r($object);
+				echo '</pre>'; exit;*/
+				
 				//Ligne de produit/service existant
 				if(!empty($idProd) && $idProd != 0 && isset($_REQUEST['pu_devise_product']) && !empty($_REQUEST['pu_devise_product'])){
-					$devise_mt_ligne = $_REQUEST['pu_devise_product'] * $_REQUEST['qty'];
-					$sql = 'UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise_product'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid;
+					
+					if($conf->tarif->enabled){
+						$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ".$object->{"fk_".$table};
+
+						$resql = $this->db->query($sql);
+						$res = $this->db->fetch_object($resql);
+						
+						$devise_pu = $object->subprice * $res->devise_taux;
+					}
+					else{
+						$devise_pu = $_REQUEST['pu_devise_product'];
+					}
+
+					$devise_mt_ligne = $devise_pu * $_REQUEST['qty'];
+					$sql = 'UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid;
 					$this->db->query($sql);
-					
+
 					$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ".$object->{"fk_".$table};
-					
+
 					$resql = $this->db->query($sql);
 					$res = $this->db->fetch_object($resql);
+						
+					//$subprice_ttc = $devise_pu / $res->devise_taux;
+					//$subprice = $subprice_ttc / (1 + ($object->tva_tx / 100));
 					
-					$subprice_ttc = $_REQUEST['pu_devise_product'] / $res->devise_taux;
-					$subprice = $subprice_ttc / (1 + ($object->tva_tx / 100));
 					
 					if($subprice != $object->subprice){
 						$class = ucfirst($table);
