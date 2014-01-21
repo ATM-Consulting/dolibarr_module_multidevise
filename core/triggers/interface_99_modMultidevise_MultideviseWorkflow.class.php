@@ -218,9 +218,23 @@ class InterfaceMultideviseWorkflow
 					$originid = $object->origin_id;
 				}
 				
-				$resql = $this->db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet_origin." WHERE rowid = ".$originid);
-				$res = $this->db->fetch_object($resql);
-				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' WHERE rowid = '.$object->rowid);
+				if($object->origin == "shipping"){
+					$this->db->commit();
+					$this->db->commit();
+					$this->db->commit();
+					
+					$resql = $this->db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."facture WHERE rowid = ".$object->fk_facture);
+					$res = $this->db->fetch_object($resql);
+
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $res->devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $res->devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
+					
+				}
+				else{
+					$resql = $this->db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet_origin." WHERE rowid = ".$originid);
+					$res = $this->db->fetch_object($resql);
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' WHERE rowid = '.$object->rowid);
+				}
+	
 				
 				
 			}
