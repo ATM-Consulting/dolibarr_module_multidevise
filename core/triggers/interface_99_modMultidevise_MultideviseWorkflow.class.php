@@ -206,7 +206,7 @@ class InterfaceMultideviseWorkflow
 					$tabledet_origin = "propaldet";
 					$propal = new Propal($this->db);
 					$propal->fetch($_POST['originid']);
-					
+
 					foreach($propal->lines as $line){
 						if($line->rang == $object->rang)
 							$originid = $line->rowid;
@@ -222,7 +222,7 @@ class InterfaceMultideviseWorkflow
 					$this->db->commit();
 					$this->db->commit();
 					$this->db->commit();
-					
+
 					$resql = $this->db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."facture WHERE rowid = ".$object->fk_facture);
 					$res = $this->db->fetch_object($resql);
 
@@ -333,15 +333,31 @@ class InterfaceMultideviseWorkflow
 				$object->update($user,true);
 			}
 			
-			$devise_mt_ligne = $_REQUEST['pu_devise'] * $_REQUEST['qty'];
-			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
-			
+			if($object->origin == "shipping"){
+					$this->db->commit();
+					$this->db->commit();
+					$this->db->commit();
+
+					$resql = $this->db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."facture WHERE rowid = ".$object->fk_facture);
+					$res = $this->db->fetch_object($resql);
+
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $res->devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $res->devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
+					
+			}
+			else{
+				
+				$devise_mt_ligne = $_REQUEST['pu_devise'] * $_REQUEST['qty'];
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				
+			}
+
 			//MAJ du total devise de la commande/facture/propale
 			$resql = $this->db->query('SELECT SUM(f.devise_mt_ligne) as total_devise 
 									   FROM '.MAIN_DB_PREFIX.$tabledet.' as f LEFT JOIN '.MAIN_DB_PREFIX.$table.' as m ON (f.fk_'.$table.' = m.rowid)
-									   WHERE m.rowid = '.$object->oldline->{'fk_'.$table});
+									   WHERE m.rowid = '.$object->{'fk_'.$table});
+
 			$res = $this->db->fetch_object($resql);
-			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".$object->oldline->{'fk_'.$table});
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".$object->{'fk_'.$table});
 		}
 	
 		/*
