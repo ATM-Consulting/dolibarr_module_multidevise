@@ -18,7 +18,8 @@ class ActionsMultidevise
 		if (in_array('thirdpartycard',explode(':',$parameters['context']))
 			|| in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
-			|| in_array('invoicecard',explode(':',$parameters['context']))){
+			|| in_array('invoicecard',explode(':',$parameters['context']))
+			|| in_array('ordersuppliercard',explode(':',$parameters['context']))){
 			
 			if(in_array('thirdpartycard',explode(':',$parameters['context'])))
 				$table = "societe";
@@ -28,6 +29,8 @@ class ActionsMultidevise
 				$table = "commande";
 			if(in_array('invoicecard',explode(':',$parameters['context'])))
 				$table = "facture";
+			if(in_array('ordersuppliercard',explode(':',$parameters['context'])))
+				$table = "commande_fournisseur";
 			
 	    	//EDIT
 	    	if($action == "edit" || $action == "create"){
@@ -156,7 +159,8 @@ class ActionsMultidevise
 		global $db,$user,$conf;
 		if (in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
-			|| in_array('invoicecard',explode(':',$parameters['context']))){
+			|| in_array('invoicecard',explode(':',$parameters['context']))
+			|| in_array('ordersuppliercard',explode(':',$parameters['context']))){
 			
 			if(in_array('propalcard',explode(':',$parameters['context']))){
 				$table = "propal";
@@ -169,6 +173,10 @@ class ActionsMultidevise
 			if(in_array('invoicecard',explode(':',$parameters['context']))){
 				$table = "facture";
 				$tabledet = "facturedet";
+			}
+			if(in_array('ordersuppliercard',explode(':',$parameters['context']))){
+				$table = "commande_fournisseur";
+				$tabledet = "commande_fournisseurdet";
 			}
 			
 			if($action != "create"){
@@ -254,7 +262,8 @@ class ActionsMultidevise
 		
 		if (in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
-			|| in_array('invoicecard',explode(':',$parameters['context']))){
+			|| in_array('invoicecard',explode(':',$parameters['context']))
+			|| in_array('ordersuppliercard',explode(':',$parameters['context']))){
 			
 			if(in_array('propalcard',explode(':',$parameters['context']))){
 				$table = "propal";
@@ -267,6 +276,10 @@ class ActionsMultidevise
 			if(in_array('invoicecard',explode(':',$parameters['context']))){
 				$table = "facture";
 				$tabledet = "facturedet";
+			}
+			if(in_array('ordersuppliercard',explode(':',$parameters['context']))){
+				$table = "commande_fournisseur";
+				$tabledet = "commande_fournisseurdet";
 			}
 			
 			if($action == "editline"){

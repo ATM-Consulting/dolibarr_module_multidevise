@@ -131,7 +131,7 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * ASSOCIATION DEVISE, TAUX PAR COMMANDE, PROPAL OU FACTURE
 		 */
-		if($action == "ORDER_CREATE" || $action == "PROPAL_CREATE" || $action =="BILL_CREATE" ){
+		if($action == "ORDER_CREATE" || $action == "PROPAL_CREATE" || $action =="BILL_CREATE" || $action =="ORDER_SUPPLIER_CREATE"){
 			
 			if($action == "ORDER_CREATE")
 				$table = "commande";
@@ -139,6 +139,8 @@ class InterfaceMultideviseWorkflow
 				$table = "propal";
 			elseif($action =="BILL_CREATE")
 				$table = "facture";
+			elseif($action =="ORDER_SUPPLIER_CREATE")
+				$table = "commande_fournisseur";
 			
 			if(isset($_REQUEST['currency']) && !empty($_REQUEST['currency'])){
 				$resql = $db->query('SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
@@ -172,10 +174,10 @@ class InterfaceMultideviseWorkflow
 		/*
 		 *CREATION P.U. DEVISE + TOTAL DEVISE PAR LIGNE DE COMMANDE, PROPAL OU FACTURE
 		 */
-		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT') {
+		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT' || $action == 'LINEORDER_SUPPLIER_CREATE ') {
 			
 			/*echo '<pre>';
-			print_r($object);
+			print_r($_POST);
 			echo '</pre>';exit;*/
 			
 			if($action == "LINEORDER_INSERT" || $action == 'LINEORDER_UPDATE'){
@@ -191,6 +193,11 @@ class InterfaceMultideviseWorkflow
 			elseif($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_UPDATE'){
 				$table = "facture";
 				$tabledet = "facturedet";
+				$object->update($user,true);
+			}
+			elseif($action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEORDER_SUPPLIER_CREATE'){
+				$table = "commande_fournisseur";
+				$tabledet = "commande_fournisseurdet";
 				$object->update($user,true);
 			}
 			
@@ -241,11 +248,12 @@ class InterfaceMultideviseWorkflow
 			else{//Création standard
 				 
 				$idProd = 0;
+				if(!empty($_POST['id'])) $idProd = $_POST['id'];
 				if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
 				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
 				
 				/*echo '<pre>';
-				print_r($object);
+				print_r($_REQUEST);
 				echo '</pre>'; exit;*/
 				
 				//Ligne de produit/service existant
@@ -290,6 +298,9 @@ class InterfaceMultideviseWorkflow
 							case 'propal':
 								$parent_object->updateline($object->rowid, $subprice, $object->qty, $object->remise_percent, $object->tva_tx);
 								break;
+							case 'commande_fournisseur':
+								$parent_object->updateline($object->rowid, $object->desc, $subprice, $object->qty, $object->remise_percent, $object->tva_tx);
+								break;
 						}
 					}
 				}
@@ -311,7 +322,7 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * MODIFICATION LIGNE DE COMMANDE, PROPAL OU FACTURE = MAJ DU MONTANT TOTAL DEVISE
 		 */
-		if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'){
+		if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE' || $action == 'LINEORDER_SUPPLIER_UPDATE'){
 			
 			/*echo '<pre>';
 			print_r($object);
@@ -330,6 +341,11 @@ class InterfaceMultideviseWorkflow
 			elseif($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_UPDATE'){
 				$table = "facture";
 				$tabledet = "facturedet";
+				$object->update($user,true);
+			}
+			elseif($action == 'LINEORDER_SUPPLIER_UPDATE' || $action == 'LINEORDER_SUPPLIER_UPDATE'){
+				$table = "commande_fournisseur";
+				$tabledet = "commande_fournisseurdet";
 				$object->update($user,true);
 			}
 			
@@ -363,7 +379,7 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * SUPPRESSION LIGNE DE COMMANDE, PROPAL OU FACTURE = MAJ DU MONTANT TOTAL DEVISE
 		 */
-		if ($action == 'LINEORDER_DELETE' || $action == 'LINEPROPAL_DELETE' || $action == 'LINEBILL_DELETE') {
+		if ($action == 'LINEORDER_DELETE' || $action == 'LINEPROPAL_DELETE' || $action == 'LINEBILL_DELETE' || $action == 'LINEORDER_SUPPLIER_DELETE') {
 			
 			/*echo '<pre>';
 			print_r($object);
@@ -381,6 +397,10 @@ class InterfaceMultideviseWorkflow
 				$table = "facture";
 				$tabledet = "facturedet";
 			}
+			elseif($action == 'LINEORDER_SUPPLIER_DELETE'){
+				$table = "commande_fournisseur";
+				$tabledet = "commande_fournisseur";
+			}
 			
 			$resql = $this->db->query('SELECT SUM(devise_mt_ligne) as total_ligne 
 									   FROM '.MAIN_DB_PREFIX.$tabledet.'
@@ -394,7 +414,7 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * AJOUT D'UN PAIEMENT 
 		 */
-		if($action == "PAYMENT_CUSTOMER_CREATE" ){
+		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE "){
 			
 			/*pre($_REQUEST);
 			exit;*/

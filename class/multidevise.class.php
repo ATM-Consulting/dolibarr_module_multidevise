@@ -95,6 +95,35 @@ class TMultideviseCommandedet extends TObjetStd {
 	}
 }
 
+class TMultideviseCommandeFournisseur extends TObjetStd {
+	function __construct() { /* declaration */
+		global $langs;
+		
+		parent::set_table(MAIN_DB_PREFIX.'commande_fournisseur');
+		parent::add_champs('fk_devise','type=entier;');
+		parent::add_champs('devise_taux,devise_mt_total','type=float;');
+		parent::add_champs('devise_code','type=chaine;');
+		
+		parent::_init_vars();
+		parent::start();
+	}
+}
+
+class TMultideviseCommandeFournisseurdet extends TObjetStd {
+	function __construct() { /* declaration */
+		global $langs;
+		
+		parent::set_table(MAIN_DB_PREFIX.'commande_fournisseurdet');
+		parent::add_champs('fk_devise','type=entier;');
+		parent::add_champs('devise_pu,devise_mt_ligne','type=float;');
+		parent::add_champs('devise_code','type=chaine;');
+		
+		parent::_init_vars();
+		parent::start();
+	}
+}
+
+
 class TMultidevisePaiementFacture extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;
