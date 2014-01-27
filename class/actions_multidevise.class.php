@@ -300,7 +300,7 @@ class ActionsMultidevise
 							});
 	         			});
 	         			$('#price_ht').change(function(){
-	         				var pu_devise = (parseFloat($('#price_ht').val().replace(",", ".")) * (1 + (parseFloat($('#tva_tx').val())/100))) * taux;
+	         				var pu_devise = parseFloat($('#price_ht').val().replace(",", ".")) * taux;
 	         				$('input[name=dp_pu_devise]').val(Math.round(pu_devise*100000)/100000);
 	         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val());
 	         			});
@@ -308,7 +308,7 @@ class ActionsMultidevise
 	         			$('input[name=dp_pu_devise]').ready(function(){
 	         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				$('input[name=dp_pu_devise]').keyup(function(){
-	         					var pu_ht = ((parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) / taux) / (1 + (parseFloat($('#tva_tx').val())/100)));
+	         					var pu_ht = parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) / taux;
 		         				$('#price_ht').val(Math.round(pu_ht*100000)/100000);
 		         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				});
