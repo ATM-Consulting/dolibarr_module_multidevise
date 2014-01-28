@@ -7,7 +7,7 @@ $id = $_POST['fk_product'];
 $ATMdb = new Tdb;
 $Tres = array();
 
-$sql = "SELECT price_ttc
+$sql = "SELECT price
 		FROM ".MAIN_DB_PREFIX."product_price
 		WHERE fk_product = ".$id."
 		ORDER BY date_price DESC
@@ -16,7 +16,7 @@ $sql = "SELECT price_ttc
 $ATMdb->Execute($sql);
 
 while($ATMdb->Get_line()){
-	$Tres["price"] = $ATMdb->Get_field('price_ttc');
+	$Tres["price"] = $ATMdb->Get_field('price');
 }
 
 echo json_encode($Tres);

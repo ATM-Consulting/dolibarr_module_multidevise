@@ -146,9 +146,6 @@ class ActionsMultidevise
 		    	<?php
 			}
 		}
-		elseif (in_array('paiementcard',explode(':',$parameters['context']))){
-			
-		}
 
 		return 0;
 	}
@@ -183,9 +180,9 @@ class ActionsMultidevise
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
-		         		$('#np_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="np_pu_devise" size="6">');
+		         		$('#np_desc').parent().parent().find(' > td[numeroColonne=2c]').html('<input type="text" value="" name="np_pu_devise" size="6">');
 						$('#dp_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="dp_pu_devise" size="6">');
-						//$('input[name=addline]').parent().attr('colspan','5');
+						
 						var taux = $('#taux_devise').val();
 						$('#idprod').change( function(){
 							$.ajax({
@@ -197,27 +194,19 @@ class ActionsMultidevise
 									if(select.price != ""){
 										$("input[name=np_pu_devise]").val(select.price * taux.replace(",","."));
 										$("input[name=np_pu_devise]").attr('value',select.price * taux.replace(",","."));
-										$('input[name=pu_devise_product]').val(select.price * taux.replace(",","."));
 									}
 								});
 						});
+						
 						$('input[name=price_ht]').keyup(function(){
-							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
 							$('input[name=dp_pu_devise]').val(mt);
-							$('input[name=pu_devise_libre]').val(mt);
 						});
+						
 						$('input[name=dp_pu_devise]').keyup(function(){
-							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
 							$('input[name=price_ht]').val(mt);
 						});
-						$('#addpredefinedproduct').append('<input type="hidden" value="0" name="pu_devise_product" size="3">');
-			         	$('#addproduct').append('<input type="hidden" value="0" name="pu_devise_libre" size="3">');
-			         	$('input[name=dp_pu_devise]').change(function() {
-			         		$('input[name=pu_devise_libre]').val($('input[name=dp_pu_devise]').val() );	
-			         	});
-			         	$('input[name=np_pu_devise]').change(function() {
-			         		$('input[name=pu_devise_product]').val($('input[name=np_pu_devise]').val() );
-			         	});
 			     	});
 			    </script>	
 		    	<?php
@@ -233,6 +222,7 @@ class ActionsMultidevise
 					$('.liste_titre').children().eq(5).after('<td align="right" >Reçu devise</td>');
 					$('.liste_titre').children().eq(7).after('<td align="right" >Reste à encaisser devise</td>');
 					$('.liste_titre > td:last-child').before('<td align="right" >Montant règlement devise</td>');
+					
 					$('tr[class=impair], tr[class=pair]').each(function(){
 						$(this).children().eq(1).after('<td align="right" class="devise"></td>');
 						$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
@@ -240,6 +230,7 @@ class ActionsMultidevise
 						$(this).children().eq(7).after('<td align="right" class="reste_devise"></td>');
 						$(this).children().eq(9).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(9).children().next().attr('name')+']" size="8"></td>');
 					});
+					
 					$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
 					$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
 					$('tr[class=liste_total]').children().eq(4).after('<td align="right" class="total_recu_devise"></td>');
@@ -289,13 +280,13 @@ class ActionsMultidevise
 	         			var taux = $('#taux_devise').val();
 	         			
 	         			$('input[name=price_ht]').keyup(function(){
-							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
 							$('input[name=dp_pu_devise]').val(mt);
 							$('input[name=pu_devise_libre]').val(mt);
 						});
 						$('input[name=dp_pu_devise]').ready(function(){
 							$('input[name=dp_pu_devise]').keyup(function(){
-								var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
+								var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
 								$('input[name=price_ht]').val(mt);
 							});
 	         			});
@@ -308,29 +299,31 @@ class ActionsMultidevise
 	         			$('input[name=dp_pu_devise]').ready(function(){
 	         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				$('input[name=dp_pu_devise]').keyup(function(){
-	         					var pu_ht = parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) / taux;
+	         					var pu_ht = parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) * taux;
 		         				$('#price_ht').val(Math.round(pu_ht*100000)/100000);
 		         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				});
-	         				//$('#price_ht').val($(this).html() / taux);
+	         				$('#price_ht').val($(this).html() / taux);
 	         			});
 	         			$('input[name=action]').prev().prev().append('<input type="hidden" value="0" name="pu_devise" size="3">');
-
-	         			<?php
+						
+						<?php
 						foreach($object->lines as $k=>$line){
 							
-							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
+							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet." WHERE rowid = ".$line->id);
 							$res = $db->fetch_object($resql);
 							
-							if($line->product_type!=9 && $line->rowid == $_REQUEST['lineid']) {
+							if($line->product_type != 9 && $line->id == $_REQUEST['lineid']) {
+
+								echo "$('#line_".$line->id."').parent().parent().find(' > td[numerocolonne=5]').attr('colspan','4'); ";
+		         				echo "$('#line_".$line->id."').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
 								
-								echo "$('#".$line->rowid."').parent().parent().find(' > td[numerocolonne=5]').attr('colspan','4'); ";
-		         				echo "$('#".$line->rowid."').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
 							}
 							
 							if($line->error != '') echo "alert('".$line->error."');";
 	         			}
-				       ?> 
+				        ?>
+				        
 					});
 				</script>
 				<?php
@@ -434,7 +427,7 @@ class ActionsMultidevise
 							});
 							if($('td[class=total_reste_devise]').length > 0) $('td[class=total_montant_devise]').html(total);
 							mt_devise = parseFloat($(this).val().replace(',','.'));
-							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise / <?php echo $res->taux; ?>,2,',',''));
+							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise * <?php echo $res->taux; ?>,2,',',''));
 						});
 						
 						$("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").keyup(function() {

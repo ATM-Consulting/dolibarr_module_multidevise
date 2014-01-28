@@ -257,8 +257,8 @@ class InterfaceMultideviseWorkflow
 				echo '</pre>'; exit;*/
 				
 				//Ligne de produit/service existant
-				if(!empty($idProd) && $idProd != 0 && isset($_REQUEST['pu_devise_product']) && !empty($_REQUEST['pu_devise_product'])){
-					
+				if(!empty($idProd) && $idProd != 0 && isset($_REQUEST['np_pu_devise']) && !empty($_REQUEST['np_pu_devise'])){
+
 					if($conf->tarif->enabled){
 						$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ".$object->{"fk_".$table};
 
@@ -268,14 +268,14 @@ class InterfaceMultideviseWorkflow
 						$devise_pu = $object->subprice * $res->devise_taux;
 					}
 					else{
-						$devise_pu = $_REQUEST['pu_devise_product'];
+						$devise_pu = $_REQUEST['np_pu_devise'];
 					}
 
 					$devise_mt_ligne = $devise_pu * $_REQUEST['qty'];
 					$sql = 'UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid;
 					$this->db->query($sql);
 
-					$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ".$object->{"fk_".$table};
+					/*$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ".$object->{"fk_".$table};
 
 					$resql = $this->db->query($sql);
 					$res = $this->db->fetch_object($resql);
@@ -302,12 +302,13 @@ class InterfaceMultideviseWorkflow
 								$parent_object->updateline($object->rowid, $object->desc, $subprice, $object->qty, $object->remise_percent, $object->tva_tx);
 								break;
 						}
-					}
+					}*/
 				}
 				//Ligne libre
-				elseif(isset($_REQUEST['pu_devise_libre']) && !empty($_REQUEST['pu_devise_libre'])){
-					$devise_mt_ligne = $_REQUEST['pu_devise_libre'] * $_REQUEST['qty'];
-					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise_libre'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				elseif(isset($_REQUEST['dp_pu_devise']) && !empty($_REQUEST['dp_pu_devise'])){
+					
+					$devise_mt_ligne = $_REQUEST['dp_pu_devise'] * $_REQUEST['qty'];
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 				}
 				
 				//MAJ du total devise de la commande/facture/propale
