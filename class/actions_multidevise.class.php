@@ -282,7 +282,7 @@ class ActionsMultidevise
 	         			$('input[name=price_ht]').keyup(function(){
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
 							$('input[name=dp_pu_devise]').val(mt);
-							$('input[name=pu_devise_libre]').val(mt);
+							//$('input[name=pu_devise_libre]').val(mt);
 						});
 						$('input[name=dp_pu_devise]').ready(function(){
 							$('input[name=dp_pu_devise]').keyup(function(){
@@ -293,10 +293,10 @@ class ActionsMultidevise
 	         			$('#price_ht').change(function(){
 	         				var pu_devise = parseFloat($('#price_ht').val().replace(",", ".")) * taux;
 	         				$('input[name=dp_pu_devise]').val(Math.round(pu_devise*100000)/100000);
-	         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val());
+	         				//$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val());
 	         			});
 	         			
-	         			$('input[name=dp_pu_devise]').ready(function(){
+	         			/*$('input[name=dp_pu_devise]').ready(function(){
 	         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				$('input[name=dp_pu_devise]').keyup(function(){
 	         					var pu_ht = parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) / taux;
@@ -304,7 +304,7 @@ class ActionsMultidevise
 		         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				});
 	         				$('#price_ht').val($(this).html() / taux);
-	         			});
+	         			});*/
 	         			$('input[name=action]').prev().prev().append('<input type="hidden" value="0" name="pu_devise" size="3">');
 						
 						<?php

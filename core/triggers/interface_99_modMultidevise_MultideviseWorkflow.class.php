@@ -326,7 +326,7 @@ class InterfaceMultideviseWorkflow
 		if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE' || $action == 'LINEORDER_SUPPLIER_UPDATE'){
 			
 			/*echo '<pre>';
-			print_r($object);
+			print_r($_REQUEST);
 			echo '</pre>';exit;*/
 		
 			if($action == "LINEORDER_INSERT" || $action == 'LINEORDER_UPDATE'){
@@ -363,18 +363,18 @@ class InterfaceMultideviseWorkflow
 			}
 			else{
 				
-				$devise_mt_ligne = $_REQUEST['pu_devise'] * $_REQUEST['qty'];
-				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				$devise_mt_ligne = $_REQUEST['dp_pu_devise'] * $_REQUEST['qty'];
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 				
 			}
-
-			//MAJ du total devise de la commande/facture/propale
+			
+			//MAJ du total devise de la commande/facture/propal
 			$resql = $this->db->query('SELECT SUM(f.devise_mt_ligne) as total_devise 
 									   FROM '.MAIN_DB_PREFIX.$tabledet.' as f LEFT JOIN '.MAIN_DB_PREFIX.$table.' as m ON (f.fk_'.$table.' = m.rowid)
-									   WHERE m.rowid = '.$object->{'fk_'.$table});
-
+									   WHERE m.rowid = '.$_REQUEST['id']);
+			
 			$res = $this->db->fetch_object($resql);
-			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".$object->{'fk_'.$table});
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".$_REQUEST['id']);
 		}
 	
 		/*
