@@ -286,7 +286,7 @@ class ActionsMultidevise
 						});
 						$('input[name=dp_pu_devise]').ready(function(){
 							$('input[name=dp_pu_devise]').keyup(function(){
-								var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
+								var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
 								$('input[name=price_ht]').val(mt);
 							});
 	         			});
@@ -299,7 +299,7 @@ class ActionsMultidevise
 	         			$('input[name=dp_pu_devise]').ready(function(){
 	         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				$('input[name=dp_pu_devise]').keyup(function(){
-	         					var pu_ht = parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) * taux;
+	         					var pu_ht = parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) / taux;
 		         				$('#price_ht').val(Math.round(pu_ht*100000)/100000);
 		         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
 	         				});
