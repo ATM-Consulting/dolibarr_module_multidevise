@@ -136,7 +136,6 @@ class ActionsMultidevise
 		         				echo "$('#row-".$line->rowid." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
 								echo "$('#row-".$line->rowid." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
 							}
-						
 							
 							if($line->error != '') echo "alert('".$line->error."');";
 	         			}
@@ -149,9 +148,59 @@ class ActionsMultidevise
 
 		return 0;
 	}
-	
-	
+
+	function formCreateProductOptions($parameters, &$object, &$action, $hookmanager){
+		
+		global $db,$user,$conf;
+		if (in_array('ordersuppliercard',explode(':',$parameters['context']))){
+			
+			$table = "commande_fournisseur";
+			$tabledet = "commande_fournisseurdet";
+			
+			if($action != "create"){
+				?>
+				<script type="text/javascript">
+					$(document).ready(function(){
+		         		$('#np_desc').parent().parent().find(' > td[numeroColonne=2c]').html('<input type="text" value="" name="np_pu_devise" size="6">');
+						$('#dp_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="dp_pu_devise" size="6">');
+						
+						var taux = $('#taux_devise').val();
+						$('#idprod').change( function(){
+							$.ajax({
+								type: "POST"
+								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/ajax.getproductprice.php"
+								,dataType: "json"
+								,data: {fk_product: $('#idprod').val()}
+								},"json").then(function(select){
+									if(select.price != ""){
+										$("input[name=np_pu_devise]").val(select.price * taux.replace(",","."));
+										$("input[name=np_pu_devise]").attr('value',select.price * taux.replace(",","."));
+									}
+								});
+						});
+						
+						$('input[name=pu]').keyup(function(){
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
+							$('input[name=dp_pu_devise]').val(mt);
+						});
+						
+						$('input[name=dp_pu_devise]').keyup(function(){
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
+							$('input[name=pu]').val(mt);
+						});
+			     	});
+			    </script>	
+		    	<?php
+	    	}
+	    }
+		
+	}
+
 	function formAddObjectLine($parameters, &$object, &$action, $hookmanager){
+		
+		/*echo "<pre>";
+		print_r($parameters);
+		echo "</pre>";exit;*/
 		
 		global $db,$user,$conf;
 		if (in_array('propalcard',explode(':',$parameters['context']))
@@ -409,7 +458,7 @@ class ActionsMultidevise
 						
 						ligne = $('input[name=<?php echo $champ."_".$facture->id; ?>]').parent().parent();
 						$(ligne).find('> td[class=devise]').append('<?php echo $res->name.' ('.$res->code.')'; ?>');
-						$(ligne).find('> td[class=taux_devise]').append('<?php echo $res->taux; ?>');
+						$(ligne).find('> td[class=taux_devise]').append('<?php echo number_format($res->taux,2,',',''); ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $res->taux; ?>" name="taux_devise" />');
 						$(ligne).find('> td[class=recu_devise]').append('<?php echo $total_recu_devise; ?>');
 						$(ligne).find('> td[class=reste_devise]').append('<?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>');
