@@ -104,6 +104,7 @@ class ActionsMultidevise
 									}
 									
 								});
+								
 								if($('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').length) {
 									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').after('<td align="right" numeroColonne="2b"></td>');	
 								}
@@ -121,6 +122,7 @@ class ActionsMultidevise
 						});
 
 		         		$('#tablelines .liste_titre > td[numeroColonne=2b]').html('P.U. Devise');
+		         		//$('#tablelines .liste_titre > td[numeroColonne=2c]').html('P.U. Devise');
 		         		$('#tablelines .liste_titre > td[numeroColonne=5b]').each(function(){
 		         			if($(this).parent().attr('numeroligne') < <?php echo count($object->lines) + 2 ; ?>)
 		         				$(this).html('Total Devise');
@@ -129,12 +131,12 @@ class ActionsMultidevise
 	         			<?php
 						foreach($object->lines as $line){
 							
-							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->rowid);
+							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->id);
 							$res = $db->fetch_object($resql);
 							
 							if($line->product_type!=9) {
-		         				echo "$('#row-".$line->rowid." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
-								echo "$('#row-".$line->rowid." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
+		         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
+								echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
 							}
 							
 							if($line->error != '') echo "alert('".$line->error."');";
@@ -166,12 +168,16 @@ class ActionsMultidevise
 						$('#dp_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="dp_pu_devise" size="6">');
 						
 						var taux = $('#taux_devise').val();
-						$('#idprod').change( function(){
+						$('#idprodfournprice').change( function(){
 							$.ajax({
 								type: "POST"
-								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/ajax.getproductprice.php"
+								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/interface.php"
 								,dataType: "json"
-								,data: {fk_product: $('#idprod').val()}
+								,data: {
+									fk_product: $('#idprodfournprice').val(),
+									get : "getproductfournprice",
+									json : 1
+								}
 								},"json").then(function(select){
 									if(select.price != ""){
 										$("input[name=np_pu_devise]").val(select.price * taux.replace(",","."));
@@ -220,9 +226,13 @@ class ActionsMultidevise
 						$('#idprod').change( function(){
 							$.ajax({
 								type: "POST"
-								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/ajax.getproductprice.php"
+								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/interface.php"
 								,dataType: "json"
-								,data: {fk_product: $('#idprod').val()}
+								,data: {
+									fk_product: $('#idprod').val(),
+									get : "getproductprice",
+									json : 1
+								}
 								},"json").then(function(select){
 									if(select.price != ""){
 										$("input[name=np_pu_devise]").val(select.price * taux.replace(",","."));
@@ -365,7 +375,8 @@ class ActionsMultidevise
 
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
 		
-		global $db, $user, $conf;
+		global $db, 
+	         			$user, $conf;
 		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
 				
 		if(in_array('paiementcard',explode(':',$parameters['context']))){
@@ -470,8 +481,29 @@ class ActionsMultidevise
 					});
 				</script>
 				<?php
-				}
+			}
 		}
+		elseif(in_array('ordersuppliercard',explode(':',$parameters['context']))){
+				
+			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX."commandefournisseur_det WHERE rowid = ".$line->id);
+			$res = $db->fetch_object($resql);
+			
+			?>
+			<script type="text/javascript">
+			<?php
+			
+			if($line->product_type!=9) {
+				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
+				echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
+			}
+			
+			?>
+			</script>
+			<?php
+			if($line->error != '') echo "alert('".$line->error."');";
+			
+		}
+
 		return 0;
 	}
 }

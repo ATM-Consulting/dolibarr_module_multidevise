@@ -174,10 +174,10 @@ class InterfaceMultideviseWorkflow
 		/*
 		 *CREATION P.U. DEVISE + TOTAL DEVISE PAR LIGNE DE COMMANDE, PROPAL OU FACTURE
 		 */
-		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT' || $action == 'LINEORDER_SUPPLIER_CREATE ') {
+		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT' || $action == 'LINEORDER_SUPPLIER_CREATE') {
 			
 			/*echo '<pre>';
-			print_r($_POST);
+			print_r($object);
 			echo '</pre>';exit;*/
 			
 			if($action == "LINEORDER_INSERT" || $action == 'LINEORDER_UPDATE'){
@@ -198,7 +198,7 @@ class InterfaceMultideviseWorkflow
 			elseif($action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEORDER_SUPPLIER_CREATE'){
 				$table = "commande_fournisseur";
 				$tabledet = "commande_fournisseurdet";
-				$object->update($user,true);
+				//$object->update($user,true);
 			}
 			
 			//Création a partir d'un objet d'origine (propale ou commande)
@@ -253,7 +253,7 @@ class InterfaceMultideviseWorkflow
 				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
 				
 				/*echo '<pre>';
-				print_r($_REQUEST);
+				print_r($object);
 				echo '</pre>'; exit;*/
 				
 				//Ligne de produit/service existant
@@ -308,6 +308,9 @@ class InterfaceMultideviseWorkflow
 				elseif(isset($_REQUEST['dp_pu_devise']) && !empty($_REQUEST['dp_pu_devise'])){
 					
 					$devise_mt_ligne = $_REQUEST['dp_pu_devise'] * $_REQUEST['qty'];
+					
+					//echo 'UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid; exit;
+					
 					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 				}
 				

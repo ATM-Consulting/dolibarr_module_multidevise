@@ -53,8 +53,15 @@ TODO
 		 */
 	 	
 		$reshook=$hookmanager->executeHooks('doActions',$parameters,$object,$action);    // Note that $action and $object may have been modified by some hooks
+	
+	
+	******************************** AJOUTER L'APPEL DE HOOK SUR LA FICHE COMMANDE FOURNISSEUR htdocs/fourn/commande/fiche.php
+	
+	1 ) Ligne 1586 environ => remplacer la ligne d'ouverture de tr par 
 		
-	1 ) Ligne 1652 environ => juste avant la fermeture de "</tr>" de la ligne de commande
+			print '<tr id="row-'.$line->id.'" '.$bc[$var].'>';
+		
+	2 ) Ligne 1652 environ => juste avant la fermeture de "</tr>" de la ligne de commande
 	
 			if (is_object($hookmanager))
 			{
