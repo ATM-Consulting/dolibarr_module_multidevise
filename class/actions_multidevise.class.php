@@ -148,14 +148,15 @@ class ActionsMultidevise
 
 		return 0;
 	}
-
+	
+	
+	/*
+	 * Hook uniquement disponible pour les commandes fournisseur
+	 */
 	function formCreateProductOptions($parameters, &$object, &$action, $hookmanager){
 		
 		global $db,$user,$conf;
 		if (in_array('ordersuppliercard',explode(':',$parameters['context']))){
-			
-			$table = "commande_fournisseur";
-			$tabledet = "commande_fournisseurdet";
 			
 			if($action != "create"){
 				?>
@@ -185,7 +186,7 @@ class ActionsMultidevise
 						});
 						
 						$('input[name=dp_pu_devise]').keyup(function(){
-							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
 							$('input[name=pu]').val(mt);
 						});
 			     	});
@@ -207,23 +208,6 @@ class ActionsMultidevise
 			|| in_array('ordercard',explode(':',$parameters['context']))
 			|| in_array('invoicecard',explode(':',$parameters['context']))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))){
-			
-			if(in_array('propalcard',explode(':',$parameters['context']))){
-				$table = "propal";
-				$tabledet = "propaldet";
-			}
-			if(in_array('ordercard',explode(':',$parameters['context']))){
-				$table = "commande";
-				$tabledet = "commandedet";
-			}
-			if(in_array('invoicecard',explode(':',$parameters['context']))){
-				$table = "facture";
-				$tabledet = "facturedet";
-			}
-			if(in_array('ordersuppliercard',explode(':',$parameters['context']))){
-				$table = "commande_fournisseur";
-				$tabledet = "commande_fournisseurdet";
-			}
 			
 			if($action != "create"){
 				?>
@@ -306,19 +290,15 @@ class ActionsMultidevise
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))){
 			
 			if(in_array('propalcard',explode(':',$parameters['context']))){
-				$table = "propal";
 				$tabledet = "propaldet";
 			}
 			if(in_array('ordercard',explode(':',$parameters['context']))){
-				$table = "commande";
 				$tabledet = "commandedet";
 			}
 			if(in_array('invoicecard',explode(':',$parameters['context']))){
-				$table = "facture";
 				$tabledet = "facturedet";
 			}
 			if(in_array('ordersuppliercard',explode(':',$parameters['context']))){
-				$table = "commande_fournisseur";
 				$tabledet = "commande_fournisseurdet";
 			}
 			
