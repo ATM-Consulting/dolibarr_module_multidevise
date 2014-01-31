@@ -338,16 +338,25 @@ class InterfaceMultideviseWorkflow
 		 */
 		if ($action == 'LINEORDER_DELETE' || $action == 'LINEPROPAL_DELETE' || $action == 'LINEBILL_DELETE' || $action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE') {
 			
-			echo '<pre>';
-			print_r($object);
-			echo '</pre>';exit;
+			/*echo '<pre>';
+			print_r($_REQUEST);
+			echo '</pre>';exit;*/
 			
-			$resql = $this->db->query('SELECT SUM(devise_mt_ligne) as total_ligne 
-									   FROM '.MAIN_DB_PREFIX.$object->table_element_line.'
-									   WHERE fk_'.$object->table_element.' = '.$object->{"fk_".$object->table_element});
+			$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne 
+				    FROM '.MAIN_DB_PREFIX.$object->table_element_line;
+				    
+			
+			if($action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE'){
+				$sql .= ' WHERE '.$object->fk_element.' = '.$_REQUEST['id'];
+			}
+			else {
+				$sql .=  ' WHERE fk_'.$object->table_element.' = '.$object->{"fk_".$object->table_element}; 
+			}
+			
+			$resql = $this->db->query($sql);
 
 			$res = $this->db->fetch_object($resql);
-			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->total_ligne." WHERE rowid = ".$object->{'fk_'.$object->table_element});
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->total_ligne." WHERE rowid = ".(($object->{'fk_'.$object->table_element}) ? $object->{'fk_'.$object->table_element} : $_REQUEST['id'] ));
 			
 		}
 		

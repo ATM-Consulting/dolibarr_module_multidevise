@@ -304,14 +304,18 @@ class ActionsMultidevise
     	global $db, $user,$conf;
 		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
-
+		
+		/*echo '<pre>';
+		print_r($_REQUEST);
+		echo '</pre>'; exit;*/
+		
 		if (in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
 			|| in_array('invoicecard',explode(':',$parameters['context']))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
-			if($action == "editline"){
+			if($action == "editline" || $action == "edit_line"){
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
@@ -340,7 +344,9 @@ class ActionsMultidevise
 							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
 							$res = $db->fetch_object($resql);
 							
-							if($line->product_type != 9 && $line->id == $_REQUEST['lineid']) {
+							echo "SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id;
+							
+							if($line->product_type != 9 && $line->id == ($_REQUEST['lineid']) ? $_REQUEST['lineid'] : $_REQUEST['rowid']) {
 
 								echo "$('#line_".$line->id."').parent().parent().find(' > td[numerocolonne=5]').attr('colspan','4'); ";
 		         				echo "$('#line_".$line->id."').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
@@ -349,6 +355,8 @@ class ActionsMultidevise
 							
 							if($line->error != '') echo "alert('".$line->error."');";
 	         			}
+						
+						exit;
 				        ?>
 				        
 					});

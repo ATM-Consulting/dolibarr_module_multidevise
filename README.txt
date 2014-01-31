@@ -86,4 +86,18 @@ TODO
 				$parameters=array('fk_parent_line'=>$line->fk_parent_line, 'line'=>$line,'var'=>$var,'num'=>$num,'i'=>$i);
 				$reshook=$hookmanager->executeHooks('printObjectLine',$parameters,$object,$action);
 			}
+			
+	************************** AJOUTER L'APPEL DU TRIGGER LORS DE LA SUPPRESSION D'UNE LIGNE DE COMMANDE FOURNISSEUR ******************
+	
+	1 ) Ligne 1410 dans la fonction deleteline dans htdocs/custom/fourn/class/fournisseur.commande.php
+	
+			global $conf, $langs, $user;
+			// Appel des triggers
+			include_once DOL_DOCUMENT_ROOT . '/core/class/interfaces.class.php';
+			$interface=new Interfaces($this->db);
+			$result = $interface->run_triggers('LINEORDER_SUPPLIER_DELETE',$this,$user,$langs,$conf);
+			if ($result < 0) {
+				$error++; $this->errors=$interface->errors;
+			}
+			// Fin appel triggers
  
