@@ -10,37 +10,31 @@ class ActionsMultidevise
     
     function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
     {
+		
     	global $db, $user,$conf;
 		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
 		include_once(DOL_DOCUMENT_ROOT."/core/lib/functions.lib.php");
-		
+
 		if (in_array('thirdpartycard',explode(':',$parameters['context']))
 			|| in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
 			|| in_array('invoicecard',explode(':',$parameters['context']))
-			|| in_array('ordersuppliercard',explode(':',$parameters['context']))){
+			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
+			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
+
 			
-			if(in_array('thirdpartycard',explode(':',$parameters['context'])))
-				$table = "societe";
-			if(in_array('propalcard',explode(':',$parameters['context'])))
-				$table = "propal";
-			if(in_array('ordercard',explode(':',$parameters['context'])))
-				$table = "commande";
-			if(in_array('invoicecard',explode(':',$parameters['context'])))
-				$table = "facture";
-			if(in_array('ordersuppliercard',explode(':',$parameters['context'])))
-				$table = "commande_fournisseur";
-			
-	    	//EDIT
+	    	/* ***********************
+			 * EDIT
+			 * ***********************/
 	    	if($action == "edit" || $action == "create"){
 	    		
 				$cur = $conf->currency;
 				$id = (!empty($_REQUEST['socid'])) ? $_REQUEST['socid'] : 0 ;
-				
+
 	    		$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$id;
-				
+
 	    		if($resql = $db->query($sql)){
 					$res = $db->fetch_object($resql);
 					if($res->fk_devise && !is_null($res->devise_code)){
@@ -52,33 +46,49 @@ class ActionsMultidevise
 				print '<tr><td>Devise</td><td colspan="3">';
 				print $form->select_currency($cur,"currency");
 				print '</td></tr>';
+
 	    	}
 			else{
+				
+				/* ***********************
+				 * VIEW
+				 * ***********************/
+				
 				$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ($table != "societe") ? ', devise_taux, devise_mt_total' : "";
-	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$object->id;
+	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id;
 				
 	    		$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
+				
 				if($res->fk_devise && !is_null($res->devise_code)){
+					
 					print '<tr><td>Devise</td><td colspan="3">';
 					print currency_name($res->devise_code,1);
 					print ' ('.$res->devise_code.')</td></tr>';
-					if($table != "societe"){
+
+					if($object->table_element != "societe"){
 						print '<tr><td>Taux Devise</td><td colspan="3">'.price($res->devise_taux,0,'',1,2,2).'</td><input type="hidden" id="taux_devise" value="'.price2num(price($res->devise_taux,0,'',1,2,2)).'"></tr>';
 						print '<tr><td>Montant Devise</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
 					}
+					
 				}
 				else{
+					
 					print '<tr><td>Devise</td><td colspan="3">';
 					print currency_name($conf->currency,1);
 					print ' ('.$conf->currency.')</td></tr>';
-					if($table != "societe"){
+
+					if($object->table_element != "societe"){
 						print '<tr><td>Taux Devise</td><td colspan="3"></td></tr>';
 						print '<tr><td>Montant Devise</td><td colspan="3"></td></tr>';
 					}
+					
 				}
-
+				
+				/* *********************************************************************************
+				 * Ajout d'attribut aux lignes et colonne pour accessibilité plus facile avec jquery
+				 * *********************************************************************************/
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
@@ -120,18 +130,17 @@ class ActionsMultidevise
 								}
 								
 						});
-
+						
+						// Ajout des libellé de colonne
 		         		$('#tablelines .liste_titre > td[numeroColonne=2b]').html('P.U. Devise');
-		         		//$('#tablelines .liste_titre > td[numeroColonne=2c]').html('P.U. Devise');
-		         		$('#tablelines .liste_titre > td[numeroColonne=5b]').each(function(){
-		         			if($(this).parent().attr('numeroligne') < <?php echo count($object->lines) + 2 ; ?>)
-		         				$(this).html('Total Devise');
-		         		});
+		         		$('#tablelines .liste_titre > td[numeroColonne=5b]').first().html('Total Devise');
 		         		
+		         		
+		         		// Ajout des prix devisé sur les lignes
 	         			<?php
 						foreach($object->lines as $line){
 							
-							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$table."det WHERE rowid = ".$line->id);
+							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
 							$res = $db->fetch_object($resql);
 							
 							if($line->product_type!=9) {
@@ -152,13 +161,14 @@ class ActionsMultidevise
 	}
 	
 	
-	/*
+	/* *********************************************************
 	 * Hook uniquement disponible pour les commandes fournisseur
-	 */
+	 * *********************************************************/
 	function formCreateProductOptions($parameters, &$object, &$action, $hookmanager){
 		
 		global $db,$user,$conf;
-		if (in_array('ordersuppliercard',explode(':',$parameters['context']))){
+		if (in_array('ordersuppliercard',explode(':',$parameters['context']))
+			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
 			if($action != "create"){
 				?>
@@ -213,7 +223,8 @@ class ActionsMultidevise
 		if (in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
 			|| in_array('invoicecard',explode(':',$parameters['context']))
-			|| in_array('ordersuppliercard',explode(':',$parameters['context']))){
+			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
+			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
 			if($action != "create"){
 				?>
@@ -293,35 +304,22 @@ class ActionsMultidevise
     	global $db, $user,$conf;
 		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
-		
+
 		if (in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
 			|| in_array('invoicecard',explode(':',$parameters['context']))
-			|| in_array('ordersuppliercard',explode(':',$parameters['context']))){
-			
-			if(in_array('propalcard',explode(':',$parameters['context']))){
-				$tabledet = "propaldet";
-			}
-			if(in_array('ordercard',explode(':',$parameters['context']))){
-				$tabledet = "commandedet";
-			}
-			if(in_array('invoicecard',explode(':',$parameters['context']))){
-				$tabledet = "facturedet";
-			}
-			if(in_array('ordersuppliercard',explode(':',$parameters['context']))){
-				$tabledet = "commande_fournisseurdet";
-			}
+			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
+			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
 			if($action == "editline"){
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
 	         			var taux = $('#taux_devise').val();
-	         			
+
 	         			$('input[name=price_ht]').keyup(function(){
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
 							$('input[name=dp_pu_devise]').val(mt);
-							//$('input[name=pu_devise_libre]').val(mt);
 						});
 						$('input[name=dp_pu_devise]').ready(function(){
 							$('input[name=dp_pu_devise]').keyup(function(){
@@ -332,24 +330,14 @@ class ActionsMultidevise
 	         			$('#price_ht').change(function(){
 	         				var pu_devise = parseFloat($('#price_ht').val().replace(",", ".")) * taux;
 	         				$('input[name=dp_pu_devise]').val(Math.round(pu_devise*100000)/100000);
-	         				//$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val());
 	         			});
-	         			
-	         			/*$('input[name=dp_pu_devise]').ready(function(){
-	         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
-	         				$('input[name=dp_pu_devise]').keyup(function(){
-	         					var pu_ht = parseFloat($('input[name=dp_pu_devise]').val().replace(",", ".")) / taux;
-		         				$('#price_ht').val(Math.round(pu_ht*100000)/100000);
-		         				$('input[name=pu_devise]').val($('input[name=dp_pu_devise]').val().replace(",","."));
-	         				});
-	         				$('#price_ht').val($(this).html() / taux);
-	         			});*/
+
 	         			$('input[name=action]').prev().prev().append('<input type="hidden" value="0" name="pu_devise" size="3">');
-						
+
 						<?php
 						foreach($object->lines as $k=>$line){
 							
-							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet." WHERE rowid = ".$line->id);
+							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
 							$res = $db->fetch_object($resql);
 							
 							if($line->product_type != 9 && $line->id == $_REQUEST['lineid']) {
@@ -375,11 +363,12 @@ class ActionsMultidevise
 
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
 		
-		global $db, 
-	         			$user, $conf;
+		global $db, $user, $conf;
+		
 		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
 				
 		if(in_array('paiementcard',explode(':',$parameters['context']))){
+			
 			$facture = new Facture($db);
 			$facture->fetch($object->facid);
 			
@@ -399,6 +388,7 @@ class ActionsMultidevise
 									   ORDER BY cr.dt_sync DESC LIMIT 1');
 			
 			$res = $db->fetch_object($resql);
+			
 			if($res->code){
 				
 				if($action == "add_paiement"){
@@ -483,9 +473,10 @@ class ActionsMultidevise
 				<?php
 			}
 		}
-		elseif(in_array('ordersuppliercard',explode(':',$parameters['context']))){
-				
-			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX."commandefournisseur_det WHERE rowid = ".$line->id);
+		elseif(in_array('ordersuppliercard',explode(':',$parameters['context']))
+				|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
+			
+			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element." WHERE rowid = ".$line->id);
 			$res = $db->fetch_object($resql);
 			
 			?>

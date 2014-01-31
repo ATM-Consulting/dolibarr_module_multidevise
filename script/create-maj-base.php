@@ -39,6 +39,12 @@
 	$o=new TMultideviseCommandeFournisseurdet;
 	$o->init_db_by_vars($ATMdb);
 	
+	$o=new TMultideviseFactureFournisseur;
+	$o->init_db_by_vars($ATMdb);
+	
+	$o=new TMultideviseFactureFournisseurdet;
+	$o->init_db_by_vars($ATMdb);
+	
 	$o=new TMultidevisePaiementFacture;
 	$o->init_db_by_vars($ATMdb);
 	

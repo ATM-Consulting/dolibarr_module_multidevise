@@ -131,23 +131,14 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * ASSOCIATION DEVISE, TAUX PAR COMMANDE, PROPAL OU FACTURE
 		 */
-		if($action == "ORDER_CREATE" || $action == "PROPAL_CREATE" || $action =="BILL_CREATE" || $action =="ORDER_SUPPLIER_CREATE"){
-			
-			if($action == "ORDER_CREATE")
-				$table = "commande";
-			elseif($action == "PROPAL_CREATE")
-				$table = "propal";
-			elseif($action =="BILL_CREATE")
-				$table = "facture";
-			elseif($action =="ORDER_SUPPLIER_CREATE")
-				$table = "commande_fournisseur";
+		if($action == "ORDER_CREATE" || $action == "PROPAL_CREATE" || $action =="BILL_CREATE" || $action =="ORDER_SUPPLIER_CREATE" || $action =="BILL_SUPPLIER_CREATE"){
 			
 			if(isset($_REQUEST['currency']) && !empty($_REQUEST['currency'])){
 				$resql = $db->query('SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
 									 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
 									 WHERE c.code = "'.$_REQUEST['currency'].'" AND cr.id_entity = '.$conf->entity.' ORDER BY cr.dt_sync DESC LIMIT 1');
 				if($res = $db->fetch_object($resql)){
-					$db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET fk_devise = '.$res->rowid.', devise_code = "'.$res->code.'", devise_taux = '.$res->rate.' WHERE rowid = '.$object->id);
+					$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$res->rowid.', devise_code = "'.$res->code.'", devise_taux = '.$res->rate.' WHERE rowid = '.$object->id);
 				}
 			}
 			
@@ -172,43 +163,31 @@ class InterfaceMultideviseWorkflow
 		}
 		
 		/*
-		 *CREATION P.U. DEVISE + TOTAL DEVISE PAR LIGNE DE COMMANDE, PROPAL OU FACTURE
+		 *  CREATION P.U. DEVISE + TOTAL DEVISE PAR LIGNE DE COMMANDE, PROPAL, FACTURE, COMMANDE FOURNISSEUR OU FACTURE FOURNISSEUR
 		 */
-		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT' || $action == 'LINEORDER_SUPPLIER_CREATE') {
+		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT' || $action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE') {
+			
+			
+			
+			if($action == 'LINEBILL_INSERT'){
+				$object->update($user,true);
+			}
+			elseif($action != 'LINEORDER_SUPPLIER_CREATE'){
+				$object->update(true);
+			}
+			else{
+				$db->commit();
+			}
 			
 			/*echo '<pre>';
 			print_r($object);
-			echo '</pre>';exit;*/
+			echo '</pre>'; exit;*/
 			
-			if($action == "LINEORDER_INSERT" || $action == 'LINEORDER_UPDATE'){
-				$table = "commande";
-				$tabledet = "commandedet";
-				$object->update(true);
-			}
-			elseif($action == 'LINEPROPAL_INSERT' || $action == 'LINEPROPAL_UPDATE'){
-				$table = "propal";
-				$tabledet = "propaldet";
-				$object->update(true);
-			}
-			elseif($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_UPDATE'){
-				$table = "facture";
-				$tabledet = "facturedet";
-				$object->update($user,true);
-			}
-			elseif($action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEORDER_SUPPLIER_CREATE'){
-				$table = "commande_fournisseur";
-				$tabledet = "commande_fournisseurdet";
-				//$object->update($user,true);
-			}
-			
-			//Création a partir d'un objet d'origine (propale ou commande)
+			//Création a partir d'un objet d'origine (propale,commande client ou commande fournisseur)
 			if((!empty($object->origin) && !empty($object->origin_id)) || (!empty($_POST['origin']) && !empty($_POST['originid']))){
 				
-				/*echo '<pre>';
-				print_r($object);
-				echo '</pre>';*/
-				
 				if($_POST['origin'] == "propal"){
+					
 					$table_origin = "propal";
 					$tabledet_origin = "propaldet";
 					$propal = new Propal($this->db);
@@ -218,14 +197,17 @@ class InterfaceMultideviseWorkflow
 						if($line->rang == $object->rang)
 							$originid = $line->rowid;
 					}
+					
 	        	}
 				elseif($object->origin == "commande"){
+					
 					$table_origin = "commande";
 					$tabledet_origin = "commandedet";
 					$originid = $object->origin_id;
+					
 				}
-				
-				if($object->origin == "shipping"){
+				elseif($object->origin == "shipping"){
+					
 					$this->db->commit();
 					$this->db->commit();
 					$this->db->commit();
@@ -237,120 +219,91 @@ class InterfaceMultideviseWorkflow
 					
 				}
 				else{
+					
 					$resql = $this->db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet_origin." WHERE rowid = ".$originid);
 					$res = $this->db->fetch_object($resql);
-					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' WHERE rowid = '.$object->rowid);
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element_line.' SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' WHERE rowid = '.$object->rowid);
+					
 				}
 	
 				
 				
 			}
-			else{//Création standard
+			else{
+				/* ***************************
+				 *	Création standard
+				 * ***************************/ 
 				 
 				$idProd = 0;
+				
 				if(!empty($_POST['id'])) $idProd = $_POST['id'];
 				if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
 				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
+				if(!empty($_POST['idprodfournprice'])) $idProd = $_POST['idprodfournprice'];
 				
-				/*echo '<pre>';
-				print_r($object);
-				echo '</pre>'; exit;*/
-				
+				//echo $idProd; exit;
 				//Ligne de produit/service existant
 				if(!empty($idProd) && $idProd != 0 && isset($_REQUEST['np_pu_devise']) && !empty($_REQUEST['np_pu_devise'])){
-
+				
+					//Si module tarif activé, on recalcule le prix devisé une fois que le tarif par conditionnement a été calculé
 					if($conf->tarif->enabled){
-						$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ".$object->{"fk_".$table};
+						$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$object->table_element." WHERE rowid = ".$object->{"fk_".$object->table_element};
 
 						$resql = $this->db->query($sql);
 						$res = $this->db->fetch_object($resql);
 						
 						$devise_pu = $object->subprice * $res->devise_taux;
 					}
-					else{
+					else{//Sinon on prends le prix devisé passé dans le formulaire
 						$devise_pu = $_REQUEST['np_pu_devise'];
 					}
 
 					$devise_mt_ligne = $devise_pu * $_REQUEST['qty'];
-					$sql = 'UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid;
+					$sql = 'UPDATE '.MAIN_DB_PREFIX.$object->table_element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid;
 					$this->db->query($sql);
-
-					/*$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ".$object->{"fk_".$table};
-
-					$resql = $this->db->query($sql);
-					$res = $this->db->fetch_object($resql);
-						
-					//$subprice_ttc = $devise_pu / $res->devise_taux;
-					//$subprice = $subprice_ttc / (1 + ($object->tva_tx / 100));
-					
-					
-					if($subprice != $object->subprice){
-						$class = ucfirst($table);
-						$parent_object = new $class($this->db);
-						$parent_object->fetch($object->{"fk_".$table}); 
-						switch($table){
-							case 'commande':
-								$parent_object->updateline($object->rowid, $object->desc, $subprice, $object->qty, $object->remise_percent, $object->tva_tx);
-								break;
-							case 'facture':
-								$parent_object->updateline($object->rowid, $object->desc, $subprice, $object->qty, $object->remise_percent, $object->date_start, $object->date_end, $object->tva_tx);
-								break;
-							case 'propal':
-								$parent_object->updateline($object->rowid, $subprice, $object->qty, $object->remise_percent, $object->tva_tx);
-								break;
-							case 'commande_fournisseur':
-								$parent_object->updateline($object->rowid, $object->desc, $subprice, $object->qty, $object->remise_percent, $object->tva_tx);
-								break;
-						}
-					}*/
 				}
 				//Ligne libre
 				elseif(isset($_REQUEST['dp_pu_devise']) && !empty($_REQUEST['dp_pu_devise'])){
 					
 					$devise_mt_ligne = $_REQUEST['dp_pu_devise'] * $_REQUEST['qty'];
+
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element_line.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 					
-					//echo 'UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid; exit;
-					
-					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 				}
 				
+				$sql = 'SELECT SUM(f.devise_mt_ligne) as total_devise 
+						FROM '.MAIN_DB_PREFIX.$object->table_element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$object->table_element.' as m ON (f.'.$object->fk_element.' = m.rowid)';
+						    
+				
 				//MAJ du total devise de la commande/facture/propale
-				$resql = $this->db->query('SELECT SUM(f.devise_mt_ligne) as total_devise 
-										   FROM '.MAIN_DB_PREFIX.$tabledet.' as f LEFT JOIN '.MAIN_DB_PREFIX.$table.' as m ON (f.fk_'.$table.' = m.rowid)
-										   WHERE m.rowid = '.$object->{'fk_'.$table});
+				if($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT'){
+					$sql .= 'WHERE m.rowid = '.$object->{'fk_'.$object->table_element};
+				}
+				else{
+					$sql .= 'WHERE m.rowid = '.$object->id;
+				}
+				
+				$resql = $this->db->query($sql);
 				$res = $this->db->fetch_object($resql);
-				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".$object->{'fk_'.$table});
+				
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".(($object->{'fk_'.$object->table_element})? $object->{'fk_'.$object->table_element} : $object->id) );
 			}
 		}
 	
 		/*
 		 * MODIFICATION LIGNE DE COMMANDE, PROPAL OU FACTURE = MAJ DU MONTANT TOTAL DEVISE
 		 */
-		if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE' || $action == 'LINEORDER_SUPPLIER_UPDATE'){
+		if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE' || $action == 'LINEORDER_SUPPLIER_UPDATE' || $action == 'LINEBILL_SUPPLIER_UPDATE'){
 			
 			/*echo '<pre>';
 			print_r($_REQUEST);
 			echo '</pre>';exit;*/
 		
-			if($action == "LINEORDER_INSERT" || $action == 'LINEORDER_UPDATE'){
-				$table = "commande";
-				$tabledet = "commandedet";
-				$object->update(true);
-			}
-			elseif($action == 'LINEPROPAL_INSERT' || $action == 'LINEPROPAL_UPDATE'){
-				$table = "propal";
-				$tabledet = "propaldet";
-				$object->update(true);
-			}
-			elseif($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_UPDATE'){
-				$table = "facture";
-				$tabledet = "facturedet";
+			if($action == 'LINEBILL_UPDATE'){
 				$object->update($user,true);
 			}
-			elseif($action == 'LINEORDER_SUPPLIER_UPDATE' || $action == 'LINEORDER_SUPPLIER_UPDATE'){
-				$table = "commande_fournisseur";
-				$tabledet = "commande_fournisseurdet";
-				$object->update($user,true);
+			elseif($action != 'LINEORDER_SUPPLIER_UPDATE'){
+				$object->update(true);
 			}
 			
 			if($object->origin == "shipping"){
@@ -367,51 +320,35 @@ class InterfaceMultideviseWorkflow
 			else{
 				
 				$devise_mt_ligne = $_REQUEST['dp_pu_devise'] * $_REQUEST['qty'];
-				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$tabledet.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element_line.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 				
 			}
 			
 			//MAJ du total devise de la commande/facture/propal
 			$resql = $this->db->query('SELECT SUM(f.devise_mt_ligne) as total_devise 
-									   FROM '.MAIN_DB_PREFIX.$tabledet.' as f LEFT JOIN '.MAIN_DB_PREFIX.$table.' as m ON (f.fk_'.$table.' = m.rowid)
+									   FROM '.MAIN_DB_PREFIX.$object->table_element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$object->table_element.' as m ON (f.fk_'.$object->table_element.' = m.rowid)
 									   WHERE m.rowid = '.$_REQUEST['id']);
 			
 			$res = $this->db->fetch_object($resql);
-			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".$_REQUEST['id']);
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".$_REQUEST['id']);
 		}
 	
 		/*
 		 * SUPPRESSION LIGNE DE COMMANDE, PROPAL OU FACTURE = MAJ DU MONTANT TOTAL DEVISE
 		 */
-		if ($action == 'LINEORDER_DELETE' || $action == 'LINEPROPAL_DELETE' || $action == 'LINEBILL_DELETE' || $action == 'LINEORDER_SUPPLIER_DELETE') {
+		if ($action == 'LINEORDER_DELETE' || $action == 'LINEPROPAL_DELETE' || $action == 'LINEBILL_DELETE' || $action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE') {
 			
-			/*echo '<pre>';
+			echo '<pre>';
 			print_r($object);
-			echo '</pre>';exit;*/
-			
-			if($action == "LINEORDER_DELETE"){
-				$table = "commande";
-				$tabledet = "commandedet";
-			}
-			elseif($action == 'LINEPROPAL_DELETE'){
-				$table = "propal";
-				$tabledet = "propaldet";
-			}
-			elseif($action == 'LINEBILL_DELETE'){
-				$table = "facture";
-				$tabledet = "facturedet";
-			}
-			elseif($action == 'LINEORDER_SUPPLIER_DELETE'){
-				$table = "commande_fournisseur";
-				$tabledet = "commande_fournisseur";
-			}
+			echo '</pre>';exit;
 			
 			$resql = $this->db->query('SELECT SUM(devise_mt_ligne) as total_ligne 
-									   FROM '.MAIN_DB_PREFIX.$tabledet.'
-									   WHERE fk_'.$table.' = '.$object->{"fk_".$table});
-									   
+									   FROM '.MAIN_DB_PREFIX.$object->table_element_line.'
+									   WHERE fk_'.$object->table_element.' = '.$object->{"fk_".$object->table_element});
+
 			$res = $this->db->fetch_object($resql);
-			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.$res->total_ligne." WHERE rowid = ".$object->{'fk_'.$table});
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->total_ligne." WHERE rowid = ".$object->{'fk_'.$object->table_element});
+			
 		}
 		
 		
@@ -420,9 +357,6 @@ class InterfaceMultideviseWorkflow
 		 */
 		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE "){
 			
-			/*pre($_REQUEST);
-			exit;*/
-			
 			$TDevise=array();
 			foreach($_REQUEST as $key=>$value) {
 				
@@ -430,8 +364,6 @@ class InterfaceMultideviseWorkflow
 				if(strpos($key, $mask)===0) {
 					
 					$id_facture = (int)substr($key, strlen($mask));
-					
-			
 					$TDevise[$id_facture] = $value; // On récupère la liste des factures et le montant du paiement
 					
 				}
@@ -456,9 +388,6 @@ class InterfaceMultideviseWorkflow
 					
 					$account = new Account($db);
 					$account->fetch($_REQUEST['accountid']);
-					
-					/*echo "\$account->currency_code : ".$account->currency_code."<br />";
-					echo "\$facture->devise_code : ".$res->devise_code;*/
 					
 					//Règlement total
 					if($res->devise_mt_total == $mt_devise){ // TODO pourquoi ne passer ce test que si le montant d'un paiement est égal au total de la facture ?

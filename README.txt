@@ -1,5 +1,9 @@
 TODO
 
+	******************************* AJOUTER UN CRON ********************************************************************************
+	
+	0	2	*	*	*	php /var/www/dolibarr/htdocs/custom/multidevise/cron/1day/sync.php
+
 	 ****************************** AJOUTER LES APPELS DE HOOK DANS LE FICHIER htdocs/compta/paiement.php **************************
 	
 
@@ -56,6 +60,20 @@ TODO
 	
 	
 	******************************** AJOUTER L'APPEL DE HOOK SUR LA FICHE COMMANDE FOURNISSEUR htdocs/fourn/commande/fiche.php
+	
+	1 ) Ligne 1586 environ => remplacer la ligne d'ouverture de tr par 
+		
+			print '<tr id="row-'.$line->id.'" '.$bc[$var].'>';
+		
+	2 ) Ligne 1652 environ => juste avant la fermeture de "</tr>" de la ligne de commande
+	
+			if (is_object($hookmanager))
+			{
+				$parameters=array('fk_parent_line'=>$line->fk_parent_line, 'line'=>$line,'var'=>$var,'num'=>$num,'i'=>$i);
+				$reshook=$hookmanager->executeHooks('printObjectLine',$parameters,$object,$action);
+			}
+			
+	******************************** AJOUTER L'APPEL DE HOOK SUR LA FICHE FACTURE FOURNISSEUR htdocs/fourn/facture/fiche.php
 	
 	1 ) Ligne 1586 environ => remplacer la ligne d'ouverture de tr par 
 		
