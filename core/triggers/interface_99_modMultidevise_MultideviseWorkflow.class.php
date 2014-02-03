@@ -155,10 +155,15 @@ class InterfaceMultideviseWorkflow
 					$tabledet_origin = "commandedet";
 					$originid = $object->origin_id;
 				}
+				elseif($object->origin == "order_supplier"){
+					$table_origin = "commande_fournisseur";
+					$tabledet_origin = "commande_fournisseurdet";
+					$originid = $object->origin_id;
+				}
 				
 				$resql = $this->db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
 				$res = $this->db->fetch_object($resql);
-				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$table.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
 			}
 		}
 		
@@ -210,7 +215,17 @@ class InterfaceMultideviseWorkflow
 			//Création a partir d'un objet d'origine (propale,commande client ou commande fournisseur)
 			if((!empty($object->origin) && !empty($object->origin_id)) || (!empty($_POST['origin']) && !empty($_POST['originid']))){
 				
-				if($_POST['origin'] == "propal"){
+				/*echo '<pre>';
+				print_r($object);
+				echo '</pre>';
+				
+				echo '<pre>';
+				print_r($_REQUEST);
+				echo '</pre>';
+				
+				exit;*/
+				
+				if($_REQUEST['origin'] == "propal"){
 					
 					$table_origin = "propal";
 					$tabledet_origin = "propaldet";
@@ -230,7 +245,8 @@ class InterfaceMultideviseWorkflow
 					$originid = $object->origin_id;
 					
 				}
-				elseif($object->origin == "shipping"){
+				
+				if($object->origin == "shipping"){
 					
 					$this->db->commit();
 					$this->db->commit();
@@ -246,11 +262,26 @@ class InterfaceMultideviseWorkflow
 					
 					$resql = $this->db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet_origin." WHERE rowid = ".$originid);
 					$res = $this->db->fetch_object($resql);
-					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element_line.' SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' WHERE rowid = '.$object->rowid);
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' WHERE rowid = '.$object->rowid);
 					
+					/*$this->db->commit();
+					$this->db->commit();
+					$this->db->commit();
+					
+					$devise_mt_ligne = $res->devise_mt_ligne;
+					
+					$sql = 'SELECT devise_mt_total 
+							FROM '.MAIN_DB_PREFIX.$element.'
+							WHERE rowid = '.$object->{"fk_".$element};
+					
+					$resql = $this->db->query($sql);
+					$res = $this->db->fetch_object($resql);
+					
+					//echo 'UPDATE '.MAIN_DB_PREFIX.$element.' SET devise_mt_total = '.($res->devise_mt_total + $devise_mt_ligne)." WHERE rowid = ".(($object->{'fk_'.$element})? $object->{'fk_'.$element} : $object->id) ; exit;
+					
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element.' SET devise_mt_total = '.($res->devise_mt_total + $devise_mt_ligne)." WHERE rowid = ".(($object->{'fk_'.$element})? $object->{'fk_'.$element} : $object->id) );*/
+
 				}
-	
-				
 				
 			}
 			else{
