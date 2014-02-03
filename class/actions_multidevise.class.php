@@ -56,7 +56,7 @@ class ActionsMultidevise
 				 * ***********************/
 				
 				$sql = 'SELECT fk_devise, devise_code';
-	    		$sql .= ($table != "societe") ? ', devise_taux, devise_mt_total' : "";
+	    		$sql .= ($object->table_element != "societe") ? ', devise_taux, devise_mt_total' : "";
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id;
 
 	    		$resql = $db->query($sql);
@@ -413,10 +413,13 @@ class ActionsMultidevise
 							
 							if($line->product_type != 9 && $line->id == (($_REQUEST['lineid']) ? $_REQUEST['lineid'] : $_REQUEST['rowid'])) {
 									
-								if(!in_array('invoicesuppliercard',explode(':',$parameters['context']))){
-									echo "$('#row-".$line->id."').find(' > td[numerocolonne=5]').attr('colspan','4'); ";
+								if(in_array('invoicesuppliercard',explode(':',$parameters['context'])) || in_array('ordersuppliercard',explode(':',$parameters['context']))){
+									echo "$('input[value=".$line->id."]').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
 								}
-		         				echo "$('#row-".$line->id."').find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
+								else{
+									echo "$('#line_".$line->id."').parent().parent().find(' > td[numerocolonne=5]').attr('colspan','4'); ";
+									echo "$('#line_".$line->id."').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
+								}
 
 							}
 							

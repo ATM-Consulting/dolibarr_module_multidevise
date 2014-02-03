@@ -64,10 +64,6 @@ TODO
 	1 ) Ligne 1586 environ => remplacer la ligne d'ouverture de tr par 
 		
 			print '<tr id="row-'.$line->id.'" '.$bc[$var].'>';
-			
-	1' ) Ligne 1660 environ => remplacer la ligne d'ouverture de tr par
-	 		
-			print '<tr id="row-'.$line->id.'" '.$bc[$var].'>';
 		
 	2 ) Ligne 1652 environ => juste avant la fermeture de "</tr>" de la ligne de commande
 	
@@ -79,11 +75,7 @@ TODO
 			
 	******************************** AJOUTER L'APPEL DE HOOK SUR LA FICHE FACTURE FOURNISSEUR htdocs/fourn/facture/fiche.php
 	
-	1 ) Ligne 1891 environ => remplacer la ligne d'ouverture de tr par 
-		
-			print '<tr id="row-'.$line->id.'" '.$bc[$var].'>';
-	
-	1' ) Ligne 1953 environ => remplacer la ligne d'ouverture de tr par 
+	1 ) Ligne 1953 environ => remplacer la ligne d'ouverture de tr par 
 		
 			print '<tr id="row-'.$object->lines[$i]->rowid.'" '.$bc[$var].'>';
 	
