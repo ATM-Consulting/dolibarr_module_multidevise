@@ -64,6 +64,10 @@ TODO
 	1 ) Ligne 1586 environ => remplacer la ligne d'ouverture de tr par 
 		
 			print '<tr id="row-'.$line->id.'" '.$bc[$var].'>';
+			
+	1' ) Ligne 1660 environ => remplacer la ligne d'ouverture de tr par
+	 		
+			print '<tr id="row-'.$line->id.'" '.$bc[$var].'>';
 		
 	2 ) Ligne 1652 environ => juste avant la fermeture de "</tr>" de la ligne de commande
 	
@@ -75,11 +79,16 @@ TODO
 			
 	******************************** AJOUTER L'APPEL DE HOOK SUR LA FICHE FACTURE FOURNISSEUR htdocs/fourn/facture/fiche.php
 	
-	1 ) Ligne 1586 environ => remplacer la ligne d'ouverture de tr par 
+	1 ) Ligne 1891 environ => remplacer la ligne d'ouverture de tr par 
 		
 			print '<tr id="row-'.$line->id.'" '.$bc[$var].'>';
+	
+	1' ) Ligne 1953 environ => remplacer la ligne d'ouverture de tr par 
 		
-	2 ) Ligne 1652 environ => juste avant la fermeture de "</tr>" de la ligne de commande
+			print '<tr id="row-'.$object->lines[$i]->rowid.'" '.$bc[$var].'>';
+	
+		
+	2 ) Ligne 1647 environ => juste avant la fermeture de "</tr>" de la ligne de commande
 	
 			if (is_object($hookmanager))
 			{
@@ -100,4 +109,20 @@ TODO
 				$error++; $this->errors=$interface->errors;
 			}
 			// Fin appel triggers
+			
+	***********************  DEPLACER L'APPEL DU TRIGGER DE SUPPRESSION DE LIGNE FACTURE FOUNISSEUR *************************
+	
+	1) Ligne 1262 à 1272 déplcer le code suivant juste après la requête de suppresion :
+	
+			if (! $error && ! $notrigger)
+	        {
+		    	// Appel des triggers
+		    	include_once(DOL_DOCUMENT_ROOT . "/core/class/interfaces.class.php");
+		    	$interface=new Interfaces($this->db);
+		    	$result=$interface->run_triggers('LINEBILL_SUPPLIER_DELETE',$this,$user,$langs,$conf);
+		    	if ($result < 0) {
+		    		$error++; $this->errors=$interface->errors;
+		    	}
+	        	// Fin appel triggers
+	        }
  

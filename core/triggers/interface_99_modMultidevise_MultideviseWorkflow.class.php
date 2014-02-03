@@ -326,7 +326,7 @@ class InterfaceMultideviseWorkflow
 			
 			//MAJ du total devise de la commande/facture/propal
 			$resql = $this->db->query('SELECT SUM(f.devise_mt_ligne) as total_devise 
-									   FROM '.MAIN_DB_PREFIX.$object->table_element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$object->table_element.' as m ON (f.fk_'.$object->table_element.' = m.rowid)
+									   FROM '.MAIN_DB_PREFIX.$object->table_element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$object->table_element.' as m ON (f.'.$object->fk_element.' = m.rowid)
 									   WHERE m.rowid = '.$_REQUEST['id']);
 			
 			$res = $this->db->fetch_object($resql);
@@ -336,26 +336,46 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * SUPPRESSION LIGNE DE COMMANDE, PROPAL OU FACTURE = MAJ DU MONTANT TOTAL DEVISE
 		 */
-		if ($action == 'LINEORDER_DELETE' || $action == 'LINEPROPAL_DELETE' || $action == 'LINEBILL_DELETE' || $action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE') {
+		if ($action == 'LINEORDER_DELETE' || $action == 'LINEPROPAL_DELETE' || $action == 'LINEBILL_DELETE') {
 			
-			/*echo '<pre>';
-			print_r($_REQUEST);
-			echo '</pre>';exit;*/
+			switch ($action) {
+				case 'LINEORDER_DELETE':
+					$parent_object = "commande";
+					break;
+					
+				case 'LINEPROPAL_DELETE':
+					$parent_object = "propal";
+					break;
+					
+				case 'LINEBILL_DELETE':
+					$parent_object = "facture";	
+					break;
+			}
+			
 			
 			$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne 
-				    FROM '.MAIN_DB_PREFIX.$object->table_element_line;
-				    
-			
-			if($action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE'){
-				$sql .= ' WHERE '.$object->fk_element.' = '.$_REQUEST['id'];
-			}
-			else {
-				$sql .=  ' WHERE fk_'.$object->table_element.' = '.$object->{"fk_".$object->table_element}; 
-			}
+				    FROM '.MAIN_DB_PREFIX.$object->table_element.' 
+				    WHERE fk_'.$parent_object.' = '.$object->{"fk_".$parent_object};
 			
 			$resql = $this->db->query($sql);
-
 			$res = $this->db->fetch_object($resql);
+			
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.' SET devise_mt_total = '.$res->total_ligne." WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $_REQUEST['id'] ));
+			
+		}
+		
+		/*
+		 * SUPPRESSION LIGNE DE COMMANDE OU FACTURE FOURNISSEUR = MAJ DU MONTANT TOTAL DEVISE
+		 */
+		if ($action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE') {
+			
+			$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne 
+				    FROM '.MAIN_DB_PREFIX.$object->table_element_line.' 
+				    WHERE '.$object->fk_element.' = '.$_REQUEST['id'];
+
+			$resql = $this->db->query($sql);
+			$res = $this->db->fetch_object($resql);
+
 			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->total_ligne." WHERE rowid = ".(($object->{'fk_'.$object->table_element}) ? $object->{'fk_'.$object->table_element} : $_REQUEST['id'] ));
 			
 		}

@@ -24,6 +24,7 @@ class ActionsMultidevise
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 
 			
+			
 	    	/* ***********************
 			 * EDIT
 			 * ***********************/
@@ -57,10 +58,10 @@ class ActionsMultidevise
 				$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ($table != "societe") ? ', devise_taux, devise_mt_total' : "";
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id;
-				
+
 	    		$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
-				
+
 				if($res->fk_devise && !is_null($res->devise_code)){
 					
 					print '<tr><td>Devise</td><td colspan="3">';
@@ -97,52 +98,60 @@ class ActionsMultidevise
 								if(!$(this).attr('numeroLigne')) {
 										$(this).attr('numeroLigne', iLigne);	
 								}
-								
+
 								var iColonne=0;
-								
+
 								$(this).find('>td').each(function() {
-									
+
 									if(!$(this).attr('numeroColonne')) {
 										$(this).attr('numeroColonne', iColonne);	
 									}
-									
+
 									if(!$(this).attr('colspan')) {
 										iColonne++;	
 									}
 									else {
 										iColonne+=parseInt($(this).attr('colspan'));
 									}
-									
+
 								});
-								
+
 								if($('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').length) {
 									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').after('<td align="right" numeroColonne="2b"></td>');	
 								}
 								else {
 									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=0]').after('<td align="right" numeroColonne="2c"></td>');
 								}
-								
+
 								if($('tr[numeroLigne='+iLigne+'] td[numeroColonne=5]').length) {
 									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=5]').after('<td align="right" numeroColonne="5b"></td>');	
 								}
 								else {
 									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=0]').after('<td align="right" numeroColonne="5c"></td>');
 								}
-								
+
 						});
-						
+
 						// Ajout des libellé de colonne
 		         		$('#tablelines .liste_titre > td[numeroColonne=2b]').html('P.U. Devise');
 		         		$('#tablelines .liste_titre > td[numeroColonne=5b]').first().html('Total Devise');
-		         		
-		         		
+
+
 		         		// Ajout des prix devisé sur les lignes
 	         			<?php
+	         			
+	         			/*echo '<pre>';
+						print_r($_REQUEST);
+						echo '</pre>';exit;*/
+	         			
 						foreach($object->lines as $line){
+							
+							if($line->rowid)
+								$line->id = $line->rowid;
 							
 							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
 							$res = $db->fetch_object($resql);
-							
+
 							if($line->product_type!=9) {
 		         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
 								echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
@@ -160,15 +169,73 @@ class ActionsMultidevise
 		return 0;
 	}
 	
+	/* *********************************************************
+	 * Hook uniquement disponible pour les FACTURES fournisseur
+	 * *********************************************************/ 
+	function formCreateProductSupplierOptions ($parameters, &$object, &$action, $hookmanager){
+		
+		global $db,$user,$conf;
+		if (in_array('invoicesuppliercard',explode(':',$parameters['context']))){
+			
+			/*echo '<pre>';
+			print_r($object);
+			echo '</pre>';exit;*/
+			
+			if($action != "create"){
+				?>
+				<script type="text/javascript">
+					$(document).ready(function(){
+						$('#np_desc').parent().parent().find(' > td[numeroColonne=0]').attr('colspan',$('#np_desc').parent().parent().find(' > td[numeroColonne=0]').attr('colspan')-1);
+						$('#np_desc').parent().parent().find(' > td[numeroColonne=2c]').after('<td></td>');
+		         		$('#np_desc').parent().parent().find(' > td[numeroColonne=2c]').html('<input type="text" value="" name="np_pu_devise" size="6">');
+						$('#dp_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="dp_pu_devise" size="6">');
+						
+						var taux = $('#taux_devise').val();
+						$('#idprodfournprice').change( function(){
+							$.ajax({
+								type: "POST"
+								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/interface.php"
+								,dataType: "json"
+								,data: {
+									fk_product: $('#idprodfournprice').val(),
+									get : "getproductfournprice",
+									json : 1
+								}
+								},"json").then(function(select){
+									if(select.price != ""){
+										$("input[name=np_pu_devise]").val(select.price * taux.replace(",","."));
+										$("input[name=np_pu_devise]").attr('value',select.price * taux.replace(",","."));
+									}
+								});
+						});
+						
+						$('input[name=amount]').keyup(function(){
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
+							$('input[name=dp_pu_devise]').val(mt);
+						});
+						
+						$('input[name=dp_pu_devise]').keyup(function(){
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
+							$('input[name=amount]').val(mt);
+						});
+			     	});
+			    </script>	
+		    	<?php
+	    	}
+	    }
+	}
 	
 	/* *********************************************************
-	 * Hook uniquement disponible pour les commandes fournisseur
+	 * Hook uniquement disponible pour les COMMANDES fournisseur
 	 * *********************************************************/
 	function formCreateProductOptions($parameters, &$object, &$action, $hookmanager){
 		
 		global $db,$user,$conf;
-		if (in_array('ordersuppliercard',explode(':',$parameters['context']))
-			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
+		if (in_array('ordersuppliercard',explode(':',$parameters['context']))){
+			
+			/*echo '<pre>';
+			print_r($object);
+			echo '</pre>';exit;*/
 			
 			if($action != "create"){
 				?>
@@ -321,14 +388,14 @@ class ActionsMultidevise
 					$(document).ready(function(){
 	         			var taux = $('#taux_devise').val();
 
-	         			$('input[name=price_ht]').keyup(function(){
+	         			$('input[name=price_ht], input[name=pu], input[name=puht]').keyup(function(){
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
 							$('input[name=dp_pu_devise]').val(mt);
 						});
 						$('input[name=dp_pu_devise]').ready(function(){
 							$('input[name=dp_pu_devise]').keyup(function(){
 								var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
-								$('input[name=price_ht]').val(mt);
+								$('input[name=price_ht], input[name=pu], input[name=puht]').val(mt);
 							});
 	         			});
 	         			$('#price_ht').change(function(){
@@ -344,19 +411,17 @@ class ActionsMultidevise
 							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
 							$res = $db->fetch_object($resql);
 							
-							echo "SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id;
-							
-							if($line->product_type != 9 && $line->id == ($_REQUEST['lineid']) ? $_REQUEST['lineid'] : $_REQUEST['rowid']) {
+							if($line->product_type != 9 && $line->id == (($_REQUEST['lineid']) ? $_REQUEST['lineid'] : $_REQUEST['rowid'])) {
+									
+								if(!in_array('invoicesuppliercard',explode(':',$parameters['context']))){
+									echo "$('#row-".$line->id."').find(' > td[numerocolonne=5]').attr('colspan','4'); ";
+								}
+		         				echo "$('#row-".$line->id."').find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
 
-								echo "$('#line_".$line->id."').parent().parent().find(' > td[numerocolonne=5]').attr('colspan','4'); ";
-		         				echo "$('#line_".$line->id."').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
-								
 							}
 							
 							if($line->error != '') echo "alert('".$line->error."');";
 	         			}
-						
-						exit;
 				        ?>
 				        
 					});
@@ -372,6 +437,10 @@ class ActionsMultidevise
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
 		
 		global $db, $user, $conf;
+		
+		echo '<pre>';
+		print_r($object);
+		echo '</pre>'; exit;
 		
 		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
 				
@@ -482,7 +551,7 @@ class ActionsMultidevise
 			}
 		}
 		elseif(in_array('ordersuppliercard',explode(':',$parameters['context']))
-				|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
+			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
 			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element." WHERE rowid = ".$line->id);
 			$res = $db->fetch_object($resql);
@@ -500,7 +569,7 @@ class ActionsMultidevise
 			</script>
 			<?php
 			if($line->error != '') echo "alert('".$line->error."');";
-			
+
 		}
 
 		return 0;
