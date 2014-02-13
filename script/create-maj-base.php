@@ -48,6 +48,9 @@
 	$o=new TMultidevisePaiementFacture;
 	$o->init_db_by_vars($ATMdb);
 	
+	$o=new TMultidevisePaiementFactureFournisseur;
+	$o->init_db_by_vars($ATMdb);
+	
 	$o=new TCurrency;
 	$o->init_db_by_vars($ATMdb);
 	

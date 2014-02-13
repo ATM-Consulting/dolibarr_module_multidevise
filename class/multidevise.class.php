@@ -163,3 +163,16 @@ class TMultidevisePaiementFacture extends TObjetStd {
 		parent::start();
 	}
 }
+
+class TMultidevisePaiementFactureFournisseur extends TObjetStd {
+	function __construct() { /* declaration */
+		global $langs;
+		
+		parent::set_table(MAIN_DB_PREFIX.'paiementfourn_facturefourn');
+		parent::add_champs('devise_taux,devise_mt_paiement,devise_mt_paiement','type=float;');
+		parent::add_champs('devise_code','type=chaine;');
+		
+		parent::_init_vars();
+		parent::start();
+	}
+}

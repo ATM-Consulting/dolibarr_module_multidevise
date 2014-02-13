@@ -220,9 +220,7 @@ class InterfaceMultideviseWorkflow
 			
 			//Création a partir d'un objet d'origine (propale,commande client ou commande fournisseur)
 			if((!empty($object->origin) && !empty($object->origin_id)) || (!empty($_POST['origin']) && !empty($_POST['originid']))){
-				
-				
-				
+
 				if($_REQUEST['origin'] == "propal"){
 					$table_origin = "propal";
 					$tabledet_origin = "propaldet";
@@ -275,16 +273,11 @@ class InterfaceMultideviseWorkflow
 						$originid = $commande_fourn_origine->lines[$last_key]->id;
 					}
 					
-					
-					//echo "SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet_origin." WHERE rowid = ".$originid.'<br>';
-					
 					$resql = $this->db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tabledet_origin." WHERE rowid = ".$originid);
 					$res = $this->db->fetch_object($resql);
-					
-					//echo 'UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' WHERE rowid = '.$object->rowid.'<br>';exit;
-					
+
 					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' WHERE rowid = '.$object->rowid);
-					
+
 				}
 				
 				
@@ -295,7 +288,7 @@ class InterfaceMultideviseWorkflow
 				 * ***************************/ 
 				 
 				$idProd = 0;
-				
+
 				if(!empty($_POST['id'])) $idProd = $_POST['id'];
 				if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
 				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
@@ -501,8 +494,6 @@ class InterfaceMultideviseWorkflow
 				if(strpos($key, $mask)===0) {
 					
 					$id_facture = (int)substr($key, strlen($mask));
-					
-			
 					$TDevise[$id_facture] = $value; // On récupère la liste des factures et le montant du paiement
 					
 				}
@@ -512,7 +503,7 @@ class InterfaceMultideviseWorkflow
 			if(!empty($TDevise)){
 				$this->db->commit();
 				$this->db->commit();
-				
+
 				$note = "";
 				$somme = 0.00;
 				foreach($TDevise  as $id_fac => $mt_devise){
@@ -520,11 +511,11 @@ class InterfaceMultideviseWorkflow
 					
 					$facture = new Facture($db);
 					$facture->fetch($id_fac);
-					
+
 					$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$facture->id;					
 					$resql = $db->query($sql);
 					$res = $db->fetch_object($resql);
-					
+
 					$account = new Account($db);
 					$account->fetch($_REQUEST['accountid']);
 					
@@ -534,7 +525,7 @@ class InterfaceMultideviseWorkflow
 					//Règlement total
 					if($res->devise_mt_total == $mt_devise){ // TODO pourquoi ne passer ce test que si le montant d'un paiement est égal au total de la facture ?
 						$facture->set_paid($user);
-						
+
 						if($account->currency_code == $res->devise_code) {
 							return null;
 						} else {

@@ -361,6 +361,34 @@ class ActionsMultidevise
 		    </script>
 	    	<?php
 		}
+
+		if(in_array('paymentsupplier',explode(':',$parameters['context']))){
+			?>
+			<script type="text/javascript">
+				$(document).ready(function(){
+					$('.liste_titre').children().eq(2).after('<td align="right" >Devise</td>');
+					$('.liste_titre').children().eq(3).after('<td align="right" >Taux Devise actuel</td>');
+					$('.liste_titre').children().eq(7).after('<td align="right" >Reçu devise</td>');
+					$('.liste_titre').children().eq(9).after('<td align="right" >Reste à encaisser devise</td>');
+					$('.liste_titre > td:last-child').after('<td align="right" >Montant règlement devise</td>');
+					
+					$('tr[class=impair], tr[class=pair]').each(function(){
+						$(this).children().eq(1).after('<td align="right" class="devise"></td>');
+						$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
+						$(this).children().eq(6).after('<td align="right" class="recu_devise"></td>');
+						$(this).children().eq(8).after('<td align="right" class="reste_devise"></td>');
+						$(this).children().eq(10).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(10).children().attr('name')+']" size="8"></td>');
+					});
+					
+					$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
+					$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
+					$('tr[class=liste_total]').children().eq(4).after('<td align="right" class="total_recu_devise"></td>');
+					$('tr[class=liste_total]').children().eq(6).after('<td align="right" class="total_reste_devise">0</td>');
+					$('tr[class=liste_total]').children().eq(8).after('<td align="right" class="total_montant_devise"></td>');
+				});
+		    </script>
+	    	<?php
+		}
 		
 		return 0;
 	}
@@ -441,35 +469,36 @@ class ActionsMultidevise
 		
 		global $db, $user, $conf;
 		
-		echo '<pre>';
+		/*echo '<pre>';
 		print_r($object);
-		echo '</pre>'; exit;
+		echo '</pre>'; exit;*/
 		
 		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
+		include_once(DOL_DOCUMENT_ROOT."/fourn/class/fournisseur.facture.class.php");
 				
-		if(in_array('paiementcard',explode(':',$parameters['context']))){
+		if(in_array('paiementcard',explode(':',$parameters['context'])) || in_array('paymentsupplier',explode(':',$parameters['context']))){
 			
-			$facture = new Facture($db);
-			$facture->fetch($object->facid);
+			if(in_array('paiementcard',explode(':',$parameters['context']))){
+				
+				$facture = new Facture($db);
+				$facture->fetch($object->facid);
 			
-			//Récupération des règlements déjà effectué
-			$resql = $db->query('SELECT SUM(pf.devise_mt_paiement) as total_paiement
-								 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
-								 WHERE pf.fk_facture = '.$facture->id);
-			$res = $db->fetch_object($resql);
-			$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0,00";
-			
-			$resql = $db->query('SELECT f.total as total, c.code as code, c.name as name, cr.rate as taux, f.devise_mt_total as total_devise
-									   FROM '.MAIN_DB_PREFIX.'facture as f
-									    LEFT JOIN '.MAIN_DB_PREFIX.'currency as c ON (c.rowid = f.fk_devise)
-									    LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate as cr ON (cr.id_currency = c.rowid)
-									   WHERE f.rowid = '.$facture->id.'
-									   AND cr.id_entity = '.$conf->entity.'
-									   ORDER BY cr.dt_sync DESC LIMIT 1');
-			
-			$res = $db->fetch_object($resql);
-			
-			if($res->code){
+				//Récupération des règlements déjà effectué
+				$resql = $db->query('SELECT SUM(pf.devise_mt_paiement) as total_paiement
+									 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
+									 WHERE pf.fk_facture = '.$facture->id);
+				$res = $db->fetch_object($resql);
+				$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0,00";
+				
+				$resql = $db->query('SELECT f.total as total, c.code as code, c.name as name, cr.rate as taux, f.devise_mt_total as total_devise
+										   FROM '.MAIN_DB_PREFIX.'facture as f
+										    LEFT JOIN '.MAIN_DB_PREFIX.'currency as c ON (c.rowid = f.fk_devise)
+										    LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate as cr ON (cr.id_currency = c.rowid)
+										   WHERE f.rowid = '.$facture->id.'
+										   AND cr.id_entity = '.$conf->entity.'
+										   ORDER BY cr.dt_sync DESC LIMIT 1');
+				
+				$res = $db->fetch_object($resql);
 				
 				if($action == "add_paiement"){
 					$champ = "amount";
@@ -479,6 +508,34 @@ class ActionsMultidevise
 					$champ = "remain";
 					$champ2 = "amount";
 				}
+			}
+			else{
+				
+				$facture = new FactureFournisseur($db);
+				$facture->fetch($object->facid);
+				
+				//Récupération des règlements déjà effectué
+				$resql = $db->query('SELECT SUM(pf.devise_mt_paiement) as total_paiement
+									 FROM '.MAIN_DB_PREFIX.'paiementfourn_facturefourn as pf
+									 WHERE pf.fk_facturefourn = '.$facture->id);
+				$res = $db->fetch_object($resql);
+				$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0,00";
+				
+				$resql = $db->query('SELECT f.total_ttc as total, c.code as code, c.name as name, cr.rate as taux, f.devise_mt_total as total_devise
+										   FROM '.MAIN_DB_PREFIX.'facture_fourn as f
+										    LEFT JOIN '.MAIN_DB_PREFIX.'currency as c ON (c.rowid = f.fk_devise)
+										    LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate as cr ON (cr.id_currency = c.rowid)
+										   WHERE f.rowid = '.$facture->id.'
+										   AND cr.id_entity = '.$conf->entity.'
+										   ORDER BY cr.dt_sync DESC LIMIT 1');
+				
+				$res = $db->fetch_object($resql);
+				
+				$champ = "amount";
+				$champ2 = "remain";
+			}
+			
+			if($res->code){
 				
 				?>
 				<script type="text/javascript">
@@ -527,7 +584,7 @@ class ActionsMultidevise
 						if($('td[class=total_reste_devise]').length > 0){
 							$('td[class=total_recu_devise]').html($('td[class=total_recu_devise]').val() + <?php echo $total_recu_devise; ?>);
 							total_reste_devise = $('td[class=total_reste_devise]').html();
-							$('td[class=total_reste_devise]').html(parseFloat(total_reste_devise.replace(',','.')) + <?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>);
+							$('td[class=total_reste_devise]').html(number_format(parseFloat(total_reste_devise.replace(',','.')) + <?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>,2,',',''));
 						}
 						
 						$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").keyup(function() {

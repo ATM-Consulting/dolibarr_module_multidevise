@@ -44,6 +44,28 @@ TODO
 		$reshook=$hookmanager->executeHooks('printObjectLine',$parameters,$objp,$action); // Note that $action and $object may have been modified by hook
 	
 	
+	****************************** AJOUTER LES APPELS DE HOOK DANS LE FICHIER htdocs/fourn/facture/paiement.php **************************
+	
+	
+	2 ) ligne 280 environ => avant la création de l'en-tête du tableau listant les facture en attente de paiement
+	
+		$parameters=array();
+		$reshook=$hookmanager->executeHooks('formAddObjectLine',$parameters,$facture,$action);    // Note that $action and $object may have been modified by hook
+		
+
+	3 ) ligne 323 environ => entre les fermetures de </td></tr> dans la boucle affichant les lignes de facture en attente de paiement 
+	
+		$parameters=array();
+		$reshook=$hookmanager->executeHooks('printObjectLine',$parameters,$objp,$action); // Note that $action and $object may have been modified by hook
+		
+
+	4 ) ligne 511 environ => juste avant la fermeture de </tr> dans la boucle affichant les lignes de paiement déjà effectué
+	
+		$parameters=array();
+		$reshook=$hookmanager->executeHooks('printObjectLine',$parameters,$objp,$action); // Note that $action and $object may have been modified by hook
+
+	
+	
 	
 	******************************** AJOUTER L'APPEL DE DU DOACTION POUR LE HOOK EXPEDITION htdocs/expedition/fiche.php ******************************
 	
