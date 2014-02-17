@@ -14,6 +14,10 @@
 
 	$o=new TMultideviseClient;
 	$o->init_db_by_vars($ATMdb);
+
+	$o=new TMultideviseProductPrice;
+	$o->init_db_by_vars($ATMdb);
+
 	
 	$o=new TMultidevisePropal;
 	$o->init_db_by_vars($ATMdb);

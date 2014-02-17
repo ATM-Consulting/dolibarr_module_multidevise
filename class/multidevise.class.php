@@ -12,6 +12,21 @@ class TMultideviseClient extends TObjetStd {
 	}
 }
 
+class TMultideviseProductPrice extends TObjetStd {
+	function __construct() { /* declaration */
+		global $langs;
+		
+		parent::set_table(MAIN_DB_PREFIX.'product_price');
+		parent::add_champs('fk_devise','type=entier;');
+		parent::add_champs('devise_code','type=chaine;');
+		parent::add_champs('devise_price','type=float;');
+		
+		parent::_init_vars();
+		parent::start();
+	}
+}
+
+
 class TMultidevisePropal extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;

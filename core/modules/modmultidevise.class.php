@@ -99,7 +99,8 @@ class modmultidevise extends DolibarrModules
 				'invoicesuppliercard',
 				'paymentsupplier'
 			)
-			,'triggers'=>1);
+			,'triggers'=>1
+			,'js'=>'/multidevise/js/hook.js.php');
 
 		// Data directories to create when module is enabled.
 		// Example: this->dirs = array("/mymodule/temp");
