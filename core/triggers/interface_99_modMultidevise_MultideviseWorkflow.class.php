@@ -406,8 +406,13 @@ class InterfaceMultideviseWorkflow
 			}
 			elseif($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'){
 				$pu_devise = $object->subprice * $devise_taux;
+			    $pu_devise = !empty($object->device_pu) ? $object->device_pu : $object->subprice * $devise_taux;
+ 
 				$devise_mt_ligne = $pu_devise * $object->qty;
-				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' 
+				SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' 
+				 ,total_ht = subprice*qty*(1 - remise_percent/100) 
+				WHERE rowid = '.$object->rowid);
 			}
 			else{
 				if($action == 'LINEORDER_SUPPLIER_UPDATE')

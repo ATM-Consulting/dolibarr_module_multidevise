@@ -428,7 +428,7 @@ class ActionsMultidevise
 	         			});
 	         			$('#price_ht').change(function(){
 	         				var pu_devise = parseFloat($('#price_ht').val().replace(",", ".")) * taux;
-	         				$('input[name=dp_pu_devise]').val(Math.round(pu_devise*100000)/100000);
+	         				$('input[name=dp_pu_devise]').val(pu_devise);
 	         			});
 
 	         			$('input[name=action]').prev().prev().append('<input type="hidden" value="0" name="pu_devise" size="3">');

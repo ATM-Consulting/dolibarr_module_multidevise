@@ -34,7 +34,7 @@
  *  Class of triggers for Mantis module
  */
  
-class InterfaceMultideviseWorkflow
+class InterfaceMultideviseWorkflow2
 {
     var $db;
     
@@ -104,9 +104,9 @@ class InterfaceMultideviseWorkflow
      *      @param  conf		$conf       Object conf
      *      @return int         			<0 if KO, 0 if no triggered ran, >0 if OK
      */
-	function run_trigger($action,$object,$user,$langs,$conf)
+	function run_trigger($action,&$object,$user,$langs,$conf)
 	{
-		global $db, $user, $conf;
+		
 		if(!defined('INC_FROM_DOLIBARR'))define('INC_FROM_DOLIBARR',true);
 		dol_include_once('/tarif/config.php');
 		dol_include_once('/commande/class/commande.class.php');
@@ -114,6 +114,8 @@ class InterfaceMultideviseWorkflow
 		dol_include_once('/comm/propal/class/propal.class.php');
 		dol_include_once("/societe/class/societe.class.php");
 		dol_include_once("/core/lib/functions.lib.class.php");
+		
+		$db = &$this->db;
 		
 		/*
 		 * Enregistrement sur PRODUCT_PRICE_MODIFY
@@ -132,6 +134,62 @@ class InterfaceMultideviseWorkflow
 				}
 			}
 				
+		}
+		
+ 		/*
+		 *CREATION P.U. DEVISE + TOTAL DEVISE PAR LIGNE DE COMMANDE, PROPAL OU FACTURE
+		 */
+		else if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT') {
+			
+			/*echo '<pre>';
+			print_r($object);
+			echo '</pre>';exit;*/
+			
+			if($action == "LINEORDER_INSERT" || $action == 'LINEORDER_UPDATE'){
+				$table = "commande";
+				$tabledet = "commandedet";
+			}
+			elseif($action == 'LINEPROPAL_INSERT' || $action == 'LINEPROPAL_UPDATE'){
+				$table = "propal";
+				$tabledet = "propaldet";
+			}
+			elseif($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_UPDATE'){
+				$table = "facture";
+				$tabledet = "facturedet";
+			}
+			
+			$idligne = $object->rowid;
+			$fk_product = $object->fk_product;
+		
+			$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid=".$object->{'fk_'.$table};
+			$res=$db->query($sql);
+			
+			if(!empty($res) && $fk_product>0) {
+				$obj = $db->fetch_object($res);
+			
+				$devise_code = $obj->devise_code;
+				$devise_taux = $obj->devise_taux;
+				
+				$sql = "SELECT devise_price FROM ".MAIN_DB_PREFIX."product_price WHERE fk_product=".$fk_product." AND devise_code='".$devise_code."' ORDER BY rowid DESC LIMIT 1";
+				$res = $db->query($sql);
+				if(!empty($res) && $devise_taux>0) {
+						$obj = $db->fetch_object($res);
+							
+						$device_price = $obj->devise_price;
+						$price = $device_price / $devise_taux;
+						
+						$object->subprice = $price;
+						$object->device_pu = $device_price;
+						
+						$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$device_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
+						$db->query($sql);
+				}
+				
+			}
+				
+		/*	var_dump($object);
+			exit;
+			*/
 		}
 		
 		return 1;
