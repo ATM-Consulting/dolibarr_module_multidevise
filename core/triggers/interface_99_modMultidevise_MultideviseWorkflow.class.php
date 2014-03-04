@@ -307,10 +307,24 @@ class InterfaceMultideviseWorkflow
                     $res = $this->db->fetch_object($resql);
 					$devise_taux = __val($res->devise_taux,1);
 					
+					$pu_devise_product = __get('np_pu_devise', 0);
+					if($pu_devise_product) {
+						$devise_pu = $pu_devise_product;
+						$object->subprice = $pu_devise_product / $devise_taux;
+					}
+					else {
+						$devise_pu = !empty($object->devise_pu) ? $object->devise_pu : $object->subprice * $devise_taux;	
+					}
+					
 					$devise_pu = ($object->subprice) ? $object->subprice * $devise_taux : $_REQUEST['np_pu_devise'];
 					
 					$devise_mt_ligne = $devise_pu * (($object->qty) ? $object->qty : $_REQUEST['qty']);
-					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' WHERE rowid = '.$object->rowid;
+					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
+					SET devise_pu = '.$devise_pu.'
+					, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
+					,subprice='.$object->subprice.'
+					,total_ht = subprice*qty*(1 - remise_percent/100) 
+					WHERE rowid = '.$object->rowid;
 
 					$this->db->query($sql);
 					
