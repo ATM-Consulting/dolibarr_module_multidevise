@@ -172,10 +172,10 @@ class InterfaceMultideviseWorkflow2
 				
 				$sql = "SELECT devise_price FROM ".MAIN_DB_PREFIX."product_price WHERE fk_product=".$fk_product." AND devise_code='".$devise_code."' ORDER BY rowid DESC LIMIT 1";
 				$res = $db->query($sql);
-				if(!empty($res) && $devise_taux>0) {
-						$obj = $db->fetch_object($res);
+				if(!empty($res) && $devise_taux>0 && $obj=$db->fetch_object($res)) {
+						
 							
-						$device_price = $obj->devise_price;
+						$device_price = (float)$obj->devise_price;
 						$price = $device_price / $devise_taux;
 						
 						$object->subprice = $price;
@@ -186,6 +186,7 @@ class InterfaceMultideviseWorkflow2
 				}
 				
 			}
+			
 				
 		/*	var_dump($object);
 			exit;

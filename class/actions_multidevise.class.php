@@ -12,9 +12,11 @@ class ActionsMultidevise
     {
 		
     	global $db, $user,$conf;
-		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
-		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
-		include_once(DOL_DOCUMENT_ROOT."/core/lib/functions.lib.php");
+		dol_include_once("/societe/class/societe.class.php");
+		dol_include_once("/core/lib/company.lib.php");
+		dol_include_once("/core/lib/functions.lib.php");
+		define('INC_FROM_DOLIBARR',true);
+		dol_include_once("/multidevise/config.php");		
 
 		if (in_array('thirdpartycard',explode(':',$parameters['context']))
 			|| in_array('propalcard',explode(':',$parameters['context']))
@@ -69,7 +71,7 @@ class ActionsMultidevise
 					print ' ('.$res->devise_code.')</td></tr>';
 
 					if($object->table_element != "societe"){
-						print '<tr><td>Taux Devise</td><td colspan="3">'.price($res->devise_taux,0,'',1,2,2).'</td><input type="hidden" id="taux_devise" value="'.price2num(price($res->devise_taux,0,'',1,2,2)).'"></tr>';
+						print '<tr><td>Taux Devise</td><td colspan="3">'.price(__val($res->devise_taux,1),0,'',1,2,2).'</td><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></tr>';
 						print '<tr><td>Montant Devise</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
 					}
 					
@@ -81,7 +83,7 @@ class ActionsMultidevise
 					print ' ('.$conf->currency.')</td></tr>';
 
 					if($object->table_element != "societe"){
-						print '<tr><td>Taux Devise</td><td colspan="3"></td></tr>';
+						print '<tr><td>Taux Devise</td><td colspan="3">1,0<input type="hidden" id="taux_devise" value="1" /></td></tr>';
 						print '<tr><td>Montant Devise</td><td colspan="3"></td></tr>';
 					}
 					
@@ -194,7 +196,7 @@ class ActionsMultidevise
 						$('#idprodfournprice').change( function(){
 							$.ajax({
 								type: "POST"
-								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/interface.php"
+								,url: "<?=dol_buildpath('/multidevise/script/interface.php',1); ?>"
 								,dataType: "json"
 								,data: {
 									fk_product: $('#idprodfournprice').val(),

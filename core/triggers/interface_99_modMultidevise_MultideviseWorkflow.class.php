@@ -249,8 +249,9 @@ class InterfaceMultideviseWorkflow
 
 					$resql = $this->db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."facture WHERE rowid = ".$object->fk_facture);
 					$res = $this->db->fetch_object($resql);
+					$devise_taux = __val($res->devise_taux,1);
 
-					$this->db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $res->devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $res->devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
 					
 				}
 				else{
@@ -288,7 +289,6 @@ class InterfaceMultideviseWorkflow
 				 * ***************************/ 
 				 
 				$idProd = 0;
-
 				if(!empty($_POST['id'])) $idProd = $_POST['id'];
 				if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
 				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
@@ -299,13 +299,13 @@ class InterfaceMultideviseWorkflow
 				echo '</pre>';*/
 				
 				//Ligne de produit/service existant
-				if(!empty($idProd) && $idProd != 0 && isset($_REQUEST['np_pu_devise']) && !empty($_REQUEST['np_pu_devise'])){
+				if($idProd>0 && isset($_REQUEST['np_pu_devise']) && !empty($_REQUEST['np_pu_devise'])){
 					
 					$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".(($object->{"fk_".$element})? $object->{"fk_".$element} : $object->id) ;
 
                     $resql = $this->db->query($sql);
                     $res = $this->db->fetch_object($resql);
-					$devise_taux = $res->devise_taux;
+					$devise_taux = __val($res->devise_taux,1);
 					
 					$devise_pu = ($object->subprice) ? $object->subprice * $devise_taux : $_REQUEST['np_pu_devise'];
 					
@@ -313,6 +313,9 @@ class InterfaceMultideviseWorkflow
 					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' WHERE rowid = '.$object->rowid;
 
 					$this->db->query($sql);
+					
+					
+					
 				}
 				//Ligne libre
 				elseif(isset($_REQUEST['dp_pu_devise']) && !empty($_REQUEST['dp_pu_devise'])){
@@ -394,7 +397,7 @@ class InterfaceMultideviseWorkflow
 
             $resql = $this->db->query($sql);
             $res = $this->db->fetch_object($resql);
-            $devise_taux = $res->devise_taux;
+            $devise_taux = __val($res->devise_taux,1);
 
 			if($object->origin == "shipping"){
 					$this->db->commit();
@@ -409,10 +412,12 @@ class InterfaceMultideviseWorkflow
 			    $pu_devise = !empty($object->device_pu) ? $object->device_pu : $object->subprice * $devise_taux;
  
 				$devise_mt_ligne = $pu_devise * $object->qty;
-				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' 
+				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 				SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' 
 				 ,total_ht = subprice*qty*(1 - remise_percent/100) 
-				WHERE rowid = '.$object->rowid);
+				WHERE rowid = '.$object->rowid;
+				
+				$this->db->query($sql);
 			}
 			else{
 				if($action == 'LINEORDER_SUPPLIER_UPDATE')
