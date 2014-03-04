@@ -175,13 +175,13 @@ class InterfaceMultideviseWorkflow2
 				if(!empty($res) && $devise_taux>0 && $obj=$db->fetch_object($res)) {
 						
 							
-						$device_price = (float)$obj->devise_price;
-						$price = $device_price / $devise_taux;
+						$devise_price = (float)$obj->devise_price;
+						$price = $devise_price / $devise_taux;
 						
 						$object->subprice = $price;
-						$object->device_pu = $device_price;
+						$object->devise_pu = $devise_price;
 						
-						$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$device_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
+						$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
 						$db->query($sql);
 				}
 				
