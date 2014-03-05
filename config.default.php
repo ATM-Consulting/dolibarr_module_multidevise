@@ -13,13 +13,14 @@
 	} else {
 		global $dolibarr_main_db_host, $dolibarr_main_db_name, $dolibarr_main_db_user, $dolibarr_main_db_pass;
 	}
-
-
-    define('DB_HOST',$dolibarr_main_db_host);
-    define('DB_NAME',$dolibarr_main_db_name);
-    define('DB_USER',$dolibarr_main_db_user);
-    define('DB_PASS',$dolibarr_main_db_pass);
-    define('DB_DRIVER','mysqli');
+	
+	if(!empty($dolibarr_main_db_host)) {
+		define('DB_HOST',$dolibarr_main_db_host);
+		define('DB_NAME',$dolibarr_main_db_name);
+		define('DB_USER',$dolibarr_main_db_user);
+		define('DB_PASS',$dolibarr_main_db_pass);
+		define('DB_DRIVER','mysqli');
+	}
 
 	define('DOL_PACKAGE', true);
 	define('USE_TBS', true);
