@@ -58,12 +58,18 @@ function _getproductfournprice(&$ATMdb,&$id) {
 	$sql = "SELECT price
 			FROM ".MAIN_DB_PREFIX."product_fournisseur_price
 			WHERE rowid = ".$id;
-	
+			
 	$ATMdb->Execute($sql);
+	$ATMdb->Get_line();
 	
-	while($ATMdb->Get_line()){
-		$Tres["price"] = $ATMdb->Get_field('price');
+	if(isset($_REQUEST['taux'])){
+		$price = $ATMdb->Get_field('price') / $_REQUEST['taux'];
 	}
+	else{
+		$price = $ATMdb->Get_field('price');
+	}
+	
+	$Tres["price"] = $price;
 	
 	return $Tres;
 }

@@ -246,6 +246,7 @@ class ActionsMultidevise
 						$('#dp_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="dp_pu_devise" size="6">');
 						
 						var taux = $('#taux_devise').val();
+						
 						$('#idprodfournprice').change( function(){
 							$.ajax({
 								type: "POST"
@@ -254,12 +255,19 @@ class ActionsMultidevise
 								,data: {
 									fk_product: $('#idprodfournprice').val(),
 									get : "getproductfournprice",
+									<?=(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? "taux : taux," : '' ;?>
 									json : 1
 								}
 								},"json").then(function(select){
 									if(select.price != ""){
-										$("input[name=np_pu_devise]").val(select.price * taux.replace(",","."));
-										$("input[name=np_pu_devise]").attr('value',select.price * taux.replace(",","."));
+										<?php
+										if(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY)
+											print 'price = Math.round((select.price * taux.replace(",",".") * 100) / 100);';
+										else
+											print 'price = select.price * taux.replace(",",".");';
+										?>
+										$("input[name=np_pu_devise]").val(price);
+										$("input[name=np_pu_devise]").attr('value',price);
 									}
 								});
 						});
