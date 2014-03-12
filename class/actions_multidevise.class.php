@@ -26,7 +26,6 @@ class ActionsMultidevise
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 
 			
-			
 	    	/* ***********************
 			 * EDIT
 			 * ***********************/
@@ -153,7 +152,6 @@ class ActionsMultidevise
 							
 							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
 							$res = $db->fetch_object($resql);
-
 							if($line->product_type!=9) {
 		         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
 								echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
@@ -225,6 +223,7 @@ class ActionsMultidevise
 		    	<?php
 	    	}
 	    }
+		return 0;
 	}
 	
 	/* *********************************************************
@@ -279,7 +278,7 @@ class ActionsMultidevise
 		    	<?php
 	    	}
 	    }
-		
+		return 0;
 	}
 
 	function formAddObjectLine($parameters, &$object, &$action, $hookmanager){
