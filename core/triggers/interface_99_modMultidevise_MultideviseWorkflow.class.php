@@ -320,15 +320,13 @@ class InterfaceMultideviseWorkflow
 					
 					$devise_mt_ligne = $devise_pu * (($object->qty) ? $object->qty : $_REQUEST['qty']);
 					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
-					SET devise_pu = '.$devise_pu.'
-					, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
-					,subprice='.$object->subprice.'
-					,total_ht = subprice*qty*(1 - remise_percent/100) 
-					WHERE rowid = '.$object->rowid;
-
+							SET devise_pu = '.$devise_pu.'
+							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
+							,'.( ($element_line == "facture_fourn_det") ? 'pu_ht='.$object->subprice : 'subprice='.$object->subprice ).'
+							,total_ht = '.( ($element_line == "facture_fourn_det") ? 'pu_ht' : 'subprice' ).'*qty*(1 - remise_percent/100) 
+							WHERE rowid = '.$object->rowid;
+					
 					$this->db->query($sql);
-					
-					
 					
 				}
 				//Ligne libre
@@ -485,7 +483,7 @@ class InterfaceMultideviseWorkflow
 			$resql = $this->db->query($sql);
 			$res = $this->db->fetch_object($resql);
 			
-			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.' SET devise_mt_total = '.$res->total_ligne." WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $_REQUEST['id'] ));
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.' SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")." WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $_REQUEST['id'] ));
 			
 		}
 		
@@ -494,14 +492,18 @@ class InterfaceMultideviseWorkflow
 		 */
 		if ($action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE') {
 			
+			//Obligé puisque dans le cas d'une suppresion le trigger est appelé avant et non après
+			$object->deleteline($_REQUEST['lineid'], TRUE);
+			$db->commit();
+			
 			$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne 
 				    FROM '.MAIN_DB_PREFIX.$object->table_element_line.' 
 				    WHERE '.$object->fk_element.' = '.$_REQUEST['id'];
 
 			$resql = $this->db->query($sql);
 			$res = $this->db->fetch_object($resql);
-
-			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->total_ligne." WHERE rowid = ".(($object->{'fk_'.$object->table_element}) ? $object->{'fk_'.$object->table_element} : $_REQUEST['id'] ));
+			
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")." WHERE rowid = ".(($object->{'fk_'.$object->table_element}) ? $object->{'fk_'.$object->table_element} : $_REQUEST['id'] ));
 			
 		}
 		
