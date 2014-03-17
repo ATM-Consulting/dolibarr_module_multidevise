@@ -5,10 +5,12 @@ class TMultidevise{
 		global $langs, $db, $conf, $user;
 		
 		if (in_array('ordercard',explode(':',$parameters['context'])) || in_array('propalcard',explode(':',$parameters['context']))
-			|| in_array('expeditioncard',explode(':',$parameters['context'])) || in_array('invoicecard',explode(':',$parameters['context']))){
-			
+			|| in_array('expeditioncard',explode(':',$parameters['context'])) || in_array('invoicecard',explode(':',$parameters['context']))
+			|| in_array('ordersuppliercard',explode(':',$parameters['context'])) || in_array('invoicesuppliercard',explode(':',$parameters['context']))){
+
         	if ($action == 'builddoc')
 			{
+				
 				// 1 - Dans le haut du document
 				 
 				//Modification des prix si la devise est différente
@@ -35,14 +37,14 @@ class TMultidevise{
 					//Modification des montant si la devise a changé
 					if($devise_change){
 						
-						$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.$line->rowid);
+						$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.(($line->rowid) ? $line->rowid : $line->id) );
 						$res = $db->fetch_object($resl);
 
 						if($res){
-							
 							$line->tva_tx = 0;
 							$line->subprice = round($res->devise_pu,2);
 							$line->price = round($res->devise_pu,2);
+							$line->pu_ht = round($res->devise_pu,2);
 							$line->total_ht = round($res->devise_mt_ligne,2);
 							$line->total_ttc = round($res->devise_mt_ligne,2);
 							$line->total_tva = 0;
@@ -65,10 +67,9 @@ class TMultidevise{
 					}
 				}
 				
-				
 				//Si le module est actif sans module spécifique client alors on reproduit la génération standard dolibarr sinon on retourne l'objet modifié
 				if(!$conf->global->USE_SPECIFIC_CLIENT){
-						
+					//exit($object->element);	
 					// ***********************************************
 					// On reproduis le traitement standard de dolibarr
 					// ***********************************************
@@ -101,7 +102,14 @@ class TMultidevise{
 							$result= expedition_pdf_create($db, $object, $object->modelpdf, $outputlangs);
 							break;
 						case 'delivery':
-							$result=delivery_order_pdf_create($db, $object, $object->modelpdf, $outputlangs);
+							$result= delivery_order_pdf_create($db, $object, $object->modelpdf, $outputlangs);
+							break;
+						case 'order_supplier':
+							$result= supplier_order_pdf_create($db, $object, $object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
+							break;
+						case 'invoice_supplier':
+							$result= supplier_invoice_pdf_create($db, $object, $object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
+							//echo $result; exit;
 							break;
 
 						default:
