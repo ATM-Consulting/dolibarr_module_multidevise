@@ -8,6 +8,21 @@ class ActionsMultidevise
       *  @return       void 
       */ 
     
+    function doActions($parameters, &$object, &$action, $hookmanager) 
+    {
+    	global $langs, $db, $conf, $user;
+		/*echo '<pre>';
+		print_r($object);
+		echo '</pre>';*/
+		define('INC_FROM_DOLIBARR',true);
+		dol_include_once('/multidevise/config.php');
+		dol_include_once('/multidevise/class/multidevise.class.php');
+
+		TMultidevise::doActionsMultidevise($parameters, $object, $action, $hookmanager);
+
+        return 0;
+    }
+    
     function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
     {
 		
