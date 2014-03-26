@@ -318,7 +318,9 @@ class InterfaceMultideviseWorkflow
 					
 					$devise_pu = ($object->subprice) ? $object->subprice * $devise_taux : $_REQUEST['np_pu_devise'];
 					
-					$devise_mt_ligne = $devise_pu * (($object->qty) ? $object->qty : $_REQUEST['qty']);
+					$devise_mt_ligne = $devise_pu * (($object->qty) ? $object->qty : $_REQUEST['qty_predef']);
+					
+					//echo $_REQUEST['qty_predef']; exit;
 					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 							SET devise_pu = '.$devise_pu.'
 							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
