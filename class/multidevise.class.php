@@ -12,13 +12,12 @@ class TMultidevise{
 			{
 				
 				// 1 - Dans le haut du document
-				 
+				$devise_change = false;
 				//Modification des prix si la devise est différente
 				if(!in_array('expeditioncard',explode(':',$parameters['context']))){
 					
 					$resl = $db->query('SELECT devise_code FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
 					$res = $db->fetch_object($resl);
-					$devise_change = false;
 					$last_devise = 0;
 					
 					if($res){

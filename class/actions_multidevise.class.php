@@ -10,6 +10,7 @@ class ActionsMultidevise
     
     function doActions($parameters, &$object, &$action, $hookmanager) 
     {
+    	//exit('1');
     	global $langs, $db, $conf, $user;
 		/*echo '<pre>';
 		print_r($object);
