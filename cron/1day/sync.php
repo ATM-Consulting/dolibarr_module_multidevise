@@ -1,10 +1,9 @@
-<?
+<?php
 	
 	//TODO récupérer les taux pour chaque entité en fonction de leur devise respective
 	//TODO récupérer les taux de conversion uniquement pour les devises sélectionné en conf
-	
 	require('../../config.php');
-	include(ROOT.'custom/multidevise/class/class.currency.php');
+	dol_include_once('/multidevise/class/class.currency.php');
 	
 	$url_list = TCurrenty_list_source;
 	$url_rate =  strtr(TCurrenty_rate_source,array('{app_id}'=>TCurrenty_app_id));
