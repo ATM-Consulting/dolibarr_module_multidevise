@@ -4,7 +4,7 @@ require(DOL_DOCUMENT_ROOT."/product/class/product.class.php");
 
 $id = $_POST['fk_product'];
 
-$ATMdb = new Tdb;
+$ATMdb = new TPDOdb;
 $Tres = array();
 
 $sql = "SELECT price

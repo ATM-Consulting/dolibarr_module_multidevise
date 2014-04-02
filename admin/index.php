@@ -13,7 +13,7 @@ if (! $user->admin) accessforbidden();
 
 $action=GETPOST('action');
 
-$ATMdb = new Tdb;
+$ATMdb = new TPDOdb;
 
 /*
  * Action
@@ -57,7 +57,7 @@ print '<br>';
 
 $form=new Form($db);
 $var=true;
-print '<form method="post" action="">';
+print '<form method="post" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="action" value="modtaux" />';
 print '<table class="noborder" width="100%">';
 print '<tr class="liste_titre">';
