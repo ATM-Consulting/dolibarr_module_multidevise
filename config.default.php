@@ -14,7 +14,7 @@
 	} else {
 		global $dolibarr_main_db_host, $dolibarr_main_db_name, $dolibarr_main_db_user, $dolibarr_main_db_pass;
 	}
-	if(!defined('DB_HOST')) {
+	if(!defined('DB_HOST') && !empty($dolibarr_main_db_host)) {
 		define('DB_HOST',$dolibarr_main_db_host);
 		define('DB_NAME',$dolibarr_main_db_name);
 		define('DB_USER',$dolibarr_main_db_user);
