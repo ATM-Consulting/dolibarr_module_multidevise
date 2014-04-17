@@ -217,6 +217,7 @@ class ActionsMultidevise
 								,data: {
 									fk_product: $('#idprodfournprice').val(),
 									get : "getproductfournprice",
+									<?php echo (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? "taux : taux," : '' ;?>
 									json : 1
 								}
 								},"json").then(function(select){
@@ -273,7 +274,7 @@ class ActionsMultidevise
 								,data: {
 									fk_product: $('#idprodfournprice').val(),
 									get : "getproductfournprice",
-									<?=(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? "taux : taux," : '' ;?>
+									<?php echo (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? "taux : taux," : '' ;?>
 									json : 1
 								}
 								},"json").then(function(select){
