@@ -353,7 +353,7 @@ class ActionsMultidevise
 						});
 						
 						$('input[name=dp_pu_devise]').keyup(function(){
-							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
+							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
 							$('input[name=price_ht]').val(mt);
 						});
 			     	});
