@@ -321,14 +321,25 @@ class InterfaceMultideviseWorkflow
 					$devise_mt_ligne = $devise_pu * (($object->qty) ? $object->qty : $_REQUEST['qty_predef']);
 					
 					//echo $_REQUEST['qty_predef']; exit;
-					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
+					/*$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 							SET devise_pu = '.$devise_pu.'
 							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
 							,'.( ($element_line == "facture_fourn_det") ? 'pu_ht='.$object->subprice : 'subprice='.$object->subprice ).'
 							,total_ht = '.( ($element_line == "facture_fourn_det") ? 'pu_ht' : 'subprice' ).'*qty*(1 - remise_percent/100) 
+							WHERE rowid = '.$object->rowid;*/
+					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
+							SET devise_pu = '.$devise_pu.'
+							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
 							WHERE rowid = '.$object->rowid;
 					
 					$this->db->query($sql);
+					
+					$tabprice=calcul_price_total($object->qty, $object->subprice, $object->remise_percent, $object->tva_tx, 0, 0, 0, 'HT', $object->info_bits, $object->fk_product_type);
+					$object->total_ht  = $tabprice[0];
+					$object->total_tva = $tabprice[1];
+					$object->total_ttc = $tabprice[2];
+					
+					$object->update(1);
 					
 				}
 				//Ligne libre
