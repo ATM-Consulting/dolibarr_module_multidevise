@@ -3,7 +3,10 @@ class TMultidevise{
 	
 	static function doActionsMultidevise(&$parameters, &$object, &$action, &$hookmanager) {
 		global $langs, $db, $conf, $user;
-		
+
+//ini_set('display_errors',1);
+//error_reporting(E_ALL);
+//print "la";		
 		if (in_array('ordercard',explode(':',$parameters['context'])) || in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('expeditioncard',explode(':',$parameters['context'])) || in_array('invoicecard',explode(':',$parameters['context']))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context'])) || in_array('invoicesuppliercard',explode(':',$parameters['context']))){
