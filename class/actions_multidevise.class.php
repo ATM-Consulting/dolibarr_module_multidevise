@@ -285,6 +285,9 @@ class ActionsMultidevise
 										else
 											print 'price = select.price * taux.replace(",",".");';
 										?>
+										
+										price = price / $('#qty_predef').val();
+										
 										$("input[name=np_pu_devise]").val(price);
 										$("input[name=np_pu_devise]").attr('value',price);
 									}
