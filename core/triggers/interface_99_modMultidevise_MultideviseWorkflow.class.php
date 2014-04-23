@@ -339,7 +339,12 @@ class InterfaceMultideviseWorkflow
 					$object->total_tva = $tabprice[1];
 					$object->total_ttc = $tabprice[2];
 					
-					$object->update(1);
+					if(get_class($object)=='CommandeFournisseur') {
+						$object->update_price();	
+					}
+					else {
+						$object->update(1);	
+					}
 					
 				}
 				//Ligne libre
