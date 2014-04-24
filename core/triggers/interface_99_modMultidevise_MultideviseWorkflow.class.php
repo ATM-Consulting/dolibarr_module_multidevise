@@ -108,7 +108,7 @@ class InterfaceMultideviseWorkflow
 	{
 		global  $user, $conf;
 		if(!defined('INC_FROM_DOLIBARR'))define('INC_FROM_DOLIBARR',true);
-		dol_include_once('/tarif/config.php');
+		dol_include_once('/multidevise/config.php');
 		dol_include_once('/commande/class/commande.class.php');
 		dol_include_once('/compta/facture/class/facture.class.php');
 		dol_include_once('/comm/propal/class/propal.class.php');
@@ -116,6 +116,7 @@ class InterfaceMultideviseWorkflow
 		dol_include_once("/core/lib/functions.lib.class.php");
 		dol_include_once('/fourn/class/fournisseur.facture.class.php');
 		dol_include_once('/fourn/class/fournisseur.commande.class.php');
+		dol_include_once('/fourn/class/fournisseur.product.class.php');
 
 		$db=&$this->db;
 
@@ -177,7 +178,7 @@ class InterfaceMultideviseWorkflow
 		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT' || $action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE') {
 			
 			/*echo '<pre>';
-			print_r($object);
+			print_r($_REQUEST);
 			echo '</pre>';exit;*/
 			
 			switch ($action) {
@@ -294,44 +295,47 @@ class InterfaceMultideviseWorkflow
 				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
 				if(!empty($_POST['idprodfournprice'])) $idProd = $_POST['idprodfournprice'];
 				
-				/*echo '<pre>';
-				print_r($_REQUEST);
-				echo '</pre>';*/
-				
 				//Ligne de produit/service existant
-				if($idProd>0 && isset($_REQUEST['np_pu_devise']) && !empty($_REQUEST['np_pu_devise'])){
+				if($idProd>0 && empty($_REQUEST['dp_pu_devise'])){
 					
 					$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".(($object->{"fk_".$element})? $object->{"fk_".$element} : $object->id) ;
-
+					
                     $resql = $this->db->query($sql);
                     $res = $this->db->fetch_object($resql);
 					$devise_taux = __val($res->devise_taux,1);
 					
-					$pu_devise_product = __get('np_pu_devise', 0);
-					if($pu_devise_product) {
-						$devise_pu = $pu_devise_product;
-						$object->subprice = $pu_devise_product / $devise_taux;
+					//obligatoire sur partie achat car c'est l'objet parent et non l'object ligne qui est transmis au trigger
+					if($action == 'LINEORDER_SUPPLIER_CREATE'){
+						$ligne = new CommandeFournisseurLigne($db);
+						$ligne->fetch($object->rowid);
+						$object_last = $object;
+						$object = $ligne;
 					}
-					else {
-						$devise_pu = !empty($object->devise_pu) ? $object->devise_pu : $object->subprice * $devise_taux;	
+					elseif($action == 'LINEBILL_SUPPLIER_CREATE'){
+						$ligne = new ProductFournisseur($db);
+						$ligne->fetch_product_fournisseur_price($_REQUEST['idprodfournprice']);
+						$object->subprice = $ligne->fourn_price;
+						//$object = $ligne;
 					}
 					
-					$devise_pu = ($object->subprice) ? $object->subprice * $devise_taux : $_REQUEST['np_pu_devise'];
-					
+					//Cas ou le prix de référence est dans la devise fournisseur et non dans la devise du dolibarr
+					if(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY && ($action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE')){
+						$devise_pu = $object->subprice;
+						$object->subprice = $devise_pu / $devise_taux;
+						$subprice = $object->subprice;
+					}
+					else{
+						$subprice = $object->subprice;
+						$devise_pu = !empty($object->devise_pu) ? $object->devise_pu : $object->subprice * $devise_taux;
+					}
+
 					$devise_mt_ligne = $devise_pu * (($object->qty) ? $object->qty : $_REQUEST['qty_predef']);
-					
-					//echo $_REQUEST['qty_predef']; exit;
-					/*$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
-							SET devise_pu = '.$devise_pu.'
-							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
-							,'.( ($element_line == "facture_fourn_det") ? 'pu_ht='.$object->subprice : 'subprice='.$object->subprice ).'
-							,total_ht = '.( ($element_line == "facture_fourn_det") ? 'pu_ht' : 'subprice' ).'*qty*(1 - remise_percent/100) 
-							WHERE rowid = '.$object->rowid;*/
+
 					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 							SET devise_pu = '.$devise_pu.'
 							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
 							WHERE rowid = '.$object->rowid;
-					
+
 					$this->db->query($sql);
 					
 					$tabprice=calcul_price_total($object->qty, $object->subprice, $object->remise_percent, $object->tva_tx, 0, 0, 0, 'HT', $object->info_bits, $object->fk_product_type);
@@ -339,11 +343,27 @@ class InterfaceMultideviseWorkflow
 					$object->total_tva = $tabprice[1];
 					$object->total_ttc = $tabprice[2];
 					
+					if($action == 'LINEORDER_SUPPLIER_CREATE'){
+						$ligne = new CommandeFournisseurLigne($db);
+						$ligne->fetch($object->rowid);
+						$object = $ligne;
+					}
+					
+					//obligatoire sur partie achat car c'est l'objet parent et non l'object ligne qui est transmis au trigger
+					//on reprends l'object parent car l'objet ligne ne possède pas de méthode update
+					if($action == 'LINEORDER_SUPPLIER_CREATE'){
+						$object = $object_last;
+					}
+					
+					/*echo '<pre>';
+					print_r($object);
+					echo '</pre>';exit;*/
+					
 					if(get_class($object)=='CommandeFournisseur') {
-						$object->update_price();	
+						$object->updateline($object->rowid, $ligne->desc, $subprice, $ligne->qty, $ligne->remise_percent, $ligne->tva_tx);
 					}
 					else {
-						$object->update(1);	
+						$object->update(1);
 					}
 					
 				}
@@ -351,7 +371,7 @@ class InterfaceMultideviseWorkflow
 				elseif(isset($_REQUEST['dp_pu_devise']) && !empty($_REQUEST['dp_pu_devise'])){
 					
 					$devise_mt_ligne = $_REQUEST['dp_pu_devise'] * $_REQUEST['qty'];
-
+					
 					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 					
 				}
