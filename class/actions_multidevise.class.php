@@ -281,7 +281,7 @@ class ActionsMultidevise
 									if(select.price != ""){
 										<?php
 										if(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY)
-											print 'price = Math.round((select.price * taux.replace(",",".") * 100) / 100);';
+											print 'price = Math.round((select.price * taux.replace(",",".") * 100)) / 100;';
 										else
 											print 'price = select.price * taux.replace(",",".");';
 										?>
