@@ -562,6 +562,8 @@ class InterfaceMultideviseWorkflow
 		 */
 		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE "){
 			
+			//pre($_REQUEST);
+			
 			$TDevise=array();
 			foreach($_REQUEST as $key=>$value) {
 				
@@ -569,11 +571,12 @@ class InterfaceMultideviseWorkflow
 				if(strpos($key, $mask)===0) {
 					
 					$id_facture = (int)substr($key, strlen($mask));
-					$TDevise[$id_facture] = $value; // On récupère la liste des factures et le montant du paiement
+					$TDevise[$id_facture] = $_REQUEST['devise'][$mask.$id_facture]; // On récupère la liste des factures et le montant du paiement
 					
 				}
-				
 			}
+			
+			//pre($TDevise); exit;
 			
 			if(!empty($TDevise)){
 				$this->db->commit();
@@ -581,8 +584,9 @@ class InterfaceMultideviseWorkflow
 
 				$note = "";
 				$somme = 0.00;
+
 				foreach($TDevise  as $id_fac => $mt_devise){
-					$somme += str_replace(',','.',$mt_devise); //TODO à quoi ça sert?
+					$somme += str_replace(',','.',$mt_devise);
 					
 					$facture = new Facture($db);
 					$facture->fetch($id_fac);
@@ -598,7 +602,7 @@ class InterfaceMultideviseWorkflow
 					echo "\$facture->devise_code : ".$res->devise_code;*/
 					
 					//Règlement total
-					if($res->devise_mt_total == $mt_devise){ // TODO pourquoi ne passer ce test que si le montant d'un paiement est égal au total de la facture ?
+					if(price($res->devise_mt_total,2,'',2,1,2) == $mt_devise){
 						$facture->set_paid($user);
 
 						if($account->currency_code == $res->devise_code) {
@@ -607,16 +611,20 @@ class InterfaceMultideviseWorkflow
 							// TODO Ecriture comptable à enregistrer dans un compte. En dessous la note n'a pas de sens : ($_REQUEST['amount_'.$facture->id] - $facture->total_ttc) ne correspond jamais à un gain ou à une perte suite à une conversion
 							
 							//Ajout de la note si des écarts sont lié aux conversions de devises
-							if($_REQUEST['amount_'.$facture->id] < $facture->total_ttc)
-								$note .= "facture : ".$facture->facnumber." => PERTE après conversion : ".($facture->total_ttc - $_REQUEST['amount_'.$facture->id]);
-							elseif($_REQUEST['amount_'.$facture->id] > $facture->total_ttc)
-								$note .= "facture : ".$facture->facnumber." => GAIN après conversion : ".($_REQUEST['amount_'.$facture->id] - $facture->total_ttc);
+							if($_REQUEST['amount_'.$facture->id] < $facture->total_ttc){
+								$note .= "facture : ".$facture->ref." => PERTE après conversion : ".($facture->total_ttc - $_REQUEST['amount_'.$facture->id])."\n";
+							}
+							elseif($_REQUEST['amount_'.$facture->id] > $facture->total_ttc){
+								$note .= "facture : ".$facture->ref." => GAIN après conversion : ".($_REQUEST['amount_'.$facture->id] - $facture->total_ttc)."\n";
+							}
 						}
 					}
 
 					//MAJ du montant paiement_facture
 					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$_REQUEST['taux_devise'].'", devise_code = "'.$res->devise_code.'"
 								WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
+
+					$db->query('UPDATE '.MAIN_DB_PREFIX."paiement SET note = '".$note."' WHERE rowid = ".$object->id);
 				}
 			}
 		}
