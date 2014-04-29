@@ -532,12 +532,10 @@ class ActionsMultidevise
 				$res = $db->fetch_object($resql);
 				
 				if($action == "add_paiement"){
-					$champ = "amount";
-					$champ2 = "remain";
+					$champ = "remain";
 				}
 				else{
-					$champ = "remain";
-					$champ2 = "amount";
+					$champ = "amount";
 				}
 			}
 			else{
@@ -628,13 +626,9 @@ class ActionsMultidevise
 							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise / <?php echo $res->taux; ?>,2,',',''));
 						});
 						
-						$("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").keyup(function() {
+						$("#payment_form").find("input[name*=\"<?php echo $champ; ?>_\"]").keyup(function() {
 							mt_rglt = parseFloat($(this).val().replace(',','.'));
 							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt * <?php echo $res->taux; ?>,2,',',''));
-						});
-						
-						$("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").parent().children().click(function(){
-							setTimeout(function() { $("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").keyup(); }, 1000);
 						});
 					});
 				</script>

@@ -113,17 +113,21 @@ TODO
 	************************** AJOUTER L'APPEL DU TRIGGER LORS DE LA SUPPRESSION D'UNE LIGNE DE COMMANDE FOURNISSEUR ******************
 	
 	1 ) Ligne 1410 dans la fonction deleteline dans htdocs/custom/fourn/class/fournisseur.commande.php
+			+ ajouter ,$notrigger= false) dans la déclarationd de la fonction
 	
 			global $conf, $langs, $user;
 			// Appel des triggers
-			include_once DOL_DOCUMENT_ROOT . '/core/class/interfaces.class.php';
-			$interface=new Interfaces($this->db);
-			$result = $interface->run_triggers('LINEORDER_SUPPLIER_DELETE',$this,$user,$langs,$conf);
-			if ($result < 0) {
-				$error++; $this->errors=$interface->errors;
-			}
-			// Fin appel triggers
 			
+			if(!$notrigger){
+				include_once DOL_DOCUMENT_ROOT . '/core/class/interfaces.class.php';
+				$interface=new Interfaces($this->db);
+				$result = $interface->run_triggers('LINEORDER_SUPPLIER_DELETE',$this,$user,$langs,$conf);
+				if ($result < 0) {
+					$error++; $this->errors=$interface->errors;
+				}
+				// Fin appel triggers
+			}
+						
 	***********************  DEPLACER L'APPEL DU TRIGGER DE SUPPRESSION DE LIGNE FACTURE FOUNISSEUR *************************
 	
 	1) Ligne 1262 à 1272 déplcer le code suivant juste après la requête de suppresion :
