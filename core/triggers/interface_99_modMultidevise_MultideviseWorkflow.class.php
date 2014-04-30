@@ -621,10 +621,10 @@ class InterfaceMultideviseWorkflow
 							// TODO Ecriture comptable à enregistrer dans un compte. En dessous la note n'a pas de sens : ($_REQUEST['amount_'.$facture->id] - $facture->total_ttc) ne correspond jamais à un gain ou à une perte suite à une conversion
 
 							//Ajout de la note si des écarts sont lié aux conversions de devises
-							if($_REQUEST['amount_'.$facture->id] < $facture->total_ttc){
+							if(round(strtr($_REQUEST['amount_'.$facture->id],array(','=>'.')),2) < strtr(round($facture->total_ttc,2),array(','=>'.'))){
 								$note .= "facture : ".$facture->ref." => PERTE après conversion : ".($facture->total_ttc - price2num($_REQUEST['amount_'.$facture->id]))." ".$conf->currency."\n";
 							}
-							elseif($_REQUEST['amount_'.$facture->id] > $facture->total_ttc){
+							elseif(round(strtr($_REQUEST['amount_'.$facture->id],array(','=>'.')),2) > strtr(round($facture->total_ttc,2),array(','=>'.'))){
 								$note .= "facture : ".$facture->ref." => GAIN après conversion : ".(price2num($_REQUEST['amount_'.$facture->id]) - $facture->total_ttc)." ".$conf->currency."\n";
 							}
 						}
