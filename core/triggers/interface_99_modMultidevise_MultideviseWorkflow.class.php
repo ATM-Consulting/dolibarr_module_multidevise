@@ -104,7 +104,7 @@ class InterfaceMultideviseWorkflow
      *      @param  conf		$conf       Object conf
      *      @return int         			<0 if KO, 0 if no triggered ran, >0 if OK
      */
-	function run_trigger($action,$object,$user,$langs,$conf)
+	function run_trigger($action,&$object,$user,$langs,$conf)
 	{
 		global  $user, $conf;
 		if(!defined('INC_FROM_DOLIBARR'))define('INC_FROM_DOLIBARR',true);
@@ -647,6 +647,60 @@ class InterfaceMultideviseWorkflow
 				}
 			}
 		}
+		
+		if($action == "BEFORE_PROPAL_BUILDDOC" || $action == "BEFORE_ORDER_BUILDDOC"  || $action == "BEFORE_BILL_BUILDDOC" || $action == "BEFORE_ORDER_SUPPLIER_BUILDDOC" || $action == "BEFORE_BILL_SUPPLIER_BUILDDOC"){
+				
+			
+			$devise_change = false;
+			//Modification des prix si la devise est différente
+				
+			$resl = $db->query('SELECT devise_code FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
+			$res = $db->fetch_object($resl);
+			$last_devise = 0;
+			
+			if($res){
+				
+				if($conf->currency != $res->devise_code){
+					$last_devise = $conf->currency;
+					$conf->currency  = $res->devise_code;
+					$devise_change = true;
+				}
+			}
+			
+			// 2 - Dans les lignes
+			foreach($object->lines as $line){
+				//Modification des montant si la devise a changé
+				if($devise_change){
+					
+					$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.(($line->rowid) ? $line->rowid : $line->id) );
+					$res = $db->fetch_object($resl);
+
+					if($res){
+						$line->tva_tx = 0;
+						$line->subprice = round($res->devise_pu,2);
+						$line->price = round($res->devise_pu,2);
+						$line->pu_ht = round($res->devise_pu,2);
+						$line->total_ht = round($res->devise_mt_ligne,2);
+						$line->total_ttc = round($res->devise_mt_ligne,2);
+						$line->total_tva = 0;
+					}
+				}
+			}
+			
+			// 3 - Dans le bas du document
+			//Modification des TOTAUX si la devise a changé
+			if($devise_change){
+				
+				$resl = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
+				$res = $db->fetch_object($resl);
+
+				if($res){
+					$object->total_ht = round($res->devise_mt_total,2);
+					$object->total_ttc = round($res->devise_mt_total,2);
+					$object->total_tva = 0;
+				}
+			}
+		}	
 		
 		return 1;
 	}
