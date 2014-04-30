@@ -673,11 +673,20 @@ class ActionsMultidevise
 		 * 
 		 */	
 		elseif(in_array('viewpaiementcard',explode(':',$parameters['context']))){
-
-			$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total
+			
+			//Cas facture fournisseur
+			if($object->ref_supplier){
+				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total
+								 FROM '.MAIN_DB_PREFIX.'paiementfourn_facturefourn as pf
+								 	LEFT JOIN '.MAIN_DB_PREFIX.'facture_fourn as f On (f.rowid = pf.fk_facturefourn)
+								 WHERE pf.rowid = '.$_REQUEST['id']);
+			}
+			else{ //cas facture client
+				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total
 								 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
 								 	LEFT JOIN '.MAIN_DB_PREFIX.'facture as f On (f.rowid = pf.fk_facture)
 								 WHERE pf.rowid = '.$_REQUEST['id']);
+			}
 			$res = $db->fetch_object($resql);
 			?>
 			<script type="text/javascript">

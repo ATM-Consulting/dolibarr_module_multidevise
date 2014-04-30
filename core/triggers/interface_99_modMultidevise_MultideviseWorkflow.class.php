@@ -560,7 +560,7 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * AJOUT D'UN PAIEMENT 
 		 */
-		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE "){
+		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE"){
 			
 			//pre($_REQUEST);
 			
@@ -584,14 +584,22 @@ class InterfaceMultideviseWorkflow
 
 				$note = "";
 				$somme = 0.00;
-
+				
 				foreach($TDevise  as $id_fac => $mt_devise){
 					$somme += str_replace(',','.',$mt_devise);
 					
-					$facture = new Facture($db);
-					$facture->fetch($id_fac);
+					if($action == "PAYMENT_CUSTOMER_CREATE"){
+						$facture = new Facture($db);
+						$facture->fetch($id_fac);
+						$element = "facture";
+					}
+					else{
+						$facture = new FactureFournisseur($db);
+						$facture->fetch($id_fac);
+						$element = "facture_fourn";
+					}
 
-					$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$facture->id;					
+					$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;					
 					$resql = $db->query($sql);
 					$res = $db->fetch_object($resql);
 
@@ -600,31 +608,42 @@ class InterfaceMultideviseWorkflow
 					
 					/*echo "\$account->currency_code : ".$account->currency_code."<br />";
 					echo "\$facture->devise_code : ".$res->devise_code;*/
-					
+					//pre($facture);
+
 					//Règlement total
-					if(price($res->devise_mt_total,2,'',2,1,2) == $mt_devise){
+					if(strtr(round($res->devise_mt_total,2),array(','=>'.')) == strtr(round($mt_devise,2),array(','=>'.'))){
+
 						$facture->set_paid($user);
 
 						if($account->currency_code == $res->devise_code) {
 							return null;
 						} else {
 							// TODO Ecriture comptable à enregistrer dans un compte. En dessous la note n'a pas de sens : ($_REQUEST['amount_'.$facture->id] - $facture->total_ttc) ne correspond jamais à un gain ou à une perte suite à une conversion
-							
+
 							//Ajout de la note si des écarts sont lié aux conversions de devises
 							if($_REQUEST['amount_'.$facture->id] < $facture->total_ttc){
-								$note .= "facture : ".$facture->ref." => PERTE après conversion : ".($facture->total_ttc - $_REQUEST['amount_'.$facture->id])."\n";
+								$note .= "facture : ".$facture->ref." => PERTE après conversion : ".($facture->total_ttc - price2num($_REQUEST['amount_'.$facture->id]))." ".$conf->currency."\n";
 							}
 							elseif($_REQUEST['amount_'.$facture->id] > $facture->total_ttc){
-								$note .= "facture : ".$facture->ref." => GAIN après conversion : ".($_REQUEST['amount_'.$facture->id] - $facture->total_ttc)."\n";
+								$note .= "facture : ".$facture->ref." => GAIN après conversion : ".(price2num($_REQUEST['amount_'.$facture->id]) - $facture->total_ttc)." ".$conf->currency."\n";
 							}
 						}
 					}
+					
+					if($action == "PAYMENT_CUSTOMER_CREATE"){
+						//MAJ du montant paiement_facture
+						$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$_REQUEST['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+									WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
 
-					//MAJ du montant paiement_facture
-					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$_REQUEST['taux_devise'].'", devise_code = "'.$res->devise_code.'"
-								WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
+						$db->query('UPDATE '.MAIN_DB_PREFIX."paiement SET note = '".$note."' WHERE rowid = ".$object->id);
+					}
+					else{
+						//MAJ du montant paiement_facture
+						$db->query('UPDATE '.MAIN_DB_PREFIX.'paiementfourn_facturefourn SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$_REQUEST['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+									WHERE fk_paiementfourn = '.$object->id.' AND fk_facturefourn = '.$facture->id);
 
-					$db->query('UPDATE '.MAIN_DB_PREFIX."paiement SET note = '".$note."' WHERE rowid = ".$object->id);
+						$db->query('UPDATE '.MAIN_DB_PREFIX."paiementfourn SET note = '".$note."' WHERE rowid = ".$object->id);
+					}
 				}
 			}
 		}
