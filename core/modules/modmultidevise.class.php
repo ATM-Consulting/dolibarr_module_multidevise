@@ -95,6 +95,7 @@ class modmultidevise extends DolibarrModules
 				'ordercard',
 				'invoicecard',
 				'paiementcard',
+				'viewpaiementcard',
 				'ordersuppliercard',
 				'invoicesuppliercard',
 				'paymentsupplier'

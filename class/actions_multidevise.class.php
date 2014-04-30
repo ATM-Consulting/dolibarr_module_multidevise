@@ -183,7 +183,35 @@ class ActionsMultidevise
 		    	<?php
 			}
 		}
-
+		elseif(in_array('viewpaiementcard',explode(':',$parameters['context']))){
+			
+			?>
+			<script type="text/javascript">
+				$(document).ready(function(){
+					$(".liste_titre").find('>td').each(function(i,element){
+						switch (i){
+							case 0:
+								$(element).after('<td align="right">Devise</td>');
+								break;
+	
+							case 2:
+								$(element).after('<td align="right">Paiement devisé attendu</td>');
+								break;
+							
+							case 3:
+								$(element).after('<td align="right">Règlement devisé pour ce paiement</td>');
+								break;
+								
+							case 4:
+								$(element).after('<td align="right">Reste devisé à payer</td>');
+								break;
+						}
+					});
+				});
+			</script>
+			<?php
+		}
+		
 		return 0;
 	}
 	
@@ -506,7 +534,11 @@ class ActionsMultidevise
 		
 		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/fourn/class/fournisseur.facture.class.php");
-				
+
+		/*
+		 * Création de règlements
+		 * 
+		 */
 		if(in_array('paiementcard',explode(':',$parameters['context'])) || in_array('paymentsupplier',explode(':',$parameters['context']))){
 			
 			if(in_array('paiementcard',explode(':',$parameters['context']))){
@@ -635,6 +667,47 @@ class ActionsMultidevise
 				<?php
 			}
 		}
+
+		/*
+		 * Fiche règlement
+		 * 
+		 */	
+		elseif(in_array('viewpaiementcard',explode(':',$parameters['context']))){
+
+			$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total
+								 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
+								 	LEFT JOIN '.MAIN_DB_PREFIX.'facture as f On (f.rowid = pf.fk_facture)
+								 WHERE pf.rowid = '.$_REQUEST['id']);
+			$res = $db->fetch_object($resql);
+			?>
+			<script type="text/javascript">
+				$('#row-<?php echo $object->facid; ?>').find('>td').each(function(i,element){
+					switch (i){
+						case 0:
+							$(element).after('<td align="right"><?php echo $res->devise_code;?></td>');
+							break;
+
+						case 2:
+							$(element).after('<td align="right"><?php echo round($res->devise_mt_total,2);?></td>');
+							break;
+						
+						case 3:
+							$(element).after('<td align="right"><?php echo $res->devise_mt_paiement;?></td>');
+							break;
+
+						case 4:
+							$(element).after('<td align="right"><?php echo round($res->devise_mt_total,2) - $res->devise_mt_paiement;?></td>');
+							break;
+					}
+				});
+			</script>
+			<?php
+		}
+
+		/*
+		 * Affichage des ligne commande et facture fournisseur
+		 * 
+		 */
 		elseif(in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
