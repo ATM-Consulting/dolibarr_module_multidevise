@@ -383,15 +383,14 @@ class InterfaceMultideviseWorkflow
 						$object = $object_last;
 					}
 					
-					/*echo '<pre>';
-					print_r($_REQUEST);
-					echo '</pre>'; exit;*/
-					
-					// Marge					
-					$fournprice=(GETPOST('fournprice_predef')?GETPOST('fournprice_predef'):'');
-					$buyingprice=(GETPOST('buying_price_predef')?GETPOST('buying_price_predef'):'');
-					
-					$object->pa_ht = price($this->_getMarge($fournprice, $buyingprice));
+					// Marge
+					if ($conf->margin->enabled && $user->rights->margins->creer){			
+						$fournprice=(GETPOST('fournprice_predef')?GETPOST('fournprice_predef'):'');
+						$buyingprice=(GETPOST('buying_price_predef')?GETPOST('buying_price_predef'):'');
+						
+						$object->pa_ht = price($this->_getMarge($fournprice, $buyingprice));
+						$object->fk_fournprice = 0; //mise a zero obligatoire sinon affiche le prix fournisseur non modifé
+					}
 					
 					if(get_class($object)=='CommandeFournisseur') {
 						$object->updateline($object->rowid, $ligne->desc, $subprice, $ligne->qty, $ligne->remise_percent, $ligne->tva_tx,0,0,'HT',0, 0, true);
