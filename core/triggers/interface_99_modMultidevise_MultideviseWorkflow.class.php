@@ -384,7 +384,7 @@ class InterfaceMultideviseWorkflow
 					}
 					
 					// Marge
-					if ($conf->margin->enabled && $user->rights->margins->creer){			
+					if ($conf->margin->enabled && $user->rights->margins->creer && defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY){			
 						$fournprice=(GETPOST('fournprice_predef')?GETPOST('fournprice_predef'):'');
 						$buyingprice=(GETPOST('buying_price_predef')?GETPOST('buying_price_predef'):'');
 						
