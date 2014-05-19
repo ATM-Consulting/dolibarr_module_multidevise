@@ -104,11 +104,11 @@ class InterfaceMultideviseWorkflow
      *      @param  conf		$conf       Object conf
      *      @return int         			<0 if KO, 0 if no triggered ran, >0 if OK
      */
-	function run_trigger($action,$object,$user,$langs,$conf)
+	function run_trigger($action,&$object,$user,$langs,$conf)
 	{
 		global  $user, $conf;
 		if(!defined('INC_FROM_DOLIBARR'))define('INC_FROM_DOLIBARR',true);
-		dol_include_once('/tarif/config.php');
+		dol_include_once('/multidevise/config.php');
 		dol_include_once('/commande/class/commande.class.php');
 		dol_include_once('/compta/facture/class/facture.class.php');
 		dol_include_once('/comm/propal/class/propal.class.php');
@@ -116,6 +116,7 @@ class InterfaceMultideviseWorkflow
 		dol_include_once("/core/lib/functions.lib.class.php");
 		dol_include_once('/fourn/class/fournisseur.facture.class.php');
 		dol_include_once('/fourn/class/fournisseur.commande.class.php');
+		dol_include_once('/fourn/class/fournisseur.product.class.php');
 
 		$db=&$this->db;
 
@@ -177,7 +178,7 @@ class InterfaceMultideviseWorkflow
 		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT' || $action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE') {
 			
 			/*echo '<pre>';
-			print_r($object);
+			print_r($_REQUEST);
 			echo '</pre>';exit;*/
 			
 			switch ($action) {
@@ -294,49 +295,90 @@ class InterfaceMultideviseWorkflow
 				if(!empty($_POST['productid'])) $idProd = $_POST['productid'];
 				if(!empty($_POST['idprodfournprice'])) $idProd = $_POST['idprodfournprice'];
 				
-				/*echo '<pre>';
-				print_r($_REQUEST);
-				echo '</pre>';*/
-				
 				//Ligne de produit/service existant
-				if($idProd>0 && isset($_REQUEST['np_pu_devise']) && !empty($_REQUEST['np_pu_devise'])){
+				if($idProd>0 && empty($_REQUEST['dp_pu_devise'])){
 					
 					$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".(($object->{"fk_".$element})? $object->{"fk_".$element} : $object->id) ;
-
+					
                     $resql = $this->db->query($sql);
                     $res = $this->db->fetch_object($resql);
 					$devise_taux = __val($res->devise_taux,1);
 					
-					$pu_devise_product = __get('np_pu_devise', 0);
-					if($pu_devise_product) {
-						$devise_pu = $pu_devise_product;
-						$object->subprice = $pu_devise_product / $devise_taux;
+					//obligatoire sur partie achat car c'est l'objet parent et non l'object ligne qui est transmis au trigger
+					if($action == 'LINEORDER_SUPPLIER_CREATE'){
+						$ligne = new CommandeFournisseurLigne($db);
+						$ligne->fetch($object->rowid);
+						$object_last = $object;
+						$object = $ligne;
 					}
-					else {
-						$devise_pu = !empty($object->devise_pu) ? $object->devise_pu : $object->subprice * $devise_taux;	
+					elseif($action == 'LINEBILL_SUPPLIER_CREATE'){
+						$ligne = new ProductFournisseur($db);
+						$ligne->fetch_product_fournisseur_price($_REQUEST['idprodfournprice']);
+						$object->subprice = $ligne->fourn_price;
+						//$object = $ligne;
 					}
 					
-					$devise_pu = ($object->subprice) ? $object->subprice * $devise_taux : $_REQUEST['np_pu_devise'];
+					//Cas ou le prix de référence est dans la devise fournisseur et non dans la devise du dolibarr
+					if(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY && ($action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE')){
+						$devise_pu = $object->subprice;
+						$object->subprice = $devise_pu / $devise_taux;
+						$subprice = $object->subprice;
+					}
+					else{
+						$subprice = $object->subprice;
+						$devise_pu = !empty($object->devise_pu) ? $object->devise_pu : $object->subprice * $devise_taux;
+					}
 					
+					$devise_pu = round($devise_pu,2);
 					$devise_mt_ligne = $devise_pu * (($object->qty) ? $object->qty : $_REQUEST['qty_predef']);
-					
-					//echo $_REQUEST['qty_predef']; exit;
+//print $devise_mt_ligne;exit;
 					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 							SET devise_pu = '.$devise_pu.'
 							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
-							,'.( ($element_line == "facture_fourn_det") ? 'pu_ht='.$object->subprice : 'subprice='.$object->subprice ).'
-							,total_ht = '.( ($element_line == "facture_fourn_det") ? 'pu_ht' : 'subprice' ).'*qty*(1 - remise_percent/100) 
 							WHERE rowid = '.$object->rowid;
+//exit($sql);
+					$db->query($sql);
 					
-					$this->db->query($sql);
+					$tabprice=calcul_price_total($object->qty, $object->subprice, $object->remise_percent, $object->tva_tx, 0, 0, 0, 'HT', $object->info_bits, $object->fk_product_type);
+					$object->total_ht  = $tabprice[0];
+					$object->total_tva = $tabprice[1];
+					$object->total_ttc = $tabprice[2];
+					
+					if($action == 'LINEORDER_SUPPLIER_CREATE'){
+						$ligne = new CommandeFournisseurLigne($db);
+						$ligne->fetch($object->rowid);
+						$object = $ligne;
+					}
+					
+					//obligatoire sur partie achat car c'est l'objet parent et non l'object ligne qui est transmis au trigger
+					//on reprends l'object parent car l'objet ligne ne possède pas de méthode update
+					if($action == 'LINEORDER_SUPPLIER_CREATE'){
+						$object = $object_last;
+					}
+					
+					/*echo '<pre>';
+					print_r($_REQUEST);
+					echo '</pre>'; exit;*/
+					
+					if(get_class($object)=='CommandeFournisseur') {
+						$object->updateline($object->rowid, $ligne->desc, $subprice, $ligne->qty, $ligne->remise_percent, $ligne->tva_tx,0,0,'HT',0, 0, true);
+					}
+					elseif(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY && $action == 'LINEBILL_SUPPLIER_CREATE'){
+						$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$_REQUEST['qty'],$ligne->product_id,'HT',0,0,0,true);
+					}
+					else {
+						$object->update(1);
+					}
 					
 				}
 				//Ligne libre
 				elseif(isset($_REQUEST['dp_pu_devise']) && !empty($_REQUEST['dp_pu_devise'])){
 					
-					$devise_mt_ligne = $_REQUEST['dp_pu_devise'] * $_REQUEST['qty'];
-
-					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$_REQUEST['dp_pu_devise'].', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+					$devise_pu = round($_REQUEST['dp_pu_devise'],2);
+					
+					$devise_mt_ligne = $devise_pu * $_REQUEST['qty'];
+					
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 					
 				}
 				
@@ -394,7 +436,7 @@ class InterfaceMultideviseWorkflow
 					$fk_element = "fk_facture_fourn";
 					break;
 			}
-
+			
 			if($action == 'LINEBILL_UPDATE'){
 				$object->update($user,true);
 			}
@@ -424,7 +466,9 @@ class InterfaceMultideviseWorkflow
 			elseif($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'){
 				$pu_devise = $object->subprice * $devise_taux;
 			    $pu_devise = !empty($object->device_pu) ? $object->device_pu : $object->subprice * $devise_taux;
- 
+
+				$pu_devise = round($pu_devise,2);
+
 				$devise_mt_ligne = $pu_devise * $object->qty;
 				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 				SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' 
@@ -443,6 +487,9 @@ class InterfaceMultideviseWorkflow
 	            $res = $this->db->fetch_object($resql);
 
 				$pu_devise = $res->subprice * $devise_taux;
+				
+				$pu_devise = round($pu_devise,2);
+				
 				$devise_mt_ligne = $pu_devise * $res->qty;
 				
 				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($res->remise / 100))).' WHERE rowid = '.$object->rowid);
@@ -513,7 +560,9 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * AJOUT D'UN PAIEMENT 
 		 */
-		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE "){
+		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE"){
+			
+			//pre($_REQUEST);
 			
 			$TDevise=array();
 			foreach($_REQUEST as $key=>$value) {
@@ -522,11 +571,12 @@ class InterfaceMultideviseWorkflow
 				if(strpos($key, $mask)===0) {
 					
 					$id_facture = (int)substr($key, strlen($mask));
-					$TDevise[$id_facture] = $value; // On récupère la liste des factures et le montant du paiement
+					$TDevise[$id_facture] = $_REQUEST['devise'][$mask.$id_facture]; // On récupère la liste des factures et le montant du paiement
 					
 				}
-				
 			}
+			
+			//pre($TDevise); exit;
 			
 			if(!empty($TDevise)){
 				$this->db->commit();
@@ -534,13 +584,22 @@ class InterfaceMultideviseWorkflow
 
 				$note = "";
 				$somme = 0.00;
+				
 				foreach($TDevise  as $id_fac => $mt_devise){
-					$somme += str_replace(',','.',$mt_devise); //TODO à quoi ça sert?
+					$somme += str_replace(',','.',$mt_devise);
 					
-					$facture = new Facture($db);
-					$facture->fetch($id_fac);
+					if($action == "PAYMENT_CUSTOMER_CREATE"){
+						$facture = new Facture($db);
+						$facture->fetch($id_fac);
+						$element = "facture";
+					}
+					else{
+						$facture = new FactureFournisseur($db);
+						$facture->fetch($id_fac);
+						$element = "facture_fourn";
+					}
 
-					$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$facture->id;					
+					$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;					
 					$resql = $db->query($sql);
 					$res = $db->fetch_object($resql);
 
@@ -549,30 +608,99 @@ class InterfaceMultideviseWorkflow
 					
 					/*echo "\$account->currency_code : ".$account->currency_code."<br />";
 					echo "\$facture->devise_code : ".$res->devise_code;*/
-					
+					//pre($facture);
+
 					//Règlement total
-					if($res->devise_mt_total == $mt_devise){ // TODO pourquoi ne passer ce test que si le montant d'un paiement est égal au total de la facture ?
+					if(strtr(round($res->devise_mt_total,2),array(','=>'.')) == strtr(round($mt_devise,2),array(','=>'.'))){
+
 						$facture->set_paid($user);
 
 						if($account->currency_code == $res->devise_code) {
 							return null;
 						} else {
 							// TODO Ecriture comptable à enregistrer dans un compte. En dessous la note n'a pas de sens : ($_REQUEST['amount_'.$facture->id] - $facture->total_ttc) ne correspond jamais à un gain ou à une perte suite à une conversion
-							
+
 							//Ajout de la note si des écarts sont lié aux conversions de devises
-							if($_REQUEST['amount_'.$facture->id] < $facture->total_ttc)
-								$note .= "facture : ".$facture->facnumber." => PERTE après conversion : ".($facture->total_ttc - $_REQUEST['amount_'.$facture->id]);
-							elseif($_REQUEST['amount_'.$facture->id] > $facture->total_ttc)
-								$note .= "facture : ".$facture->facnumber." => GAIN après conversion : ".($_REQUEST['amount_'.$facture->id] - $facture->total_ttc);
+							if(round(strtr($_REQUEST['amount_'.$facture->id],array(','=>'.')),2) < strtr(round($facture->total_ttc,2),array(','=>'.'))){
+								$note .= "facture : ".$facture->ref." => PERTE après conversion : ".($facture->total_ttc - price2num($_REQUEST['amount_'.$facture->id]))." ".$conf->currency."\n";
+							}
+							elseif(round(strtr($_REQUEST['amount_'.$facture->id],array(','=>'.')),2) > strtr(round($facture->total_ttc,2),array(','=>'.'))){
+								$note .= "facture : ".$facture->ref." => GAIN après conversion : ".(price2num($_REQUEST['amount_'.$facture->id]) - $facture->total_ttc)." ".$conf->currency."\n";
+							}
 						}
 					}
+					
+					if($action == "PAYMENT_CUSTOMER_CREATE"){
+						//MAJ du montant paiement_facture
+						$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$_REQUEST['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+									WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
 
-					//MAJ du montant paiement_facture
-					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$_REQUEST['taux_devise'].'", devise_code = "'.$res->devise_code.'"
-								WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
+						$db->query('UPDATE '.MAIN_DB_PREFIX."paiement SET note = '".$note."' WHERE rowid = ".$object->id);
+					}
+					else{
+						//MAJ du montant paiement_facture
+						$db->query('UPDATE '.MAIN_DB_PREFIX.'paiementfourn_facturefourn SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$_REQUEST['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+									WHERE fk_paiementfourn = '.$object->id.' AND fk_facturefourn = '.$facture->id);
+
+						$db->query('UPDATE '.MAIN_DB_PREFIX."paiementfourn SET note = '".$note."' WHERE rowid = ".$object->id);
+					}
 				}
 			}
 		}
+		
+		if($action == "BEFORE_PROPAL_BUILDDOC" || $action == "BEFORE_ORDER_BUILDDOC"  || $action == "BEFORE_BILL_BUILDDOC" || $action == "BEFORE_ORDER_SUPPLIER_BUILDDOC" || $action == "BEFORE_BILL_SUPPLIER_BUILDDOC"){
+				
+			
+			$devise_change = false;
+			//Modification des prix si la devise est différente
+				
+			$resl = $db->query('SELECT devise_code FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
+			$res = $db->fetch_object($resl);
+			$last_devise = 0;
+			
+			if($res){
+				
+				if($conf->currency != $res->devise_code){
+					$last_devise = $conf->currency;
+					$conf->currency  = $res->devise_code;
+					$devise_change = true;
+				}
+			}
+			
+			// 2 - Dans les lignes
+			foreach($object->lines as $line){
+				//Modification des montant si la devise a changé
+				if($devise_change){
+					
+					$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.(($line->rowid) ? $line->rowid : $line->id) );
+					$res = $db->fetch_object($resl);
+
+					if($res){
+						$line->tva_tx = 0;
+						$line->subprice = round($res->devise_pu,2);
+						$line->price = round($res->devise_pu,2);
+						$line->pu_ht = round($res->devise_pu,2);
+						$line->total_ht = round($res->devise_mt_ligne,2);
+						$line->total_ttc = round($res->devise_mt_ligne,2);
+						$line->total_tva = 0;
+					}
+				}
+			}
+			
+			// 3 - Dans le bas du document
+			//Modification des TOTAUX si la devise a changé
+			if($devise_change){
+				
+				$resl = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
+				$res = $db->fetch_object($resl);
+
+				if($res){
+					$object->total_ht = round($res->devise_mt_total,2);
+					$object->total_ttc = round($res->devise_mt_total,2);
+					$object->total_tva = 0;
+				}
+			}
+		}	
 		
 		return 1;
 	}
