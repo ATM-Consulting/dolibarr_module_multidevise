@@ -98,7 +98,8 @@ class modmultidevise extends DolibarrModules
 				'viewpaiementcard',
 				'ordersuppliercard',
 				'invoicesuppliercard',
-				'paymentsupplier'
+				'paymentsupplier',
+				'pricesuppliercard'
 			)
 			,'triggers'=>1
 			,'js'=>'/multidevise/js/hook.js.php');

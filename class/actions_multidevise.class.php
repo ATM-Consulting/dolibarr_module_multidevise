@@ -101,7 +101,6 @@ class ActionsMultidevise
 					}
 					
 				}
-				
 				/* *********************************************************************************
 				 * Ajout d'attribut aux lignes et colonne pour accessibilité plus facile avec jquery
 				 * *********************************************************************************/
@@ -179,6 +178,7 @@ class ActionsMultidevise
 		    	<?php
 			}
 		}
+
 		elseif(in_array('viewpaiementcard',explode(':',$parameters['context']))){
 			
 			?>
@@ -203,6 +203,17 @@ class ActionsMultidevise
 								break;
 						}
 					});
+				});
+			</script>
+			<?php
+		}
+		
+		elseif(in_array('pricesuppliercard',explode(':',$parameters['context']))){
+			//pre($object); exit;
+			?>
+			<script type="text/javascript">
+				$(document).ready(function(){
+					$('tr .liste_titre:first').before('<td class="liste_titre" align="left">Devise Fournisseur</td>');
 				});
 			</script>
 			<?php
@@ -522,7 +533,7 @@ class ActionsMultidevise
 
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
 		
-		global $db, $user, $conf;
+		global $db, $user, $conf, $langs;
 		
 		/*echo '<pre>';
 		print_r($object);
@@ -716,16 +727,16 @@ class ActionsMultidevise
 		elseif(in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
-			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element." WHERE rowid = ".$line->id);
+			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element." WHERE rowid = ".$object->id);
 			$res = $db->fetch_object($resql);
 			
 			?>
 			<script type="text/javascript">
 			<?php
 			
-			if($line->product_type!=9) {
-				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
-				echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
+			if($object->product_type!=9) {
+				echo "$('#row-".$object->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
+				echo "$('#row-".$object->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
 			}
 			
 			?>
@@ -733,6 +744,22 @@ class ActionsMultidevise
 			<?php
 			if($line->error != '') echo "alert('".$line->error."');";
 
+		}
+		elseif(in_array('pricesuppliercard',explode(':',$parameters['context']))){
+			
+			$resql = $db->query("SELECT s.devise_code 
+								 FROM ".MAIN_DB_PREFIX."societe as s
+									LEFT JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON (pfp.fk_soc = s.rowid)								 
+								 WHERE pfp.rowid = ".$object->product_fourn_price_id);
+			$res = $db->fetch_object($resql);
+			
+			?>
+			<script type="text/javascript">
+				$(document).ready(function(){
+					$('#row-<?php echo $object->product_fourn_price_id; ?>').find('>td:first').after('<td align="left"><?php echo $res->devise_code; ?></td>');
+				});
+			</script>
+			<?php
 		}
 
 		return 0;
