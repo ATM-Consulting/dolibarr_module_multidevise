@@ -10,11 +10,7 @@ class ActionsMultidevise
     
     function doActions($parameters, &$object, &$action, $hookmanager) 
     {
-    	//exit('1');
     	global $langs, $db, $conf, $user;
-		/*echo '<pre>';
-		print_r($object);
-		echo '</pre>';*/
 		
 		define('INC_FROM_DOLIBARR',true);
 		
@@ -105,7 +101,6 @@ class ActionsMultidevise
 					}
 					
 				}
-				
 				/* *********************************************************************************
 				 * Ajout d'attribut aux lignes et colonne pour accessibilité plus facile avec jquery
 				 * *********************************************************************************/
@@ -184,6 +179,46 @@ class ActionsMultidevise
 			}
 		}
 
+		elseif(in_array('viewpaiementcard',explode(':',$parameters['context']))){
+			
+			?>
+			<script type="text/javascript">
+				$(document).ready(function(){
+					$(".liste_titre").find('>td').each(function(i,element){
+						switch (i){
+							case 0:
+								$(element).after('<td align="right">Devise</td>');
+								break;
+	
+							case 2:
+								$(element).after('<td align="right">Paiement devisé attendu</td>');
+								break;
+							
+							case 3:
+								$(element).after('<td align="right">Règlement devisé pour ce paiement</td>');
+								break;
+								
+							case 4:
+								$(element).after('<td align="right">Reste devisé à payer</td>');
+								break;
+						}
+					});
+				});
+			</script>
+			<?php
+		}
+		
+		elseif(in_array('pricesuppliercard',explode(':',$parameters['context']))){
+			//pre($object); exit;
+			?>
+			<script type="text/javascript">
+				$(document).ready(function(){
+					$('tr .liste_titre:first').before('<td class="liste_titre" align="left">Devise Fournisseur</td>');
+				});
+			</script>
+			<?php
+		}
+		
 		return 0;
 	}
 	
@@ -498,7 +533,7 @@ class ActionsMultidevise
 
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
 		
-		global $db, $user, $conf;
+		global $db, $user, $conf, $langs;
 		
 		/*echo '<pre>';
 		print_r($object);
@@ -506,7 +541,11 @@ class ActionsMultidevise
 		
 		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/fourn/class/fournisseur.facture.class.php");
-				
+
+		/*
+		 * Création de règlements
+		 * 
+		 */
 		if(in_array('paiementcard',explode(':',$parameters['context'])) || in_array('paymentsupplier',explode(':',$parameters['context']))){
 			
 			if(in_array('paiementcard',explode(':',$parameters['context']))){
@@ -532,12 +571,10 @@ class ActionsMultidevise
 				$res = $db->fetch_object($resql);
 				
 				if($action == "add_paiement"){
-					$champ = "amount";
-					$champ2 = "remain";
+					$champ = "remain";
 				}
 				else{
-					$champ = "remain";
-					$champ2 = "amount";
+					$champ = "amount";
 				}
 			}
 			else{
@@ -628,32 +665,78 @@ class ActionsMultidevise
 							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise / <?php echo $res->taux; ?>,2,',',''));
 						});
 						
-						$("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").keyup(function() {
+						$("#payment_form").find("input[name*=\"<?php echo $champ; ?>_\"]").keyup(function() {
 							mt_rglt = parseFloat($(this).val().replace(',','.'));
 							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt * <?php echo $res->taux; ?>,2,',',''));
-						});
-						
-						$("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").parent().children().click(function(){
-							setTimeout(function() { $("#payment_form").find("input[name*=\"<?php echo $champ2; ?>_\"]").keyup(); }, 1000);
 						});
 					});
 				</script>
 				<?php
 			}
 		}
+
+		/*
+		 * Fiche règlement
+		 * 
+		 */	
+		elseif(in_array('viewpaiementcard',explode(':',$parameters['context']))){
+			
+			//Cas facture fournisseur
+			if($object->ref_supplier){
+				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total
+								 FROM '.MAIN_DB_PREFIX.'paiementfourn_facturefourn as pf
+								 	LEFT JOIN '.MAIN_DB_PREFIX.'facture_fourn as f On (f.rowid = pf.fk_facturefourn)
+								 WHERE pf.rowid = '.$_REQUEST['id']);
+			}
+			else{ //cas facture client
+				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total
+								 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
+								 	LEFT JOIN '.MAIN_DB_PREFIX.'facture as f On (f.rowid = pf.fk_facture)
+								 WHERE pf.rowid = '.$_REQUEST['id']);
+			}
+			$res = $db->fetch_object($resql);
+			?>
+			<script type="text/javascript">
+				$('#row-<?php echo $object->facid; ?>').find('>td').each(function(i,element){
+					switch (i){
+						case 0:
+							$(element).after('<td align="right"><?php echo $res->devise_code;?></td>');
+							break;
+
+						case 2:
+							$(element).after('<td align="right"><?php echo round($res->devise_mt_total,2);?></td>');
+							break;
+						
+						case 3:
+							$(element).after('<td align="right"><?php echo $res->devise_mt_paiement;?></td>');
+							break;
+
+						case 4:
+							$(element).after('<td align="right"><?php echo round($res->devise_mt_total,2) - $res->devise_mt_paiement;?></td>');
+							break;
+					}
+				});
+			</script>
+			<?php
+		}
+
+		/*
+		 * Affichage des ligne commande et facture fournisseur
+		 * 
+		 */
 		elseif(in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
-			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element." WHERE rowid = ".$line->id);
+			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element." WHERE rowid = ".$object->id);
 			$res = $db->fetch_object($resql);
 			
 			?>
 			<script type="text/javascript">
 			<?php
 			
-			if($line->product_type!=9) {
-				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
-				echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
+			if($object->product_type!=9) {
+				echo "$('#row-".$object->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
+				echo "$('#row-".$object->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
 			}
 			
 			?>
@@ -661,6 +744,22 @@ class ActionsMultidevise
 			<?php
 			if($line->error != '') echo "alert('".$line->error."');";
 
+		}
+		elseif(in_array('pricesuppliercard',explode(':',$parameters['context']))){
+			
+			$resql = $db->query("SELECT s.devise_code 
+								 FROM ".MAIN_DB_PREFIX."societe as s
+									LEFT JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON (pfp.fk_soc = s.rowid)								 
+								 WHERE pfp.rowid = ".$object->product_fourn_price_id);
+			$res = $db->fetch_object($resql);
+			
+			?>
+			<script type="text/javascript">
+				$(document).ready(function(){
+					$('#row-<?php echo $object->product_fourn_price_id; ?>').find('>td:first').after('<td align="left"><?php echo $res->devise_code; ?></td>');
+				});
+			</script>
+			<?php
 		}
 
 		return 0;
