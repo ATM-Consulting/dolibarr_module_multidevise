@@ -92,6 +92,33 @@ class InterfaceMultideviseWorkflow
         else return $langs->trans("Unknown");
     }
 
+
+	function _getMarge(&$fk_fournprice,&$buyingprice){
+		global  $user, $conf;
+		
+		//Récupération du fk_soc associé au prix fournisseur
+		$resql = $this->db->query("SELECT pfp.fk_soc FROM ".MAIN_DB_PREFIX."product_fournisseur_price as pfp WHERE pfp.rowid = ".$fk_fournprice);
+		$res = $this->db->fetch_object($resql);
+		$fk_soc = $res->fk_soc;
+		
+		//Récupération du taux de la devise fournisseur
+		$sql = "SELECT cr.rate
+				FROM ".MAIN_DB_PREFIX."currency_rate as cr
+					LEFT JOIN ".MAIN_DB_PREFIX."currency as c ON (c.rowid = cr.id_currency)
+					LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON (cr.rowid = s.fk_devise)
+				WHERE s.rowid = ".$fk_soc."
+				ORDER BY cr.dt_sync DESC
+				LIMIT 1";
+		
+		$resql = $this->db->query($sql);
+		$res = $this->db->fetch_object($resql);
+		
+		//Calcul du prix d'achat devisé
+		$buyingprice = (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? $buyingprice / $res->rate : $buyingprice ;
+		
+		return $buyingprice;
+	}
+
 	
     /**
      *      Function called when a Dolibarrr business event is done.
@@ -288,7 +315,7 @@ class InterfaceMultideviseWorkflow
 				/* ***************************
 				 *	Création standard
 				 * ***************************/ 
-				 
+
 				$idProd = 0;
 				if(!empty($_POST['id'])) $idProd = $_POST['id'];
 				if(!empty($_POST['idprod'])) $idProd = $_POST['idprod'];
@@ -359,6 +386,12 @@ class InterfaceMultideviseWorkflow
 					/*echo '<pre>';
 					print_r($_REQUEST);
 					echo '</pre>'; exit;*/
+					
+					// Marge					
+					$fournprice=(GETPOST('fournprice_predef')?GETPOST('fournprice_predef'):'');
+					$buyingprice=(GETPOST('buying_price_predef')?GETPOST('buying_price_predef'):'');
+					
+					$object->pa_ht = price($this->_getMarge($fournprice, $buyingprice));
 					
 					if(get_class($object)=='CommandeFournisseur') {
 						$object->updateline($object->rowid, $ligne->desc, $subprice, $ligne->qty, $ligne->remise_percent, $ligne->tva_tx,0,0,'HT',0, 0, true);
