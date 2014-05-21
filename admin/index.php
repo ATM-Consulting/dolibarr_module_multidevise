@@ -1,6 +1,6 @@
 <?php
 
-$res=@include("../config.php");						// For root directory
+include_once('../config.php');
 
 require_once DOL_DOCUMENT_ROOT . "/core/lib/admin.lib.php";
 include_once('../class/class.currency.php');
@@ -30,6 +30,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == "modtaux"){
 		}
 	}
 }
+
 /*
  * View
  */
@@ -39,7 +40,21 @@ llxHeader('',$langs->trans("MulticurrencySetupPage"));
 $linkback='<a href="'.DOL_URL_ROOT.'/admin/modules.php">'.$langs->trans("BackToModuleList").'</a>';
 print_fiche_titre($langs->trans("MulticurrencyExchangeRatesSetup"),$linkback,'multidevise@multidevise');
 
+if(isset($_REQUEST['action']) && $_REQUEST['action'] == "updateall"){
+	?>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			$.ajax('<?php echo dol_buildpath('/multidevise/cron/1day/sync.php',2); ?>');
+		});
+	</script>
+	<?php
+}
+
 print '<br>';
+
+print '<div class="tabsAction">';
+print '<a class="butAction" href="?action=updateall">Actualiser les taux</a>';
+print '</div>';
 
 ?>
 <script type="text/javascript">

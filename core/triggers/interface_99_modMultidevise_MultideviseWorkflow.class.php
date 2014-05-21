@@ -388,8 +388,10 @@ class InterfaceMultideviseWorkflow
 						$fournprice=(GETPOST('fournprice_predef')?GETPOST('fournprice_predef'):'');
 						$buyingprice=(GETPOST('buying_price_predef')?GETPOST('buying_price_predef'):'');
 						
-						$object->pa_ht = price($this->_getMarge($fournprice, $buyingprice));
-						$object->fk_fournprice = 0; //mise a zero obligatoire sinon affiche le prix fournisseur non modifé
+						if($fournprice) {
+							$object->pa_ht = price($this->_getMarge($fournprice, $buyingprice));
+							$object->fk_fournprice = 0; //mise a zero obligatoire sinon affiche le prix fournisseur non modifé
+						}
 					}
 					
 					if(get_class($object)=='CommandeFournisseur') {
@@ -502,10 +504,18 @@ class InterfaceMultideviseWorkflow
 				$pu_devise = round($pu_devise,2);
 
 				$devise_mt_ligne = $pu_devise * $object->qty;
+
 				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
-				SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' 
-				 ,total_ht = subprice*qty*(1 - remise_percent/100) 
-				WHERE rowid = '.$object->rowid;
+							SET devise_pu = '.$devise_pu.'
+							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
+							WHERE rowid = '.$object->rowid;
+//exit($sql);
+				$this->db->query($sql);
+				
+				$tabprice=calcul_price_total($object->qty, $object->subprice, $object->remise_percent, $object->tva_tx, 0, 0, 0, 'HT', $object->info_bits, $object->fk_product_type);
+				$object->total_ht  = $tabprice[0];
+				$object->total_tva = $tabprice[1];
+				$object->total_ttc = $tabprice[2];
 				
 				$this->db->query($sql);
 			}
