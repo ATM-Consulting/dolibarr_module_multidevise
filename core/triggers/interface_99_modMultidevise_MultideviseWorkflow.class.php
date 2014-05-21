@@ -388,8 +388,10 @@ class InterfaceMultideviseWorkflow
 						$fournprice=(GETPOST('fournprice_predef')?GETPOST('fournprice_predef'):'');
 						$buyingprice=(GETPOST('buying_price_predef')?GETPOST('buying_price_predef'):'');
 						
-						$object->pa_ht = price($this->_getMarge($fournprice, $buyingprice));
-						$object->fk_fournprice = 0; //mise a zero obligatoire sinon affiche le prix fournisseur non modifé
+						if($fournprice) {
+							$object->pa_ht = price($this->_getMarge($fournprice, $buyingprice));
+							$object->fk_fournprice = 0; //mise a zero obligatoire sinon affiche le prix fournisseur non modifé
+						}
 					}
 					
 					if(get_class($object)=='CommandeFournisseur') {
