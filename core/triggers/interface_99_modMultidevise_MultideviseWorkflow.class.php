@@ -1,5 +1,5 @@
-<?php
-/* Copyright (C) 2005-2011 Laurent Destailleur  <eldy@users.sourceforge.net>
+<?php /* Copyright (C) 2005-2011 Laurent Destailleur 
+<eldy@users.sourceforge.net>
  * Copyright (C) 2005-2011 Regis Houssin        <regis.houssin@capnetworks.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -95,12 +95,12 @@ class InterfaceMultideviseWorkflow
 
 	function _getMarge(&$fk_fournprice,&$buyingprice){
 		global  $user, $conf;
-		
+		//echo $buyingprice;exit;
 		//Récupération du fk_soc associé au prix fournisseur
 		$resql = $this->db->query("SELECT pfp.fk_soc FROM ".MAIN_DB_PREFIX."product_fournisseur_price as pfp WHERE pfp.rowid = ".$fk_fournprice);
 		$res = $this->db->fetch_object($resql);
 		$fk_soc = $res->fk_soc;
-		
+//		exit($fk_soc);
 		//Récupération du taux de la devise fournisseur
 		$sql = "SELECT cr.rate
 				FROM ".MAIN_DB_PREFIX."currency_rate as cr
@@ -109,13 +109,13 @@ class InterfaceMultideviseWorkflow
 				WHERE s.rowid = ".$fk_soc."
 				ORDER BY cr.dt_sync DESC
 				LIMIT 1";
-		
+		//echo $sql;exit;
 		$resql = $this->db->query($sql);
 		$res = $this->db->fetch_object($resql);
 		
 		//Calcul du prix d'achat devisé
-		$buyingprice = (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? $buyingprice / $res->rate : $buyingprice ;
-		
+		$buyingprice = (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? price2num($buyingprice) / $res->rate : $buyingprice ;
+//		echo $buyingprice;exit;
 		return $buyingprice;
 	}
 
@@ -387,8 +387,9 @@ class InterfaceMultideviseWorkflow
 					if ($conf->margin->enabled && $user->rights->margins->creer && defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY){			
 						$fournprice=(GETPOST('fournprice_predef')?GETPOST('fournprice_predef'):'');
 						$buyingprice=(GETPOST('buying_price_predef')?GETPOST('buying_price_predef'):'');
-						
+					//exit($fournprice);	
 						if($fournprice) {
+//exit("1");
 							$object->pa_ht = price($this->_getMarge($fournprice, $buyingprice));
 							$object->fk_fournprice = 0; //mise a zero obligatoire sinon affiche le prix fournisseur non modifé
 						}
