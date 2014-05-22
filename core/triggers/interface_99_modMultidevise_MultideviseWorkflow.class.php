@@ -409,7 +409,7 @@ class InterfaceMultideviseWorkflow
 				//Ligne libre
 				elseif(isset($_REQUEST['dp_pu_devise']) && !empty($_REQUEST['dp_pu_devise'])){
 					
-					$devise_pu = round($_REQUEST['dp_pu_devise'],2);
+					$devise_pu = round(price2num($_REQUEST['dp_pu_devise']),2);
 					
 					$devise_mt_ligne = $devise_pu * $_REQUEST['qty'];
 					
@@ -507,7 +507,7 @@ class InterfaceMultideviseWorkflow
 				$devise_mt_ligne = $pu_devise * $object->qty;
 
 				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
-							SET devise_pu = '.$devise_pu.'
+							SET devise_pu = '.$pu_devise.'
 							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $_REQUEST['remise_percent']) / 100))).' 
 							WHERE rowid = '.$object->rowid;
 //exit($sql);
