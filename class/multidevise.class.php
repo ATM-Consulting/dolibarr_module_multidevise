@@ -143,18 +143,21 @@ class TMultidevise{
 		switch ($action) {
 				case 'LINEORDER_UPDATE':
 				case 'LINEORDER_INSERT':
+				case 'LINEORDER_DELETE':
 					$element = "commande";
 					$element_line = "commandedet";
 					$fk_element = "fk_commande";
 					break;
 				case 'LINEPROPAL_UPDATE':
 				case 'LINEPROPAL_INSERT':
+				case 'LINEPROPAL_DELETE':
 					$element = "propal";
 					$element_line = "propaldet";
 					$fk_element = "fk_propal";
 					break;
 				case 'LINEBILL_INSERT':
-					case 'LINEBILL_UPDATE':
+				case 'LINEBILL_DELETE':
+				case 'LINEBILL_UPDATE':
 					$element = "facture";
 					$element_line = "facturedet";
 					$fk_element = "fk_facture";
@@ -174,6 +177,46 @@ class TMultidevise{
 		}
 		
 		return array($element, $element_line, $fk_element);
+	}
+	
+	static function deleteLine(&$db, &$object, $action, $id, $lineid) {
+		
+		if ($action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE') {
+			
+			//Obligé puisque dans le cas d'une suppresion le trigger est appelé avant et non après
+			$object->deleteline($lineid, TRUE); // TODO est si on echappe simplement la ligne dans ce qui suit
+			$db->commit();
+			
+			$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne 
+				    FROM '.MAIN_DB_PREFIX.$object->table_element_line.' 
+				    WHERE '.$object->fk_element.' = '.$id;
+
+			$resql = $this->db->query($sql);
+			$res = $this->db->fetch_object($resql);
+			
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' 
+			SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : 0 /* Si y a 0, on met 0 sinon c'est pas sûr hein */)." 
+			WHERE rowid = ".(($object->{'fk_'.$object->table_element}) ? $object->{'fk_'.$object->table_element} : $id )); // TODO c'est la même chose qu'en dessous non ?
+			
+		}
+		else {
+			list($parent_object) = TMultidevise::getTableByAction($action);
+		
+			$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne 
+				    FROM '.MAIN_DB_PREFIX.$object->table_element.' 
+				    WHERE fk_'.$parent_object.' = '.$object->{"fk_".$parent_object};
+			
+			$resql = $this->db->query($sql);
+			$res = $this->db->fetch_object($resql);
+			
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.' 
+					SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")." 
+					WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $id ));
+			
+		}
+			
+			
+		
 	}
 	
 	static function getTableByOrigin(&$object, $origin = '') {
@@ -383,7 +426,7 @@ class TMultidevise{
 			//Ligne libre
 			elseif($idProd==0 && $dp_pu_devise){
 				
-				$devise_pu = round(price2num($dp_pu_devise) ,2)
+				$devise_pu = round(price2num($dp_pu_devise) ,2);
 				
 				$devise_mt_ligne = $devise_pu * $quantity;
 				
@@ -410,9 +453,87 @@ class TMultidevise{
 		
 		
 	}
-	static function insertLine() {
+	static function updateLine(&$db, &$object,&$user, $action,$id_line,$remise_percent) {
 		
-		
+			list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
+			
+			if($action == 'LINEBILL_UPDATE'){
+				$object->update($user,true);
+			}
+			elseif($action != 'LINEORDER_SUPPLIER_UPDATE'){
+				$object->update(true);
+			}
+			
+			if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE')
+				$fk_parent = isset($object->oldline->{"fk_".$element}) ? $object->oldline->{"fk_".$element} : $object->{"fk_".$element};
+			else
+				$fk_parent = $object->id;
+			
+			$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$fk_parent;
+
+            $resql = $this->db->query($sql);
+            $res = $this->db->fetch_object($resql);
+            $devise_taux = __val($res->devise_taux,1);
+
+			if($object->origin == "shipping"){
+					$this->db->commit();
+					$this->db->commit();
+					$this->db->commit();
+
+					$this->db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet 
+									SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' 
+									WHERE rowid = '.$object->rowid);
+					
+			}
+			elseif($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'){
+				$pu_devise = $object->subprice * $devise_taux;
+			    $pu_devise = !empty($object->device_pu) ? $object->device_pu : $object->subprice * $devise_taux;
+
+				$pu_devise = round($pu_devise,2);
+
+				$devise_mt_ligne = $pu_devise * $object->qty;
+
+				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
+							SET devise_pu = '.$pu_devise.'
+							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $remise_percent) / 100))).' 
+							WHERE rowid = '.$object->rowid;
+
+				$this->db->query($sql);
+								
+				list($object->total_ht, $object->total_tva, $object->total_ttc)=calcul_price_total($object->qty, $object->subprice, $object->remise_percent, $object->tva_tx, 0, 0, 0, 'HT', $object->info_bits, $object->fk_product_type);
+				  
+				$this->db->query($sql);
+			}
+			else{
+				if($action == 'LINEORDER_SUPPLIER_UPDATE')
+					$sql = "SELECT subprice, qty, remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$object->rowid;
+				else
+					$sql = "SELECT pu_ht as subprice, qty, remise_percent as remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$object->rowid;
+
+				$resql = $this->db->query($sql);
+	            $res = $this->db->fetch_object($resql);
+
+				$pu_devise = $res->subprice * $devise_taux;
+				
+				$pu_devise = round($pu_devise,2);
+				
+				$devise_mt_ligne = $pu_devise * $res->qty;
+				
+				$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' 
+							SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($res->remise / 100))).' 
+							WHERE rowid = '.$object->rowid);
+				
+			}
+
+			//MAJ du total devise de la commande/facture/propale
+			$resql = $this->db->query('SELECT SUM(f.devise_mt_ligne) as total_devise 
+									   FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)
+									   WHERE m.rowid = '.$id_line);
+			
+			$res = $this->db->fetch_object($resql);
+			$this->db->query('UPDATE '.MAIN_DB_PREFIX.$element.' 
+						SET devise_mt_total = '.$res->total_devise." 
+						WHERE rowid = ".$id_line);
 		
 	}
 	
