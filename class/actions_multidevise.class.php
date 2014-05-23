@@ -154,24 +154,25 @@ class ActionsMultidevise
 		         		// Ajout des prix devisé sur les lignes
 	         			<?php
 	         			
-	         			/*echo '<pre>';
-						print_r($_REQUEST);
-						echo '</pre>';exit;*/
-	         			
-						foreach($object->lines as $line){
+	         			if(!empty($object->lines)) {
+	         				
+		         			foreach($object->lines as $line){
+								
+								if($line->rowid)
+									$line->id = $line->rowid;
+								
+								$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
+								$res = $db->fetch_object($resql);
+								if($line->product_type!=9) {
+			         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
+									echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
+								}
+								
+								if($line->error != '') echo "alert('".$line->error."');";
+		         			}
 							
-							if($line->rowid)
-								$line->id = $line->rowid;
-							
-							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
-							$res = $db->fetch_object($resql);
-							if($line->product_type!=9) {
-		         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
-								echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
-							}
-							
-							if($line->error != '') echo "alert('".$line->error."');";
 	         			}
+	         			
 						?>
 					});
 			    </script>	

@@ -145,14 +145,14 @@ class InterfaceMultideviseWorkflow
 		dol_include_once('/fourn/class/fournisseur.commande.class.php');
 		dol_include_once('/fourn/class/fournisseur.product.class.php');
 
-		$db=&$object->db;
+		$db=&$this->db;
 
 		/*
 		 * ASSOCIATION DEVISE PAR SOCIETE
 		 */
 		if($action == "COMPANY_CREATE" || $action =="COMPANY_MODIFY"){
 			$currency=__get('currency','');
-			TMultidevise::udpateCompany($db, $object, $currency);
+			TMultidevise::updateCompany($db, $object, $currency);
 		}
 		
 		/*
@@ -186,7 +186,7 @@ class InterfaceMultideviseWorkflow
 			$idprodfournprice = __get('idprodfournprice',0);	 
 			$fournprice=__get('fournprice_predef','');
 			$buyingprice=__get('buying_price_predef','');	 
-				 
+			
 			TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
 		}
 	
@@ -216,7 +216,7 @@ class InterfaceMultideviseWorkflow
 		 * AJOUT D'UN PAIEMENT 
 		 */
 		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE"){
-			
+			//TODO à mettre dnas la classe en fonction
 			//pre($_REQUEST);
 			
 			$TDevise=array();
