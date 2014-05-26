@@ -480,10 +480,12 @@ class TMultidevise{
 				$object->update(true);
 			}
 			
-			if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE')
+			if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'){
 				$fk_parent = isset($object->oldline->{"fk_".$element}) ? $object->oldline->{"fk_".$element} : $object->{"fk_".$element};
-			else
+			}
+			else{
 				$fk_parent = $object->id;
+			}
 			
 			$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$fk_parent;
 
@@ -521,12 +523,12 @@ class TMultidevise{
 				$db->query($sql);
 			}
 			else{
-				if($action == 'LINEORDER_SUPPLIER_UPDATE')
+				if($action == 'LINEORDER_SUPPLIER_UPDATE'){
 					$sql = "SELECT subprice, qty, remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$object->rowid;
-				else
+				}
+				else{
 					$sql = "SELECT pu_ht as subprice, qty, remise_percent as remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$object->rowid;
-				
-				echo $sql;
+				}
 				
 				$resql = $db->query($sql);
 	            $res = $db->fetch_object($resql);

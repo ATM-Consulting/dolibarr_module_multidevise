@@ -136,6 +136,7 @@ class InterfaceMultideviseWorkflow
 		global  $user, $conf;
 		if(!defined('INC_FROM_DOLIBARR'))define('INC_FROM_DOLIBARR',true);
 		dol_include_once('/multidevise/config.php');
+		dol_include_once('/multidevise/class/multidevise.class.php');
 		dol_include_once('/commande/class/commande.class.php');
 		dol_include_once('/compta/facture/class/facture.class.php');
 		dol_include_once('/comm/propal/class/propal.class.php');
@@ -217,6 +218,7 @@ class InterfaceMultideviseWorkflow
 			$remise_percent =__get('remise_percent',0);	 
 				
 			TMultidevise::updateLine($db, $object,$user, $action,$id_line,$remise_percent);
+		
 		}
 	
 		/*
@@ -319,7 +321,7 @@ class InterfaceMultideviseWorkflow
 				}
 			}
 		}
-		
+	
 		if($action == "BEFORE_PROPAL_BUILDDOC" || $action == "BEFORE_ORDER_BUILDDOC"  || $action == "BEFORE_BILL_BUILDDOC" || $action == "BEFORE_ORDER_SUPPLIER_BUILDDOC" || $action == "BEFORE_BILL_SUPPLIER_BUILDDOC"){
 				
 			
@@ -372,7 +374,15 @@ class InterfaceMultideviseWorkflow
 					$object->total_tva = 0;
 				}
 			}
+				
 		}	
+		
+		if($action == "PROPAL_BUILDDOC" || $action == "ORDER_BUILDDOC"  || $action == "BILL_BUILDDOC" || $action == "ORDER_SUPPLIER_BUILDDOC" || $action == "BILL_SUPPLIER_BUILDDOC") {
+			
+			$object->fetch($object->id);
+			
+		}
+		
 		
 		return 1;
 	}
