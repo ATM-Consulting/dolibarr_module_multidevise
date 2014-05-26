@@ -144,6 +144,7 @@ class TMultidevise{
 				case 'LINEORDER_UPDATE':
 				case 'LINEORDER_INSERT':
 				case 'LINEORDER_DELETE':
+				case 'ORDER_CREATE':
 					$element = "commande";
 					$element_line = "commandedet";
 					$fk_element = "fk_commande";
@@ -151,6 +152,7 @@ class TMultidevise{
 				case 'LINEPROPAL_UPDATE':
 				case 'LINEPROPAL_INSERT':
 				case 'LINEPROPAL_DELETE':
+				case 'PROPAL_CREATE':
 					$element = "propal";
 					$element_line = "propaldet";
 					$fk_element = "fk_propal";
@@ -158,18 +160,21 @@ class TMultidevise{
 				case 'LINEBILL_INSERT':
 				case 'LINEBILL_DELETE':
 				case 'LINEBILL_UPDATE':
+				case 'BILL_CREATE':
 					$element = "facture";
 					$element_line = "facturedet";
 					$fk_element = "fk_facture";
 					break;
 				case 'LINEORDER_SUPPLIER_UPDATE':
 				case 'LINEORDER_SUPPLIER_CREATE':
+				case 'ORDER_SUPPLIER_CREATE':
 					$element = "commande_fournisseur";
 					$element_line = "commande_fournisseurdet";
 					$fk_element = "fk_commande";
 					break;
 				case 'LINEBILL_SUPPLIER_UPDATE':
 				case 'LINEBILL_SUPPLIER_CREATE':
+				case 'BILL_SUPPLIER_CREATE':
 					$element = "facture_fourn";
 					$element_line = "facture_fourn_det";
 					$fk_element = "fk_facture_fourn";
@@ -520,7 +525,9 @@ class TMultidevise{
 					$sql = "SELECT subprice, qty, remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$object->rowid;
 				else
 					$sql = "SELECT pu_ht as subprice, qty, remise_percent as remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$object->rowid;
-
+				
+				echo $sql;
+				
 				$resql = $db->query($sql);
 	            $res = $db->fetch_object($resql);
 
