@@ -144,9 +144,11 @@ class InterfaceMultideviseWorkflow
 		dol_include_once('/fourn/class/fournisseur.facture.class.php');
 		dol_include_once('/fourn/class/fournisseur.commande.class.php');
 		dol_include_once('/fourn/class/fournisseur.product.class.php');
-
+		
+		
 		$db=&$this->db;
 
+		
 		/*
 		 * ASSOCIATION DEVISE PAR SOCIETE
 		 */
@@ -165,12 +167,30 @@ class InterfaceMultideviseWorkflow
 		 */
 		if($action == "ORDER_CREATE" || $action == "PROPAL_CREATE" || $action =="BILL_CREATE" || $action =="ORDER_SUPPLIER_CREATE" || $action =="BILL_SUPPLIER_CREATE"){
 			
+			//Création standard => On récupère la devise passé dans le formulaire
 			if(isset($_REQUEST['currency']) && !empty($_REQUEST['currency'])){
 				$resql = $db->query('SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
 									 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
 									 WHERE c.code = "'.$_REQUEST['currency'].'" AND cr.id_entity = '.$conf->entity.' ORDER BY cr.dt_sync DESC LIMIT 1');
 				if($res = $db->fetch_object($resql)){
 					$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$res->rowid.', devise_code = "'.$res->code.'", devise_taux = '.$res->rate.' WHERE rowid = '.$object->id);
+				}
+			}
+			
+			//Clonage => On récupère la devise et le taux de l'objet cloné
+			if(!empty($_REQUEST['action']) && $_REQUEST['action'] == 'confirm_clone'){
+				
+				$objectid = ($_REQUEST['id']) ? $_REQUEST['id'] : $_REQUEST['facid'] ;
+				/*echo '<pre>';
+				print_r($_REQUEST);
+				echo '</pre>'; exit;*/
+				
+				$resql = $db->query('SELECT o.fk_devise, o.devise_code, o.devise_taux
+									 FROM '.MAIN_DB_PREFIX.$object->table_element.' AS o
+									 WHERE o.rowid = '.$objectid);
+				
+				if($res = $db->fetch_object($resql)){
+					$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$res->fk_devise.', devise_code = "'.$res->devise_code.'", devise_taux = '.$res->devise_taux.' WHERE rowid = '.$object->id);
 				}
 			}
 			
@@ -203,10 +223,6 @@ class InterfaceMultideviseWorkflow
 		 *  CREATION P.U. DEVISE + TOTAL DEVISE PAR LIGNE DE COMMANDE, PROPAL, FACTURE, COMMANDE FOURNISSEUR OU FACTURE FOURNISSEUR
 		 */
 		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT' || $action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE') {
-			
-			/*echo '<pre>';
-			print_r($_REQUEST);
-			echo '</pre>';exit;*/
 			
 			switch ($action) {
 				case 'LINEORDER_INSERT':
@@ -246,8 +262,63 @@ class InterfaceMultideviseWorkflow
 				$db->commit();
 			}
 			
+			//Clonage => On récupère la devise et le taux de l'objet cloné
+			if(!empty($_REQUEST['action']) && $_REQUEST['action'] == 'confirm_clone'){
+				
+				echo '<pre>';
+				print_r($_REQUEST);
+				echo '</pre>';
+				
+				echo '<pre>';
+				print_r($object);
+				echo '</pre>';exit;
+
+				$objectid = ($_REQUEST['id']) ? $_REQUEST['id'] : $_REQUEST['facid'] ;
+
+				if($action == 'LINEORDER_SUPPLIER_CREATE'){
+					
+					$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.$element_line.' WHERE '.$fk_element." = ".$objectid);
+					$res = $db->fetch_object($reql);
+					$originid = $res->rowid;
+				}
+				
+				//MAJ du montant devise ligne
+				$sql = "SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$element_line." WHERE ".$fk_element." = ".$objectid;
+
+				if($action == "LINEORDER_SUPPLIER_CREATE"){ //Comme dab partie achat merdique donc code spécifique
+					$sql .= " AND rowid = ".$originid;
+				}
+				else{
+					$sql .= " AND rang = ".$object->rang;
+				}
+				
+				//echo $sql; exit;
+				
+				$resql = $db->query($sql);
+				$res = $db->fetch_object($resql);
+
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' WHERE rowid = '.$object->rowid);
+				
+				//MAJ du total devise de la commande/facture/propale
+				$sql = 'SELECT SUM(f.devise_mt_ligne) as total_devise 
+						FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)';
+
+				if($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT'){
+					$sql .= 'WHERE m.rowid = '.$object->{'fk_'.$element};
+				}
+				else{
+					$sql .= 'WHERE m.rowid = '.$object->id;
+				}
+				
+				$resql = $db->query($sql);
+				$res = $db->fetch_object($resql);
+
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".(($object->{'fk_'.$element})? $object->{'fk_'.$element} : $object->id) );
+
+			}
+			
 			//Création a partir d'un objet d'origine (propale,commande client ou commande fournisseur)
-			if((!empty($object->origin) && !empty($object->origin_id)) || (!empty($_POST['origin']) && !empty($_POST['originid']))){
+			elseif((!empty($object->origin) && !empty($object->origin_id)) || (!empty($_POST['origin']) && !empty($_POST['originid']))){
 
 				if($_REQUEST['origin'] == "propal"){
 					$table_origin = "propal";
@@ -293,12 +364,12 @@ class InterfaceMultideviseWorkflow
 						
 						$commande_fourn_origine = new CommandeFournisseur($this->db);
 						$commande_fourn_origine->fetch($object->origin_id);
-						
+
 						$object->fetch_lines();
-						
+
 						$keys = array_keys($object->lines);
 						$last_key = $keys[count($keys)-1];
-						
+
 						$originid = $commande_fourn_origine->lines[$last_key]->id;
 					}
 					
