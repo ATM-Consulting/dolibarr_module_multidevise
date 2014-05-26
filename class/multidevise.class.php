@@ -468,30 +468,37 @@ class TMultidevise{
 		
 		
 	}
-	static function updateLine(&$db, &$object,&$user, $action,$id_line,$remise_percent) {
+	static function updateLine(&$db, &$object,&$user, $action,$id_line,$remise_percent, $devise_taux=0, $fk_parent=0) {
 		global $conf;
 		
 			list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
-			
 			if($action == 'LINEBILL_UPDATE'){
 				$object->update($user,true);
 			}
-			elseif($action != 'LINEORDER_SUPPLIER_UPDATE'){
+			elseif($action != 'LINEORDER_SUPPLIER_UPDATE' && $action!='LINEORDER_SUPPLIER_CREATE' && $action!='ORDER_SUPPLIER_CREATE'){
 				$object->update(true);
 			}
 			
-			if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'){
-				$fk_parent = isset($object->oldline->{"fk_".$element}) ? $object->oldline->{"fk_".$element} : $object->{"fk_".$element};
-			}
-			else{
-				$fk_parent = $object->id;
+			if(empty($fk_parent)){
+				if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'){
+					$fk_parent = isset($object->oldline->{"fk_".$element}) ? $object->oldline->{"fk_".$element} : $object->{"fk_".$element};
+				}
+				else{
+					$fk_parent = $object->id;
+				}
+				
+			}	
+					
+			if(empty($devise_taux)) {
+				
+				$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$fk_parent;
+	
+	            $resql = $db->query($sql);
+	            $res = $db->fetch_object($resql);
+	            $devise_taux = __val($res->devise_taux,1);
+				
 			}
 			
-			$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$fk_parent;
-
-            $resql = $db->query($sql);
-            $res = $db->fetch_object($resql);
-            $devise_taux = __val($res->devise_taux,1);
 
 			if($object->origin == "shipping"){
 					$db->commit();
@@ -523,13 +530,13 @@ class TMultidevise{
 				$db->query($sql);
 			}
 			else{
-				if($action == 'LINEORDER_SUPPLIER_UPDATE'){
-					$sql = "SELECT subprice, qty, remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$object->rowid;
+				if($action == 'LINEORDER_SUPPLIER_UPDATE' || $action=='LINEORDER_SUPPLIER_CREATE' || $action=='ORDER_SUPPLIER_CREATE'){
+					$sql = "SELECT subprice, qty, remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 				}
 				else{
-					$sql = "SELECT pu_ht as subprice, qty, remise_percent as remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$object->rowid;
+					$sql = "SELECT pu_ht as subprice, qty, remise_percent as remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 				}
-				
+		
 				$resql = $db->query($sql);
 	            $res = $db->fetch_object($resql);
 
@@ -539,21 +546,23 @@ class TMultidevise{
 				
 				$devise_mt_ligne = $pu_devise * $res->qty;
 				
-				$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' 
+				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 							SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($res->remise / 100))).' 
-							WHERE rowid = '.$object->rowid);
+							WHERE rowid = '.$id_line;
+				$db->query($sql);
+				
 				
 			}
 
 			//MAJ du total devise de la commande/facture/propale
 			$resql = $db->query('SELECT SUM(f.devise_mt_ligne) as total_devise 
 									   FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)
-									   WHERE m.rowid = '.$id_line);
+									   WHERE m.rowid = '.$fk_parent);
 			
 			$res = $db->fetch_object($resql);
 			$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' 
 						SET devise_mt_total = '.$res->total_devise." 
-						WHERE rowid = ".$id_line);
+						WHERE rowid = ".$fk_parent);
 		
 	}
 	

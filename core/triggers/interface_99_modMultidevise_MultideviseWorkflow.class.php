@@ -155,7 +155,7 @@ class InterfaceMultideviseWorkflow
 			$currency=__get('currency','');
 			TMultidevise::updateCompany($db, $object, $currency);
 		}
-		
+	
 		/*
 		 * ASSOCIATION DEVISE, TAUX PAR COMMANDE, PROPAL OU FACTURE
 		 */
@@ -166,18 +166,50 @@ class InterfaceMultideviseWorkflow
 
 			$origin=__get('origin', $object->origin);
 			
+			
+			$actioncard = __get('action','');
+				
+			if($actioncard=='confirm_clone' && $action='ORDER_SUPPLIER_CREATE') {
+				
+				$objectid = __get('facid', __get('id'));
+				
+				$sql = 'SELECT o.fk_devise, o.devise_code, o.devise_taux
+									 FROM '.MAIN_DB_PREFIX.$object->table_element.' AS o
+									 WHERE o.rowid = '.$objectid;
+				
+				$resql = $db->query($sql);
+
+				if($res = $db->fetch_object($resql)){
+					
+					$object->fetch($object->id);
+					
+					$fk_parent = $object->id;				
+					$devise_taux = $res->devise_taux;
+									
+					$sql="UPDATE ".MAIN_DB_PREFIX.$object->table_element." 
+					SET fk_devise=".$res->fk_devise.",devise_code='".$res->devise_code."',devise_taux=".$devise_taux."
+					WHERE rowid=".$fk_parent;
+					$db->query($sql);
+					
+					foreach($object->lines as &$line) {
+						
+						TMultidevise::updateLine($db, $line,$user, $action, $line->id ,$line->remise_percent,$devise_taux,$fk_parent);	
+						
+					}
+					
+					
+				}
+				
+				
+				
+			}
+			
 			//Clonage => On récupère la devise et le taux de l'objet cloné
 			if(!empty($_REQUEST['action']) && $_REQUEST['action'] == 'confirm_clone'){
 				
 				$objectid = ($_REQUEST['id']) ? $_REQUEST['id'] : $_REQUEST['facid'] ;
 
-				$resql = $db->query('SELECT o.fk_devise, o.devise_code, o.devise_taux
-									 FROM '.MAIN_DB_PREFIX.$object->table_element.' AS o
-									 WHERE o.rowid = '.$objectid);
-
-				if($res = $db->fetch_object($resql)){
-					$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$res->fk_devise.', devise_code = "'.$res->devise_code.'", devise_taux = '.$res->devise_taux.' WHERE rowid = '.$object->id);
-				}
+				
 				
 			}
 			
@@ -204,8 +236,18 @@ class InterfaceMultideviseWorkflow
 			$idprodfournprice = __get('idprodfournprice',0);	 
 			$fournprice=__get('fournprice_predef','');
 			$buyingprice=__get('buying_price_predef','');	 
-
-			TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
+				
+			$actioncard = __get('action','');
+				
+			if($actioncard=='confirm_clone') {
+				
+				null; //TMultidevise::updateLine($db, $object,$user, $action,$object->rowid,$object->remise_percent);
+				
+			}	
+			else {
+				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
+				
+			}				
 		}
 	
 		/*
