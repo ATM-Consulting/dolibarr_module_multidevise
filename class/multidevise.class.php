@@ -472,10 +472,12 @@ class TMultidevise{
 		global $conf;
 		
 			list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
-			if($action == 'LINEBILL_UPDATE'){
+			if($action === 'LINEBILL_UPDATE'){
+					
 				$object->update($user,true);
 			}
-			elseif($action != 'LINEORDER_SUPPLIER_UPDATE' && $action!='LINEORDER_SUPPLIER_CREATE' && $action!='ORDER_SUPPLIER_CREATE'){
+			elseif($action != 'LINEORDER_SUPPLIER_UPDATE' && $action!='LINEORDER_SUPPLIER_CREATE' && $action!='ORDER_SUPPLIER_CREATE' && $action!='BILL_SUPPLIER_CREATE' && $action!='LINEBILL_SUPPLIER_UPDATE'){
+			
 				$object->update(true);
 			}
 			
@@ -492,7 +494,7 @@ class TMultidevise{
 			if(empty($devise_taux)) {
 				
 				$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$fk_parent;
-	
+
 	            $resql = $db->query($sql);
 	            $res = $db->fetch_object($resql);
 	            $devise_taux = __val($res->devise_taux,1);
@@ -550,7 +552,7 @@ class TMultidevise{
 							SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($res->remise / 100))).' 
 							WHERE rowid = '.$id_line;
 				$db->query($sql);
-				
+			
 				
 			}
 

@@ -169,7 +169,7 @@ class InterfaceMultideviseWorkflow
 			
 			$actioncard = __get('action','');
 				
-			if($actioncard=='confirm_clone' && $action='ORDER_SUPPLIER_CREATE') {
+			if($actioncard=='confirm_clone' && $action='ORDER_SUPPLIER_CREATE'&& $action='BILL_SUPPLIER_CREATE') {
 				
 				$objectid = __get('facid', __get('id'));
 				
