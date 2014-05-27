@@ -137,7 +137,33 @@ class TMultidevise{
 			}
 		}
 	}
-	
+	static function getActionByTable($table) {
+		
+		switch($table) {
+			case 'commande':
+				return 'LINEORDER_UPDATE';
+				break;
+			
+			case 'propal':
+				return 'LINEPROPAL_UPDATE';
+				break;
+			
+			case 'facture':
+				return 'LINEBILL_UPDATE';
+				break;
+			
+			case 'commande_fournisseur':
+				return 'LINEORDER_SUPPLIER_UPDATE';
+				break;
+			
+			case 'facture_fourn':
+				return 'LINEBILL_SUPPLIER_UPDATE';
+				break;
+			
+		}
+		
+		
+	}
 	static function getTableByAction($action) {
 		
 		switch ($action) {
@@ -485,7 +511,7 @@ class TMultidevise{
 			}
 			
 			if(empty($fk_parent)){
-				if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'){
+				if($action === 'LINEORDER_UPDATE' || $action === 'LINEPROPAL_UPDATE' || $action === 'LINEBILL_UPDATE'){
 					$fk_parent = __val($object->oldline->{"fk_".$element}, __val($object->{"fk_".$element}, $object->id) );
 					
 				}
@@ -581,6 +607,43 @@ class TMultidevise{
 				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$currency.'" LIMIT 1');
 				if($res = $db->fetch_object($resql)){
 					$db->query('UPDATE '.MAIN_DB_PREFIX.'societe SET fk_devise = '.$res->rowid.', devise_code = "'.$currency.'" WHERE rowid = '.$object->id);
+				}
+			}
+		
+	}
+	
+	static function updateCurrencyRate(&$db, $object, $currency, $currencyRate) {
+		global $user;
+			if($currency){
+				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$currency.'" LIMIT 1');
+				if($res = $db->fetch_object($resql)){
+					
+					$sql = " UPDATE ".MAIN_DB_PREFIX.$object->table_element." 
+		    		SET fk_devise = ".$res->rowid.", devise_code='".$currency."'";
+		    	
+					if ($object->table_element != "societe") {
+						$sql .= ',devise_taux='.$currencyRate;
+					}
+					
+		    		$sql.=" WHERE rowid = ".$object->id;
+					$db->query($sql);	
+					
+					
+					if(!empty($object->lines)) {
+						
+						foreach($object->lines as &$line) {
+							
+							$id_line = __val($line->id, $line->rowid);
+							$remise_percent = __val($line->remise_percent, $line->rowid);
+							
+							$action = TMultidevise::getActionByTable($object->table_element);
+							//var_dump($line, $action, $id_line, $remise_percent);
+							TMultidevise::updateLine($db, $line, $user, $action, $id_line, $remise_percent,$currencyRate,$object->id);
+							
+						}
+						
+					}
+					
 				}
 			}
 		
