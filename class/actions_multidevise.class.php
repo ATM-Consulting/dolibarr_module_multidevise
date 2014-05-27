@@ -25,7 +25,7 @@ class ActionsMultidevise
     function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
     {
 		
-    	global $db, $user,$conf;
+    	global $db, $user,$conf, $langs;
 		dol_include_once("/societe/class/societe.class.php");
 		dol_include_once("/core/lib/company.lib.php");
 		dol_include_once("/core/lib/functions.lib.php");
@@ -39,6 +39,7 @@ class ActionsMultidevise
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 
+			$langs->load('multidevise@multidevise');
 			
 	    	/* ***********************
 			 * EDIT
@@ -59,7 +60,7 @@ class ActionsMultidevise
 				}
 				
 				$form=new Form($db);
-				print '<tr><td>Devise</td><td colspan="3">';
+				print '<tr><td>'.$langs->trans('Currency').'</td><td colspan="3">';
 				print $form->select_currency($cur,"currency");
 				print '</td></tr>';
 
@@ -79,25 +80,25 @@ class ActionsMultidevise
 
 				if($res->fk_devise && !is_null($res->devise_code)){
 					
-					print '<tr><td>Devise</td><td colspan="3">';
+					print '<tr><td>'.$langs->trans('Currency').'</td><td colspan="3">';
 					print currency_name($res->devise_code,1);
 					print ' ('.$res->devise_code.')</td></tr>';
 
 					if($object->table_element != "societe"){
-						print '<tr><td>Taux Devise</td><td colspan="3">'.price(__val($res->devise_taux,1),0,'',1,2,2).'</td><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></tr>';
-						print '<tr><td>Montant Devise</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
+						print '<tr><td>'.$langs->trans('CurrencyRate').'</td><td colspan="3">'.price(__val($res->devise_taux,1),0,'',1,2,2).'</td><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></tr>';
+						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
 					}
 					
 				}
 				else{
 					
-					print '<tr><td>Devise</td><td colspan="3">';
+					print '<tr><td>'.$langs->trans('Currency').'</td><td colspan="3">';
 					print currency_name($conf->currency,1);
 					print ' ('.$conf->currency.')</td></tr>';
 
 					if($object->table_element != "societe"){
-						print '<tr><td>Taux Devise</td><td colspan="3">1,0<input type="hidden" id="taux_devise" value="1" /></td></tr>';
-						print '<tr><td>Montant Devise</td><td colspan="3"></td></tr>';
+						print '<tr><td>'.$langs->trans('CurrencyRate').'</td><td colspan="3">1,0<input type="hidden" id="taux_devise" value="1" /></td></tr>';
+						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3"></td></tr>';
 					}
 					
 				}
