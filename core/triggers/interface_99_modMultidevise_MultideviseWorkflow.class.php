@@ -159,17 +159,16 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * ASSOCIATION DEVISE, TAUX PAR COMMANDE, PROPAL OU FACTURE
 		 */
-		if($action == "ORDER_CREATE" || $action == "PROPAL_CREATE" || $action =="BILL_CREATE" 
-		|| $action =="ORDER_SUPPLIER_CREATE" || $action =="BILL_SUPPLIER_CREATE"){
+		if($action === "ORDER_CREATE" || $action  ===  "PROPAL_CREATE" || $action  ===  "BILL_CREATE" 
+		|| $action === "ORDER_SUPPLIER_CREATE" || $action  === "BILL_SUPPLIER_CREATE"){
 			
 			$currency=__get('currency','');
 
 			$origin=__get('origin', $object->origin);
 			
-			
 			$actioncard = __get('action','');
 				
-			if($actioncard=='confirm_clone' && $action='ORDER_SUPPLIER_CREATE'&& $action='BILL_SUPPLIER_CREATE') {
+			if($actioncard=='confirm_clone' && ($action==='ORDER_SUPPLIER_CREATE' || $action==='BILL_SUPPLIER_CREATE' || $action==='PROPAL_CREATE' || $action==='ORDER_CREATE' || $action==='BILL_CREATE') ) {
 				
 				$objectid = __get('facid', __get('id'));
 				
@@ -178,9 +177,8 @@ class InterfaceMultideviseWorkflow
 									 WHERE o.rowid = '.$objectid;
 				
 				$resql = $db->query($sql);
-
+		
 				if($res = $db->fetch_object($resql)){
-					
 					$object->fetch($object->id);
 					
 					$fk_parent = $object->id;				
@@ -190,14 +188,16 @@ class InterfaceMultideviseWorkflow
 					SET fk_devise=".$res->fk_devise.",devise_code='".$res->devise_code."',devise_taux=".$devise_taux."
 					WHERE rowid=".$fk_parent;
 					$db->query($sql);
-					
+				
 					foreach($object->lines as &$line) {
+							
+						$id_line = ($action==='BILL_SUPPLIER_CREATE') ? $line->rowid : $line->id ;
 						
-						TMultidevise::updateLine($db, $line,$user, $action, $line->id ,$line->remise_percent,$devise_taux,$fk_parent);	
+						TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);	
 						
 					}
 					
-					
+				
 				}
 				
 				

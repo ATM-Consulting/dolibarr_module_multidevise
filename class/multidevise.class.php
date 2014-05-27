@@ -187,7 +187,7 @@ class TMultidevise{
 	static function deleteLine(&$db, &$object, $action, $id, $lineid) {
 		global $conf;
 		
-		if ($action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE') {
+		if ($action === 'LINEORDER_SUPPLIER_DELETE' || $action === 'LINEBILL_SUPPLIER_DELETE') {
 			
 			//Obligé puisque dans le cas d'une suppresion le trigger est appelé avant et non après
 			$object->deleteline($lineid, TRUE); // TODO est si on echappe simplement la ligne dans ce qui suit
@@ -470,8 +470,10 @@ class TMultidevise{
 	}
 	static function updateLine(&$db, &$object,&$user, $action,$id_line,$remise_percent, $devise_taux=0, $fk_parent=0) {
 		global $conf;
-		
+	//var_dump($object);
 			list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
+	
+	
 			if($action === 'LINEBILL_UPDATE'){
 					
 				$object->update($user,true);
@@ -479,11 +481,13 @@ class TMultidevise{
 			elseif($action != 'LINEORDER_SUPPLIER_UPDATE' && $action!='LINEORDER_SUPPLIER_CREATE' && $action!='ORDER_SUPPLIER_CREATE' && $action!='BILL_SUPPLIER_CREATE' && $action!='LINEBILL_SUPPLIER_UPDATE'){
 			
 				$object->update(true);
+				
 			}
 			
 			if(empty($fk_parent)){
 				if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'){
-					$fk_parent = isset($object->oldline->{"fk_".$element}) ? $object->oldline->{"fk_".$element} : $object->{"fk_".$element};
+					$fk_parent = __val($object->oldline->{"fk_".$element}, __val($object->{"fk_".$element}, $object->id) );
+					
 				}
 				else{
 					$fk_parent = $object->id;
@@ -494,7 +498,6 @@ class TMultidevise{
 			if(empty($devise_taux)) {
 				
 				$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$fk_parent;
-
 	            $resql = $db->query($sql);
 	            $res = $db->fetch_object($resql);
 	            $devise_taux = __val($res->devise_taux,1);
@@ -512,7 +515,8 @@ class TMultidevise{
 									WHERE rowid = '.$object->rowid);
 					
 			}
-			elseif($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'){
+			elseif($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'
+			|| $action==='PROPAL_CREATE' || $action==='BILL_CREATE' || $action==='ORDER_CREATE' ){
 				$pu_devise = $object->subprice * $devise_taux;
 			    $pu_devise = !empty($object->device_pu) ? $object->device_pu : $object->subprice * $devise_taux;
 
