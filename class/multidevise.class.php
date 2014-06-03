@@ -494,9 +494,10 @@ class TMultidevise{
 		
 		
 	}
-	static function updateLine(&$db, &$object,&$user, $action,$id_line,$remise_percent, $devise_taux=0, $fk_parent=0) {
+	static function updateLine(&$db, &$object,&$user, $action,$id_line,$remise_percent, $devise_taux=0, $fk_parent=0,$rateApplication='PU_DEVISE') {
 		global $conf;
 	//var_dump($object);
+	
 			list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
 	
 	
@@ -536,30 +537,55 @@ class TMultidevise{
 					$db->commit();
 					$db->commit();
 
-					$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet 
+					if($rateApplication=='PU_DOLIBARR') {
+						// a priori cas impossible
+					}
+					else {
+
+						$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet 
 									SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' 
 									WHERE rowid = '.$object->rowid);
-					
+						
+					}
+
 			}
-			elseif($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'
+			elseif($action === 'LINEORDER_UPDATE' || $action ==='LINEPROPAL_UPDATE' || $action === 'LINEBILL_UPDATE'
 			|| $action==='PROPAL_CREATE' || $action==='BILL_CREATE' || $action==='ORDER_CREATE' ){
-				$pu_devise = $object->subprice * $devise_taux;
+				
 			    $pu_devise = !empty($object->device_pu) ? $object->device_pu : $object->subprice * $devise_taux;
 
 				$pu_devise = round($pu_devise,2);
 
 				$devise_mt_ligne = $pu_devise * $object->qty;
-
-				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
-							SET devise_pu = '.$pu_devise.'
-							, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $remise_percent) / 100))).' 
-							WHERE rowid = '.$object->rowid;
-
-				$db->query($sql);
+				
+				if($rateApplication=='PU_DOLIBARR') {
+					
+					$object->subprice = $pu_devise / $devise_taux;
+					$object->total = $object->subprice * $object->qty; 
+					
+/*var_dump($pu_devise,$action,$rateApplication,$object);
+				exit();*/
+				}
+				else {
+					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
+								SET devise_pu = '.$pu_devise.'
+								, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $remise_percent) / 100))).' 
+								WHERE rowid = '.$object->rowid;
+	
+					$db->query($sql);
+				}
+				
 								
 				list($object->total_ht, $object->total_tva, $object->total_ttc)=calcul_price_total($object->qty, $object->subprice, $object->remise_percent, $object->tva_tx, 0, 0, 0, 'HT', $object->info_bits, $object->fk_product_type);
-				  
-				$db->query($sql);
+				if($rateApplication=='PU_DOLIBARR') {
+					if($action === 'LINEBILL_UPDATE'){
+						$object->update($user,true);
+					}
+					else{
+						$object->update(true);
+					}			
+				} 
+				//$db->query($sql); ???
 			}
 			else{
 				if($action == 'LINEORDER_SUPPLIER_UPDATE' || $action=='LINEORDER_SUPPLIER_CREATE' || $action=='ORDER_SUPPLIER_CREATE'){
@@ -578,24 +604,36 @@ class TMultidevise{
 				
 				$devise_mt_ligne = $pu_devise * $res->qty;
 				
-				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
-							SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($res->remise / 100))).' 
-							WHERE rowid = '.$id_line;
-				$db->query($sql);
+				if($rateApplication=='PU_DOLIBARR') {
+					
+				}
+				else{
+					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
+								SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($res->remise / 100))).' 
+								WHERE rowid = '.$id_line;
+					$db->query($sql);
+					
+				}
+				
+			}
+
+			if($rateApplication=='PU_DOLIBARR') {
+				
+			}
+			else {
+				//MAJ du total devise de la commande/facture/propale
+				$resql = $db->query('SELECT SUM(f.devise_mt_ligne) as total_devise 
+										   FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)
+										   WHERE m.rowid = '.$fk_parent);
+				
+				$res = $db->fetch_object($resql);
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' 
+							SET devise_mt_total = '.$res->total_devise." 
+							WHERE rowid = ".$fk_parent);
 			
 				
 			}
 
-			//MAJ du total devise de la commande/facture/propale
-			$resql = $db->query('SELECT SUM(f.devise_mt_ligne) as total_devise 
-									   FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)
-									   WHERE m.rowid = '.$fk_parent);
-			
-			$res = $db->fetch_object($resql);
-			$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' 
-						SET devise_mt_total = '.$res->total_devise." 
-						WHERE rowid = ".$fk_parent);
-		
 	}
 	
 	/*
@@ -613,10 +651,17 @@ class TMultidevise{
 	}
 	
 	static function updateCurrencyRate(&$db, $object, $currency, $currencyRate) {
-		global $user;
+		global $user,$conf;
 			if($currency){
 				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$currency.'" LIMIT 1');
 				if($res = $db->fetch_object($resql)){
+					
+					if ($object->table_element != "societe") {
+						$sql="SELECT devise_taux FROM ".MAIN_DB_PREFIX.$object->table_element." WHERE rowid = ".$object->id; 
+						$res2= $db->query($sql);	
+						$obj2 = $db->fetch_object($res2);
+						$old_currencyRate=$obj2->devise_taux;
+					}
 					
 					$sql = " UPDATE ".MAIN_DB_PREFIX.$object->table_element." 
 		    		SET fk_devise = ".$res->rowid.", devise_code='".$currency."'";
@@ -628,17 +673,17 @@ class TMultidevise{
 		    		$sql.=" WHERE rowid = ".$object->id;
 					$db->query($sql);	
 					
-					
 					if(!empty($object->lines)) {
 						
 						foreach($object->lines as &$line) {
 							
 							$id_line = __val($line->id, $line->rowid);
 							$remise_percent = __val($line->remise_percent, $line->rowid);
+							$line->device_pu = $line->subprice * $old_currencyRate;
 							
 							$action = TMultidevise::getActionByTable($object->table_element);
 							//var_dump($line, $action, $id_line, $remise_percent);
-							TMultidevise::updateLine($db, $line, $user, $action, $id_line, $remise_percent,$currencyRate,$object->id);
+							TMultidevise::updateLine($db, $line, $user, $action, $id_line, $remise_percent,$currencyRate,$object->id,$conf->global->MULTIDEVISE_MODIFY_RATE_APPLICATION);
 							
 						}
 						
