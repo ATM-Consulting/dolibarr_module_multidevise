@@ -124,7 +124,7 @@ class modmultidevise extends DolibarrModules
 		//                             1=>array('MYMODULE_MYNEWCONST2','chaine','myvalue','This is another constant to add',0, 'current', 1)
 		// );
 		$this->const = array(
-			array('MULTIDEVISE_MODIFY_RATE_APPLICATION','chaine','PU_DOLIBARR','Definie le sens d\'application des modifications de taux')
+			array('MULTIDEVISE_MODIFY_RATE_APPLICATION','chaine','PU_DOLIBARR','Definie le sens d\'application des modifications de taux',1)
 		);
 
 		// Array to add new pages in new tabs
