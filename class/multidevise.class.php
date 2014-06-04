@@ -561,7 +561,7 @@ class TMultidevise{
 				if($rateApplication=='PU_DOLIBARR') {
 					
 					$object->subprice = $pu_devise / $devise_taux;
-					$object->total = $object->subprice * $object->qty; 
+					$object->total = $object->subprice * $object->qty * (1+($object->remise_percent/100)); 
 					
 /*var_dump($pu_devise,$action,$rateApplication,$object);
 				exit();*/
@@ -589,23 +589,51 @@ class TMultidevise{
 			}
 			else{
 				if($action == 'LINEORDER_SUPPLIER_UPDATE' || $action=='LINEORDER_SUPPLIER_CREATE' || $action=='ORDER_SUPPLIER_CREATE'){
-					$sql = "SELECT subprice, qty, remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
+					$sql = "SELECT subprice, qty, remise_percent as remise, total_tva,total_localtax1,total_localtax2,total_ttc FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 				}
 				else{
-					$sql = "SELECT pu_ht as subprice, qty, remise_percent as remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
+					$sql = "SELECT pu_ht as subprice, qty, remise_percent as remise, total_tva,total_localtax1,total_localtax2,total_ttc  FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 				}
 		
 				$resql = $db->query($sql);
 	            $res = $db->fetch_object($resql);
 
-				$pu_devise = $res->subprice * $devise_taux;
+				$pu_devise = !empty($object->device_pu) ? $object->device_pu : $res->subprice * $devise_taux;
 				
 				$pu_devise = round($pu_devise,2);
 				
 				$devise_mt_ligne = $pu_devise * $res->qty;
 				
 				if($rateApplication=='PU_DOLIBARR') {
-					
+						$subprice = $pu_devise / $devise_taux;
+						$total = $subprice * $res->qty * (1+($res->remise/100));  
+						$tx_tva = $res->total_tva / $res->total_ttc;
+						
+						$object->subprice = $subprice;
+						$object->total_ht = $total;
+						$object->total_tva = $total*$tx_tva;
+						$object->total_ttc = $total*(1+$tx_tva);
+						
+						if($action==='LINEORDER_SUPPLIER_UPDATE') {
+							$parent = new CommandeFournisseur($db);
+							$parent->fetch($fk_parent);
+							$parent->updateline(
+						        $id_line,
+						        $object->description,
+						        $object->subprice,
+						        $object->qty,
+						        $object->remise_percent,
+						        $object->tva_tx,
+						        $object->localtax1,
+						        $object->localtax1,
+						        'HT',
+						        0,
+						        $object->product_type,
+						        true
+						    );
+							
+						}
+						
 				}
 				else{
 					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
@@ -618,7 +646,16 @@ class TMultidevise{
 			}
 
 			if($rateApplication=='PU_DOLIBARR') {
+				//MAJ du total devise de la commande/facture/propale
+				/*$resql = $db->query('SELECT SUM(f.total_ht) as total_ht,SUM(f.total_tva) as total_tva,SUM(f.total_ttc) as total_ttc
+										   FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)
+										   WHERE m.rowid = '.$fk_parent);
 				
+				$res = $db->fetch_object($resql);
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' 
+							SET total_ht = '.$res->total_ht.', total_tva = '.$res->total_tva.', total_ttc = '.$res->total_ttc.'
+							WHERE rowid = '.$fk_parent);
+			*/
 			}
 			else {
 				//MAJ du total devise de la commande/facture/propale
@@ -650,7 +687,7 @@ class TMultidevise{
 		
 	}
 	
-	static function updateCurrencyRate(&$db, $object, $currency, $currencyRate) {
+	static function updateCurrencyRate(&$db, &$object, $currency, $currencyRate) {
 		global $user,$conf;
 			if($currency){
 				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$currency.'" LIMIT 1');
@@ -690,6 +727,13 @@ class TMultidevise{
 					}
 					
 				}
+
+
+				if(method_exists($object, 'update_price')) {
+					$object->update_price();
+				}
+
+
 			}
 		
 	}
