@@ -770,7 +770,12 @@ class TMultidevise{
 				if(method_exists($object, 'update_price')) {
 					$object->update_price();
 				}
-
+				
+				?>
+				<script language="javascript">
+					document.location.href="?id=<?php echo $object->id; ?>";					
+				</script>
+				<?php
 
 			}
 		
