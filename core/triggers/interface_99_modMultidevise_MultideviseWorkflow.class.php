@@ -92,34 +92,6 @@ class InterfaceMultideviseWorkflow
         else return $langs->trans("Unknown");
     }
 
-
-	function _getMarge(&$fk_fournprice,&$buyingprice){
-		global  $user, $conf;
-		//echo $buyingprice;exit;
-		//Récupération du fk_soc associé au prix fournisseur
-		$resql = $this->db->query("SELECT pfp.fk_soc FROM ".MAIN_DB_PREFIX."product_fournisseur_price as pfp WHERE pfp.rowid = ".$fk_fournprice);
-		$res = $this->db->fetch_object($resql);
-		$fk_soc = $res->fk_soc;
-//		exit($fk_soc);
-		//Récupération du taux de la devise fournisseur
-		$sql = "SELECT cr.rate
-				FROM ".MAIN_DB_PREFIX."currency_rate as cr
-					LEFT JOIN ".MAIN_DB_PREFIX."currency as c ON (c.rowid = cr.id_currency)
-					LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON (cr.rowid = s.fk_devise)
-				WHERE s.rowid = ".$fk_soc."
-				ORDER BY cr.dt_sync DESC
-				LIMIT 1";
-		//echo $sql;exit;
-		$resql = $this->db->query($sql);
-		$res = $this->db->fetch_object($resql);
-		
-		//Calcul du prix d'achat devisé
-		$buyingprice = (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? price2num($buyingprice) / $res->rate : $buyingprice ;
-//		echo $buyingprice;exit;
-		return $buyingprice;
-	}
-
-	
     /**
      *      Function called when a Dolibarrr business event is done.
      *      All functions "run_trigger" are triggered if file is inside directory htdocs/core/triggers
@@ -205,12 +177,12 @@ class InterfaceMultideviseWorkflow
 			}
 			
 			//Clonage => On récupère la devise et le taux de l'objet cloné
+			//TODO A quoi ça sert?
 			if(!empty($_REQUEST['action']) && $_REQUEST['action'] == 'confirm_clone'){
 				
 				$objectid = ($_REQUEST['id']) ? $_REQUEST['id'] : $_REQUEST['facid'] ;
 
-				
-				
+
 			}
 			
 			else{
@@ -243,10 +215,10 @@ class InterfaceMultideviseWorkflow
 				
 				null; //TMultidevise::updateLine($db, $object,$user, $action,$object->rowid,$object->remise_percent);
 				
-			}	
+			}
 			else {
 				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
-				
+
 			}				
 		}
 	

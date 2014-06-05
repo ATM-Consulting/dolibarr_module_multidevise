@@ -304,8 +304,10 @@ class TMultidevise{
 		
 		global $conf;
 		
+		
+
 		list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
-			
+
 		if($action == 'LINEBILL_INSERT'){
 			$object->update($user,true);
 		}
@@ -324,7 +326,7 @@ class TMultidevise{
 			if($origin == "propal" && empty($originid)){
 				$propal = new Propal($db);
 				$propal->fetch($originidpropal);
-				
+
 				foreach($propal->lines as $line){
 					
 					if($line->rang == $object->rang) {
@@ -373,7 +375,7 @@ class TMultidevise{
 
 				$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 							SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' 
-							WHERE rowid = '.$object->rowid); //TODO check id si rowid vide
+							WHERE rowid = '.(($object->rowid) ? $object->rowid : $object->id )); //TODO check id si rowid vide
 
 			}
 			
@@ -448,7 +450,7 @@ class TMultidevise{
 				//exit($fournprice);	
 					if($fournprice) {
 //exit("1");
-						$object->pa_ht = price($this->_getMarge($fournprice, $buyingprice));
+						$object->pa_ht = price(TMultidevise::_getMarge($db,$fournprice, $buyingprice));
 						$object->fk_fournprice = 0; //mise a zero obligatoire sinon affiche le prix fournisseur non modifé
 					}
 				}
@@ -494,6 +496,33 @@ class TMultidevise{
 		
 		
 	}
+	
+	static function _getMarge(&$db,&$fk_fournprice,&$buyingprice){
+		global  $user, $conf;
+		//echo $buyingprice;exit;
+		//Récupération du fk_soc associé au prix fournisseur
+		$resql = $db->query("SELECT pfp.fk_soc FROM ".MAIN_DB_PREFIX."product_fournisseur_price as pfp WHERE pfp.rowid = ".$fk_fournprice);
+		$res = $db->fetch_object($resql);
+		$fk_soc = $res->fk_soc;
+//		exit($fk_soc);
+		//Récupération du taux de la devise fournisseur
+		$sql = "SELECT cr.rate
+				FROM ".MAIN_DB_PREFIX."currency_rate as cr
+					LEFT JOIN ".MAIN_DB_PREFIX."currency as c ON (c.rowid = cr.id_currency)
+					LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON (cr.rowid = s.fk_devise)
+				WHERE s.rowid = ".$fk_soc."
+				ORDER BY cr.dt_sync DESC
+				LIMIT 1";
+		//echo $sql;exit;
+		$resql = $db->query($sql);
+		$res = $db->fetch_object($resql);
+		
+		//Calcul du prix d'achat devisé
+		$buyingprice = (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? price2num($buyingprice) / $res->rate : $buyingprice ;
+//		echo $buyingprice;exit;
+		return $buyingprice;
+	}
+
 	static function updateLine(&$db, &$object,&$user, $action,$id_line,$remise_percent, $devise_taux=0, $fk_parent=0,$rateApplication='PU_DEVISE') {
 		global $conf;
 	//var_dump($object);
@@ -588,13 +617,14 @@ class TMultidevise{
 				//$db->query($sql); ???
 			}
 			else{
+				
 				if($action == 'LINEORDER_SUPPLIER_UPDATE' || $action=='LINEORDER_SUPPLIER_CREATE' || $action=='ORDER_SUPPLIER_CREATE'){
 					$sql = "SELECT subprice, qty, remise_percent as remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 				}
 				else{
 					$sql = "SELECT pu_ht as subprice, qty, remise_percent as remise  FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 				}
-		
+				
 				$resql = $db->query($sql);
 	            $res = $db->fetch_object($resql);
 

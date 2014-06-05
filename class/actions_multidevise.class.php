@@ -49,8 +49,20 @@ class ActionsMultidevise
 				$cur = $conf->currency;
 				$id = (!empty($_REQUEST['socid'])) ? $_REQUEST['socid'] : 0 ;
 
-	    		$sql = 'SELECT fk_devise, devise_code';
-	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$id;
+				//cas ou le document créer à une origine
+				if((isset($_REQUEST['origin']) && isset($_REQUEST['originid']))
+					|| ($object->origin && $object->origin_id )){
+					
+					$origin = ($_REQUEST['origin']) ? $_REQUEST['origin'] : $object->origin;
+					$origin_id = ($_REQUEST['originid']) ? $_REQUEST['originid'] : $object->origin_id;
+					
+					$sql = 'SELECT fk_devise, devise_code';
+	    			$sql .= ' FROM '.MAIN_DB_PREFIX.$origin.' WHERE rowid = '.$origin_id;
+				}
+				else{// cas standard on récupère la devise associé au tiers
+					$sql = 'SELECT fk_devise, devise_code';
+	    			$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$id;
+				}
 
 	    		if($resql = $db->query($sql)){
 					$res = $db->fetch_object($resql);
