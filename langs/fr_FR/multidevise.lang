@@ -5,3 +5,6 @@ Module104030Desc = Gestion de plusieurs devises
 MulticurrencySetupPage = Configuration du module multi-devise
 MulticurrencyExchangeRatesSetup = Configuration des taux de change
 ExchangeRate = Taux de change
+Currency = Devise
+CurrencyRate = Taux devise
+CurrencyTotal = Montant devise

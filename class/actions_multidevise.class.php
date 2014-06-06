@@ -25,7 +25,7 @@ class ActionsMultidevise
     function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
     {
 		
-    	global $db, $user,$conf;
+    	global $db, $user,$conf, $langs;
 		dol_include_once("/societe/class/societe.class.php");
 		dol_include_once("/core/lib/company.lib.php");
 		dol_include_once("/core/lib/functions.lib.php");
@@ -39,6 +39,7 @@ class ActionsMultidevise
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 
+			$langs->load('multidevise@multidevise');
 			
 	    	/* ***********************
 			 * EDIT
@@ -48,8 +49,20 @@ class ActionsMultidevise
 				$cur = $conf->currency;
 				$id = (!empty($_REQUEST['socid'])) ? $_REQUEST['socid'] : 0 ;
 
-	    		$sql = 'SELECT fk_devise, devise_code';
-	    		$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$id;
+				//cas ou le document créer à une origine
+				if((isset($_REQUEST['origin']) && isset($_REQUEST['originid']))
+					|| ($object->origin && $object->origin_id )){
+					
+					$origin = ($_REQUEST['origin']) ? $_REQUEST['origin'] : $object->origin;
+					$origin_id = ($_REQUEST['originid']) ? $_REQUEST['originid'] : $object->origin_id;
+					
+					$sql = 'SELECT fk_devise, devise_code';
+	    			$sql .= ' FROM '.MAIN_DB_PREFIX.$origin.' WHERE rowid = '.$origin_id;
+				}
+				else{// cas standard on récupère la devise associé au tiers
+					$sql = 'SELECT fk_devise, devise_code';
+	    			$sql .= ' FROM '.MAIN_DB_PREFIX.'societe WHERE rowid = '.$id;
+				}
 
 	    		if($resql = $db->query($sql)){
 					$res = $db->fetch_object($resql);
@@ -59,7 +72,7 @@ class ActionsMultidevise
 				}
 				
 				$form=new Form($db);
-				print '<tr><td>Devise</td><td colspan="3">';
+				print '<tr><td>'.$langs->trans('Currency').'</td><td colspan="3">';
 				print $form->select_currency($cur,"currency");
 				print '</td></tr>';
 
@@ -70,6 +83,12 @@ class ActionsMultidevise
 				 * VIEW
 				 * ***********************/
 				
+				if(__get('action')==='save_currency') {
+
+					TMultidevise::updateCurrencyRate($db, $object,__get('currency'),__get('taux_devise'));
+				}
+				
+				
 				$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ($object->table_element != "societe") ? ', devise_taux, devise_mt_total' : "";
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id;
@@ -79,25 +98,56 @@ class ActionsMultidevise
 
 				if($res->fk_devise && !is_null($res->devise_code)){
 					
-					print '<tr><td>Devise</td><td colspan="3">';
-					print currency_name($res->devise_code,1);
-					print ' ('.$res->devise_code.')</td></tr>';
+					print '
+					<form name="saveCurrecy" action="#" />
+					<input name="action" value="save_currency" type="hidden" />
+					<input name="facid" type="hidden" value="'.__get('facid').'" />
+					<input name="id" type="hidden" value="'.__get('id').'" />
+					<tr><td>'.$langs->trans('Currency');
+					
+					if($action!='edit_currency') {
+						print '<a style="float:right;" href="?id='.__get('id').'&facid='.__get('facid').'&action=edit_currency">'.img_picto('', 'edit').'</a>';
+					}
+					print '</td><td colspan="3">';
+					
+					if($action=='edit_currency') {
+						$form=new Form($db);
+						echo $form->select_currency($res->devise_code,"currency");
+						
+					}
+					else {
+						print currency_name($res->devise_code,1);
+						print ' ('.$res->devise_code.')</td></tr>';
+					}
+
 
 					if($object->table_element != "societe"){
-						print '<tr><td>Taux Devise</td><td colspan="3">'.price(__val($res->devise_taux,1),0,'',1,2,2).'</td><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></tr>';
-						print '<tr><td>Montant Devise</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
-					}
-					
+						print '<tr><td>'.$langs->trans('CurrencyRate').'</td>';
+						if($action=='edit_currency') {
+							print '<td colspan="3"><input type="text" name="taux_devise" id="taux_devise" value="'.__val($res->devise_taux,1).'" size="10" />
+							
+							<input type="submit" value="'.$langs->trans('Modify').'" />
+							</td>';	
+						}
+						else {
+							print '<td colspan="3"><span title="'.$res->devise_taux.'">'.price(__val($res->devise_taux,1),0,'',1,2,2).'</span><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></td>';	
+						}
+						print '</tr>';
+						
+						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
+					}	
+
+					print '</form>';					
 				}
 				else{
 					
-					print '<tr><td>Devise</td><td colspan="3">';
+					print '<tr><td>'.$langs->trans('Currency').'</td><td colspan="3">';
 					print currency_name($conf->currency,1);
 					print ' ('.$conf->currency.')</td></tr>';
 
 					if($object->table_element != "societe"){
-						print '<tr><td>Taux Devise</td><td colspan="3">1,0<input type="hidden" id="taux_devise" value="1" /></td></tr>';
-						print '<tr><td>Montant Devise</td><td colspan="3"></td></tr>';
+						print '<tr><td>'.$langs->trans('CurrencyRate').'</td><td colspan="3">1,0<input type="hidden" id="taux_devise" value="1" /></td></tr>';
+						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3"></td></tr>';
 					}
 					
 				}
@@ -154,24 +204,25 @@ class ActionsMultidevise
 		         		// Ajout des prix devisé sur les lignes
 	         			<?php
 	         			
-	         			/*echo '<pre>';
-						print_r($_REQUEST);
-						echo '</pre>';exit;*/
-	         			
-						foreach($object->lines as $line){
+	         			if(!empty($object->lines)) {
+	         				
+		         			foreach($object->lines as $line){
+								
+								if($line->rowid)
+									$line->id = $line->rowid;
+								
+								$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
+								$res = $db->fetch_object($resql);
+								if($line->product_type!=9) {
+			         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
+									echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
+								}
+								
+								if($line->error != '') echo "alert('".$line->error."');";
+		         			}
 							
-							if($line->rowid)
-								$line->id = $line->rowid;
-							
-							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
-							$res = $db->fetch_object($resql);
-							if($line->product_type!=9) {
-		         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
-								echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
-							}
-							
-							if($line->error != '') echo "alert('".$line->error."');";
 	         			}
+	         			
 						?>
 					});
 			    </script>	
