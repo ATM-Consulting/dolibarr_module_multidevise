@@ -84,7 +84,7 @@ class ActionsMultidevise
 				 * ***********************/
 				
 				if(__get('action')==='save_currency') {
-				
+
 					TMultidevise::updateCurrencyRate($db, $object,__get('currency'),__get('taux_devise'));
 				}
 				

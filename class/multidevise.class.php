@@ -627,19 +627,20 @@ class TMultidevise{
 				
 				$resql = $db->query($sql);
 	            $res = $db->fetch_object($resql);
-
-				$pu_devise = !empty($object->device_pu) ? $object->device_pu : $res->subprice * $devise_taux;
 				
+				$pu_devise = !empty($object->device_pu) ? $object->device_pu : $res->subprice * $devise_taux;
+
 				$pu_devise = round($pu_devise,2);
 				
 				$devise_mt_ligne = $pu_devise * $res->qty;
-				
+
 				if($rateApplication=='PU_DOLIBARR') {
+						
 						$subprice = $pu_devise / $devise_taux;
 						$object->subprice = $subprice;
 						$object->pu_ht = $subprice;
 						$object->total_ht = $object->subprice * $object->qty * (1+($object->remise_percent / 100));
-						
+
 						if($action==='LINEORDER_SUPPLIER_UPDATE') {
 							$parent = new CommandeFournisseur($db);
 							$parent->fetch($fk_parent);
@@ -682,11 +683,12 @@ class TMultidevise{
 						}
 				}
 				else{
+
 					$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 								SET devise_pu = '.$pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($res->remise / 100))).' 
 								WHERE rowid = '.$id_line;
 					$db->query($sql);
-					
+
 				}
 				
 			}
@@ -726,6 +728,7 @@ class TMultidevise{
 	
 	static function updateCurrencyRate(&$db, &$object, $currency, $currencyRate) {
 		global $user,$conf;
+
 			if($currency){
 				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$currency.'" LIMIT 1');
 				if($res = $db->fetch_object($resql)){
@@ -739,19 +742,20 @@ class TMultidevise{
 					
 					$sql = " UPDATE ".MAIN_DB_PREFIX.$object->table_element." 
 		    		SET fk_devise = ".$res->rowid.", devise_code='".$currency."'";
-		    	
+
 					if ($object->table_element != "societe") {
 						$sql .= ',devise_taux='.$currencyRate;
 					}
 					
 		    		$sql.=" WHERE rowid = ".$object->id;
-					$db->query($sql);	
+					$db->query($sql);
 					
 					if(!empty($object->lines)) {
 						
 						foreach($object->lines as &$line) {
 							
 							$id_line = __val($line->id, $line->rowid);
+
 							$remise_percent = __val($line->remise_percent, $line->rowid);
 							
 							$line->device_pu = __val($line->subprice,$line->pu_ht) * $old_currencyRate;

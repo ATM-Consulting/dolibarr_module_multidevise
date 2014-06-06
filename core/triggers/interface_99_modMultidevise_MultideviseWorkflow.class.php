@@ -137,36 +137,36 @@ class InterfaceMultideviseWorkflow
 			$currency=__get('currency','');
 
 			$origin=__get('origin', $object->origin);
-			
+
 			$actioncard = __get('action','');
-				
+
 			if($actioncard=='confirm_clone' && ($action==='ORDER_SUPPLIER_CREATE' || $action==='BILL_SUPPLIER_CREATE' || $action==='PROPAL_CREATE' || $action==='ORDER_CREATE' || $action==='BILL_CREATE') ) {
 				
 				$objectid = __get('facid', __get('id'));
-				
+
 				$sql = 'SELECT o.fk_devise, o.devise_code, o.devise_taux
 									 FROM '.MAIN_DB_PREFIX.$object->table_element.' AS o
 									 WHERE o.rowid = '.$objectid;
-				
+
 				$resql = $db->query($sql);
-		
+
 				if($res = $db->fetch_object($resql)){
 					$object->fetch($object->id);
-					
+
 					$fk_parent = $object->id;				
 					$devise_taux = $res->devise_taux;
-									
+
 					$sql="UPDATE ".MAIN_DB_PREFIX.$object->table_element." 
 					SET fk_devise=".$res->fk_devise.",devise_code='".$res->devise_code."',devise_taux=".$devise_taux."
 					WHERE rowid=".$fk_parent;
 					$db->query($sql);
-				
+
 					foreach($object->lines as &$line) {
 							
 						$id_line = ($action==='BILL_SUPPLIER_CREATE') ? $line->rowid : $line->id ;
-						
+
 						TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);	
-						
+
 					}
 					
 				
@@ -188,7 +188,7 @@ class InterfaceMultideviseWorkflow
 			else{
 				
 				TMultidevise::createDoc($db, $object,$currency,$origin);
-				
+
 			}
 		}
 		
@@ -227,12 +227,24 @@ class InterfaceMultideviseWorkflow
 		 */
 		if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE' 
 		|| $action == 'LINEORDER_SUPPLIER_UPDATE' || $action == 'LINEBILL_SUPPLIER_UPDATE'){
-				
-			$id_line =__get('id',0);	 
-			$remise_percent =__get('remise_percent',0);	 
-				
+			
+
+			switch ($action) {
+				case "LINEORDER_SUPPLIER_UPDATE":
+					$id_line = __get('elrowid',0);
+					break;
+				case 'LINEBILL_SUPPLIER_UPDATE':
+					$id_line = __get('lineid',0);
+					break;
+				default:
+					$id_line = __get('id',0);
+					break;
+			}
+
+			$remise_percent =__get('remise_percent',0);
+			
 			TMultidevise::updateLine($db, $object,$user, $action,$id_line,$remise_percent);
-		
+
 		}
 	
 		/*
@@ -242,7 +254,7 @@ class InterfaceMultideviseWorkflow
 		|| $action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE') {
 
 			TMultidevise::deleteLine($db, $object,$action,__get('id'),__get('lineid') );
-			
+
 		}
 		
 		/*
