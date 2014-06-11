@@ -164,6 +164,7 @@ class TMultidevise{
 		
 		
 	}
+	
 	static function getTableByAction($action) {
 		
 		switch ($action) {
@@ -728,7 +729,9 @@ class TMultidevise{
 	
 	static function updateCurrencyRate(&$db, &$object, $currency, $currencyRate) {
 		global $user,$conf;
-
+			/*pre($_REQUEST,true);
+			pre($object,true);
+			exit('1');*/
 			if($currency){
 				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$currency.'" LIMIT 1');
 				if($res = $db->fetch_object($resql)){
@@ -771,13 +774,16 @@ class TMultidevise{
 				}
 
 
-				if(method_exists($object, 'update_price')) {
+				if(method_exists($object, 'update_price') && $object->table_element != "societe") {
 					$object->update_price();
 				}
 				
 				?>
 				<script language="javascript">
-					document.location.href="?id=<?php echo $object->id; ?>";					
+					if(<?php echo $object->table_element; ?> != "societe")
+						document.location.href="?id=<?php echo $object->id; ?>";
+					else
+						document.location.href="?socid=<?php echo $object->id; ?>";
 				</script>
 				<?php
 

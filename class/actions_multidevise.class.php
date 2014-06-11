@@ -24,7 +24,7 @@ class ActionsMultidevise
     
     function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
     {
-		
+
     	global $db, $user,$conf, $langs;
 		dol_include_once("/societe/class/societe.class.php");
 		dol_include_once("/core/lib/company.lib.php");
@@ -85,7 +85,7 @@ class ActionsMultidevise
 				
 				if(__get('action')==='save_currency') {
 
-					TMultidevise::updateCurrencyRate($db, $object,__get('currency'),__get('taux_devise'));
+					TMultidevise::updateCurrencyRate($db, $object,__get('currency'),__get('taux_devise',0));
 				}
 				
 				
@@ -103,10 +103,11 @@ class ActionsMultidevise
 					<input name="action" value="save_currency" type="hidden" />
 					<input name="facid" type="hidden" value="'.__get('facid').'" />
 					<input name="id" type="hidden" value="'.__get('id').'" />
+					<input name="socid" type="hidden" value="'.__get('socid').'" />
 					<tr><td>'.$langs->trans('Currency');
 					
 					if($action!='edit_currency') {
-						print '<a style="float:right;" href="?id='.__get('id').'&facid='.__get('facid').'&action=edit_currency">'.img_picto('', 'edit').'</a>';
+						print '<a style="float:right;" href="?id='.__get('id').'&facid='.__get('facid').'&socid='.__get('socid').'&action=edit_currency">'.img_picto('', 'edit').'</a>';
 					}
 					print '</td><td colspan="3">';
 					
@@ -135,7 +136,10 @@ class ActionsMultidevise
 						print '</tr>';
 						
 						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
-					}	
+					}
+					else {
+						print '<input type="submit" value="'.$langs->trans('Modify').'" />';
+					}
 
 					print '</form>';					
 				}
