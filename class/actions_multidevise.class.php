@@ -137,7 +137,7 @@ class ActionsMultidevise
 						
 						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
 					}
-					else {
+					elseif($action=='edit_currency'){
 						print '<input type="submit" value="'.$langs->trans('Modify').'" />';
 					}
 
