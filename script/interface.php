@@ -4,7 +4,7 @@
 
 	require("../config.php");
 	require(DOL_DOCUMENT_ROOT."/product/class/product.class.php");
-                
+
 
 	$get = isset($_REQUEST['get'])?$_REQUEST['get']:'';
 	
@@ -13,20 +13,21 @@
 function _get($case) {
 	
 	$ATMdb = new TPDOdb;
-	
+
 	switch ($case) {
 		case 'getproductprice':
-			__out(_getproductprice($ATMdb,$_POST['fk_product']));			
+			__out(_getproductprice($ATMdb,$_POST['fk_product']));
 			break;
 		case 'getproductfournprice':
-			__out(_getproductfournprice($ATMdb,$_POST['fk_product']));			
+			__out(_getproductfournprice($ATMdb,$_POST['fk_product']));
 			break;
-			
+		case 'numberformat':
+			__out(_numberformat($_REQUEST['montant'], $_REQUEST['type']));
+			break;
 		default:
 			
 			break;
 	}
-	
 }
 
 
@@ -34,15 +35,15 @@ function _get($case) {
 function _getproductprice(&$ATMdb,&$id) {
 
 	$Tres = array();
-	
+
 	$sql = "SELECT price
 			FROM ".MAIN_DB_PREFIX."product_price
 			WHERE fk_product = ".$id."
 			ORDER BY date_price DESC
 			LIMIT 1";
-	
+
 	$ATMdb->Execute($sql);
-	
+
 	while($ATMdb->Get_line()){
 		$Tres["price"] = $ATMdb->Get_field('price');
 	}
@@ -74,3 +75,19 @@ function _getproductfournprice(&$ATMdb,&$id) {
 	return $Tres;
 }
 
+function _numberformat($price, $type='price2num'){
+	
+	switch ($type) {
+		case 'price2num':
+			return array('montant'=>strtr(price2num($price),array(','=>''))); //conversion d'un prix en nombre
+			break;
+
+		case 'price':
+			return array('montant'=>price($price,'MT'));//conversion d'un nombre en prix
+			break;
+
+		default:
+			
+			break;
+	}
+}

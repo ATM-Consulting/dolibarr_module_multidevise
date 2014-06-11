@@ -310,12 +310,12 @@ class ActionsMultidevise
 									<?php echo (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? "taux : taux," : '' ;?>
 									json : 1
 								}
-								},"json").then(function(select){
-									/*if(select.price != ""){
-										$("input[name=np_pu_devise]").val(select.price * taux.replace(",","."));
-										$("input[name=np_pu_devise]").attr('value',select.price * taux.replace(",","."));
-									}*/
-								});
+							},"json").then(function(select){
+								/*if(select.price != ""){
+									$("input[name=np_pu_devise]").val(select.price * taux.replace(",","."));
+									$("input[name=np_pu_devise]").attr('value',select.price * taux.replace(",","."));
+								}*/
+							});
 						});
 						
 						$('input[name=amount]').keyup(function(){
@@ -662,27 +662,23 @@ class ActionsMultidevise
 				
 				?>
 				<script type="text/javascript">
-					function number_format (number, decimals, dec_point, thousands_sep) {
-					  number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
-					  var n = !isFinite(+number) ? 0 : +number,
-					    prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
-					    sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
-					    dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
-					    s = '',
-					    toFixedFix = function (n, prec) {
-					      var k = Math.pow(10, prec);
-					      return '' + Math.round(n * k) / k;
-					    };
-					  // Fix for IE parseFloat(0.55).toFixed(0) = 0;
-					  s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
-					  if (s[0].length > 3) {
-					    s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
-					  }
-					  if ((s[1] || '').length < prec) {
-					    s[1] = s[1] || '';
-					    s[1] += new Array(prec - s[1].length + 1).join('0');
-					  }
-					  return s.join(dec);
+					function number_format (montant,type){
+						$.ajax({
+							async : false
+							,type: "POST"
+							,url: "<?=dol_buildpath('/multidevise/script/interface.php',1); ?>"
+							,dataType: "json"
+							,data: {
+								montant : montant,
+								type : type,
+								get : "numberformat",
+								json : 1
+							}
+						},"json").then(function(val){
+							montant = val['montant'];
+						});
+						
+						return (type == 'price2num') ? parseFloat(montant) : montant;
 					}
 
 					$(document).ready(function(){
@@ -691,38 +687,55 @@ class ActionsMultidevise
 						if(!empty($_REQUEST['devise'])){
 							foreach($_REQUEST['devise'] as $id_input => $mt_devise){
 								$id_input = str_replace("remain", "amount", $id_input);
-								echo "$('input[name=\"devise[".$id_input."]\"]').attr('value','".str_replace('.', ',', $mt_devise)."').attr('disabled','disabled');";
-								echo "$('input[name=\"devise[".$id_input."]\"]').parent().append('<input type=\"hidden\" value=\"".str_replace('.', ',', $mt_devise)."\" name=\"devise[".$id_input."]\" />');";
+								echo "$('input[name=\"devise[".$id_input."]\"]').attr('value','".price2num($mt_devise,'MT')."').attr('disabled','disabled');";
+								echo "$('input[name=\"devise[".$id_input."]\"]').parent().append('<input type=\"hidden\" value=\"".price2num($mt_devise,'MT')."\" name=\"devise[".$id_input."]\" />');";
 							}
 						}
 						?>
 						
 						ligne = $('input[name=<?php echo $champ."_".$facture->id; ?>]').parent().parent();
 						$(ligne).find('> td[class=devise]').append('<?php echo $res->name.' ('.$res->code.')'; ?>');
-						$(ligne).find('> td[class=taux_devise]').append('<?php echo number_format($res->taux,2,',',''); ?>');
+						$(ligne).find('> td[class=taux_devise]').append('<?php echo price($res->taux); ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $res->taux; ?>" name="taux_devise" />');
-						$(ligne).find('> td[class=recu_devise]').append('<?php echo $total_recu_devise; ?>');
-						$(ligne).find('> td[class=reste_devise]').append('<?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>');
-						
+						$(ligne).find('> td[class=recu_devise]').append('<?php echo price($total_recu_devise); ?>');
+						$(ligne).find('> td[class=reste_devise]').append('<?php echo price($res->total_devise - $total_recu_devise); ?>');
+
 						if($('td[class=total_reste_devise]').length > 0){
-							$('td[class=total_recu_devise]').html($('td[class=total_recu_devise]').val() + <?php echo $total_recu_devise; ?>);
-							total_reste_devise = $('td[class=total_reste_devise]').html();
-							$('td[class=total_reste_devise]').html(number_format(parseFloat(total_reste_devise.replace(',','.')) + <?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>,2,',',''));
+							
+							$('td[class=total_recu_devise]').html($('td[class=total_recu_devise]').val() + <?php echo price($total_recu_devise,'MT'); ?>);
+							
+							total_reste_devise = number_format($('td[class=total_reste_devise]').html(),'price2num');
+							
+							$('td[class=total_reste_devise]').html(number_format(total_reste_devise,'price') + <?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>);
 						}
 						
+						
+						//Modification du montant règlement devise
 						$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").keyup(function() {
 							total = 0;
+							
 							$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").each(function(){
-								if( $(this).val() != "") total += parseFloat($(this).val().replace(',','.'));
+								if( $(this).val() != "") total += number_format($(this).val(),'price2num');
 							});
-							if($('td[class=total_reste_devise]').length > 0) $('td[class=total_montant_devise]').html(total);
-							mt_devise = parseFloat($(this).val().replace(',','.'));
-							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise / <?php echo $res->taux; ?>,2,',',''));
+							
+							if($('td[class=total_reste_devise]').length > 0) 
+								$('td[class=total_montant_devise]').html(number_format(total,'price'));
+							
+							mt_devise = number_format($(this).val(),'price2num');
+							mt_devise = mt_devise / parseFloat(<?php echo $res->taux; ?>);
+
+							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise,'price'));
 						});
 						
+						
+						//Modification du montant règlement
 						$("#payment_form").find("input[name*=\"<?php echo $champ; ?>_\"]").keyup(function() {
-							mt_rglt = parseFloat($(this).val().replace(',','.'));
-							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt * <?php echo $res->taux; ?>,2,',',''));
+							
+							mt_rglt = number_format($(this).val(),'price2num');
+							mt_rglt = mt_rglt * <?php echo $res->taux; ?>;
+							
+							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt,'price'));
+							
 						});
 					});
 				</script>
