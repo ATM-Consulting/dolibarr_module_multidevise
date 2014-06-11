@@ -613,7 +613,7 @@ class ActionsMultidevise
 									 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
 									 WHERE pf.fk_facture = '.$facture->id);
 				$res = $db->fetch_object($resql);
-				$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0,00";
+				$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0.00";
 				
 				$resql = $db->query('SELECT f.total as total, c.code as code, c.name as name, cr.rate as taux, f.devise_mt_total as total_devise
 										   FROM '.MAIN_DB_PREFIX.'facture as f
@@ -642,7 +642,7 @@ class ActionsMultidevise
 									 FROM '.MAIN_DB_PREFIX.'paiementfourn_facturefourn as pf
 									 WHERE pf.fk_facturefourn = '.$facture->id);
 				$res = $db->fetch_object($resql);
-				$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0,00";
+				$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0.00";
 				
 				$resql = $db->query('SELECT f.total_ttc as total, c.code as code, c.name as name, cr.rate as taux, f.devise_mt_total as total_devise
 										   FROM '.MAIN_DB_PREFIX.'facture_fourn as f
@@ -674,11 +674,11 @@ class ActionsMultidevise
 								get : "numberformat",
 								json : 1
 							}
-						},"json").then(function(val){
-							montant = val['montant'];
+						}).done(function(val){
+							resmontant = val['montant'];
 						});
 						
-						return (type == 'price2num') ? parseFloat(montant) : montant;
+						return (type == 'price2num') ? parseFloat(resmontant) : resmontant;
 					}
 
 					$(document).ready(function(){
@@ -697,29 +697,31 @@ class ActionsMultidevise
 						$(ligne).find('> td[class=devise]').append('<?php echo $res->name.' ('.$res->code.')'; ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<?php echo price($res->taux); ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $res->taux; ?>" name="taux_devise" />');
-						$(ligne).find('> td[class=recu_devise]').append('<?php echo price($total_recu_devise); ?>');
-						$(ligne).find('> td[class=reste_devise]').append('<?php echo price($res->total_devise - $total_recu_devise); ?>');
+						$(ligne).find('> td[class=recu_devise]').append('<?php echo price($total_recu_devise,'MT'); ?>');
+						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(($res->total_devise - $total_recu_devise),'MT'); ?>');
 
 						if($('td[class=total_reste_devise]').length > 0){
 							
-							$('td[class=total_recu_devise]').html($('td[class=total_recu_devise]').val() + <?php echo price($total_recu_devise,'MT'); ?>);
+							$('td[class=total_recu_devise]').html(number_format($('td[class=total_recu_devise]').val() + <?php echo price($total_recu_devise,'MT'); ?>,'price'));
 							
 							total_reste_devise = number_format($('td[class=total_reste_devise]').html(),'price2num');
 							
-							$('td[class=total_reste_devise]').html(number_format(total_reste_devise,'price') + <?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>);
+							$('td[class=total_reste_devise]').html(number_format(total_reste_devise + <?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>,'price'));
 						}
 						
 						
 						//Modification du montant règlement devise
-						$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").keyup(function() {
+						$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").blur(function() {
 							total = 0;
 							
 							$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").each(function(){
-								if( $(this).val() != "") total += number_format($(this).val(),'price2num');
+								if( $(this).val() != "") total = total + number_format($(this).val(),'price2num');
 							});
 							
-							if($('td[class=total_reste_devise]').length > 0) 
+							if($('td[class=total_reste_devise]').length > 0){ 
+								$('td[class=total_montant_devise]').empty();
 								$('td[class=total_montant_devise]').html(number_format(total,'price'));
+							}
 							
 							mt_devise = number_format($(this).val(),'price2num');
 							mt_devise = mt_devise / parseFloat(<?php echo $res->taux; ?>);
@@ -729,7 +731,7 @@ class ActionsMultidevise
 						
 						
 						//Modification du montant règlement
-						$("#payment_form").find("input[name*=\"<?php echo $champ; ?>_\"]").keyup(function() {
+						$("#payment_form").find("input[name*=\"<?php echo $champ; ?>_\"]").blur(function() {
 							
 							mt_rglt = number_format($(this).val(),'price2num');
 							mt_rglt = mt_rglt * <?php echo $res->taux; ?>;
