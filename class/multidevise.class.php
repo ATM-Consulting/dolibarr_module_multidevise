@@ -3,7 +3,9 @@ class TMultidevise{
 	
 	static function doActionsMultidevise(&$parameters, &$object, &$action, &$hookmanager) {
 		global $langs, $db, $conf, $user;
-
+		
+		//pre($object);exit;
+		
 //ini_set('display_errors',1);
 //error_reporting(E_ALL);
 //print "la";		
@@ -13,6 +15,9 @@ class TMultidevise{
 
         	if ($action == 'builddoc')
 			{
+				//Compatibilité SelectBank	
+				$object->fk_bank = __get('fk_bank');
+				
 				
 				// 1 - Dans le haut du document
 				$devise_change = false;
@@ -789,6 +794,96 @@ class TMultidevise{
 
 			}
 		
+	}
+
+
+	static function addpaiement(&$db,&$TRequest,&$object,$action){
+		global $user,$conf;
+		
+		list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
+		
+		$TDevise=array();
+		foreach($TRequest as $key=>$value) {
+			
+			$mask = 'amount_';
+			if(strpos($key, $mask)===0) {
+				
+				$id_facture = (int)substr($key, strlen($mask));
+				$TDevise[$id_facture] = $TRequest['devise'][$mask.$id_facture]; // On récupère la liste des factures et le montant du paiement
+				
+			}
+		}
+		
+		//pre($TDevise); exit;
+		
+		if(!empty($TDevise)){
+			$db->commit();
+			$db->commit();
+
+			$note = "";
+			$somme = 0.00;
+			
+			foreach($TDevise  as $id_fac => $mt_devise){
+				$somme += str_replace(',','.',$mt_devise);
+				
+				if($action == "PAYMENT_CUSTOMER_CREATE"){
+					$facture = new Facture($db);
+					$facture->fetch($id_fac);
+					$element = "facture";
+				}
+				else{
+					$facture = new FactureFournisseur($db);
+					$facture->fetch($id_fac);
+					$element = "facture_fourn";
+				}
+
+				$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;					
+				$resql = $db->query($sql);
+				$res = $db->fetch_object($resql);
+
+				$account = new Account($db);
+				$account->fetch($TRequest['accountid']);
+				
+				/*echo "\$account->currency_code : ".$account->currency_code."<br />";
+				echo "\$facture->devise_code : ".$res->devise_code;*/
+				pre($TRequest);
+				exit();
+				//Règlement total
+				if(strtr(round($res->devise_mt_total,2),array(','=>'.')) == strtr(round($mt_devise,2),array(','=>'.'))){
+
+					$facture->set_paid($user);
+
+					if($account->currency_code == $res->devise_code) {
+						return null;
+					} else {
+						// TODO Ecriture comptable à enregistrer dans un compte. En dessous la note n'a pas de sens : ($_REQUEST['amount_'.$facture->id] - $facture->total_ttc) ne correspond jamais à un gain ou à une perte suite à une conversion
+
+						//Ajout de la note si des écarts sont lié aux conversions de devises
+						if(round(strtr($TRequest['amount_'.$facture->id],array(','=>'.')),2) < strtr(round($facture->total_ttc,2),array(','=>'.'))){
+							$note .= "facture : ".$facture->ref." => PERTE après conversion : ".($facture->total_ttc - price2num($TRequest['amount_'.$facture->id]))." ".$conf->currency."\n";
+						}
+						elseif(round(strtr($TRequest['amount_'.$facture->id],array(','=>'.')),2) > strtr(round($facture->total_ttc,2),array(','=>'.'))){
+							$note .= "facture : ".$facture->ref." => GAIN après conversion : ".(price2num($TRequest['amount_'.$facture->id]) - $facture->total_ttc)." ".$conf->currency."\n";
+						}
+					}
+				}
+				
+				if($action == "PAYMENT_CUSTOMER_CREATE"){
+					//MAJ du montant paiement_facture
+					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$TRequest['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+								WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
+
+					$db->query('UPDATE '.MAIN_DB_PREFIX."paiement SET note = '".$note."' WHERE rowid = ".$object->id);
+				}
+				else{
+					//MAJ du montant paiement_facture
+					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiementfourn_facturefourn SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$TRequest['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+								WHERE fk_paiementfourn = '.$object->id.' AND fk_facturefourn = '.$facture->id);
+
+					$db->query('UPDATE '.MAIN_DB_PREFIX."paiementfourn SET note = '".$note."' WHERE rowid = ".$object->id);
+				}
+			}
+		}
 	}
 }
 

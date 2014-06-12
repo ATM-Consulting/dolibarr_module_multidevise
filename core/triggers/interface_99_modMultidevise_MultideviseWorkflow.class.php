@@ -261,91 +261,10 @@ class InterfaceMultideviseWorkflow
 		 * AJOUT D'UN PAIEMENT 
 		 */
 		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE"){
-			//TODO à mettre dnas la classe en fonction
 			//pre($_REQUEST);
 			
-			$TDevise=array();
-			foreach($_REQUEST as $key=>$value) {
-				
-				$mask = 'amount_';
-				if(strpos($key, $mask)===0) {
-					
-					$id_facture = (int)substr($key, strlen($mask));
-					$TDevise[$id_facture] = $_REQUEST['devise'][$mask.$id_facture]; // On récupère la liste des factures et le montant du paiement
-					
-				}
-			}
-			
-			//pre($TDevise); exit;
-			
-			if(!empty($TDevise)){
-				$this->db->commit();
-				$this->db->commit();
+			TMultidevise::addpaiement($db,$_REQUEST,$object,$action);
 
-				$note = "";
-				$somme = 0.00;
-				
-				foreach($TDevise  as $id_fac => $mt_devise){
-					$somme += str_replace(',','.',$mt_devise);
-					
-					if($action == "PAYMENT_CUSTOMER_CREATE"){
-						$facture = new Facture($db);
-						$facture->fetch($id_fac);
-						$element = "facture";
-					}
-					else{
-						$facture = new FactureFournisseur($db);
-						$facture->fetch($id_fac);
-						$element = "facture_fourn";
-					}
-
-					$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;					
-					$resql = $db->query($sql);
-					$res = $db->fetch_object($resql);
-
-					$account = new Account($db);
-					$account->fetch($_REQUEST['accountid']);
-					
-					/*echo "\$account->currency_code : ".$account->currency_code."<br />";
-					echo "\$facture->devise_code : ".$res->devise_code;*/
-					//pre($facture);
-
-					//Règlement total
-					if(strtr(round($res->devise_mt_total,2),array(','=>'.')) == strtr(round($mt_devise,2),array(','=>'.'))){
-
-						$facture->set_paid($user);
-
-						if($account->currency_code == $res->devise_code) {
-							return null;
-						} else {
-							// TODO Ecriture comptable à enregistrer dans un compte. En dessous la note n'a pas de sens : ($_REQUEST['amount_'.$facture->id] - $facture->total_ttc) ne correspond jamais à un gain ou à une perte suite à une conversion
-
-							//Ajout de la note si des écarts sont lié aux conversions de devises
-							if(round(strtr($_REQUEST['amount_'.$facture->id],array(','=>'.')),2) < strtr(round($facture->total_ttc,2),array(','=>'.'))){
-								$note .= "facture : ".$facture->ref." => PERTE après conversion : ".($facture->total_ttc - price2num($_REQUEST['amount_'.$facture->id]))." ".$conf->currency."\n";
-							}
-							elseif(round(strtr($_REQUEST['amount_'.$facture->id],array(','=>'.')),2) > strtr(round($facture->total_ttc,2),array(','=>'.'))){
-								$note .= "facture : ".$facture->ref." => GAIN après conversion : ".(price2num($_REQUEST['amount_'.$facture->id]) - $facture->total_ttc)." ".$conf->currency."\n";
-							}
-						}
-					}
-					
-					if($action == "PAYMENT_CUSTOMER_CREATE"){
-						//MAJ du montant paiement_facture
-						$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$_REQUEST['taux_devise'].'", devise_code = "'.$res->devise_code.'"
-									WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
-
-						$db->query('UPDATE '.MAIN_DB_PREFIX."paiement SET note = '".$note."' WHERE rowid = ".$object->id);
-					}
-					else{
-						//MAJ du montant paiement_facture
-						$db->query('UPDATE '.MAIN_DB_PREFIX.'paiementfourn_facturefourn SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$_REQUEST['taux_devise'].'", devise_code = "'.$res->devise_code.'"
-									WHERE fk_paiementfourn = '.$object->id.' AND fk_facturefourn = '.$facture->id);
-
-						$db->query('UPDATE '.MAIN_DB_PREFIX."paiementfourn SET note = '".$note."' WHERE rowid = ".$object->id);
-					}
-				}
-			}
 		}
 	
 		if($action == "BEFORE_PROPAL_BUILDDOC" || $action == "BEFORE_ORDER_BUILDDOC"  || $action == "BEFORE_BILL_BUILDDOC" || $action == "BEFORE_ORDER_SUPPLIER_BUILDDOC" || $action == "BEFORE_BILL_SUPPLIER_BUILDDOC"){
