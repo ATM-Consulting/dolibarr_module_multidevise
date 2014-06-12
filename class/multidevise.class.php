@@ -846,8 +846,8 @@ class TMultidevise{
 				
 				/*echo "\$account->currency_code : ".$account->currency_code."<br />";
 				echo "\$facture->devise_code : ".$res->devise_code;*/
-				pre($TRequest);
-				exit();
+				/*pre($TRequest);
+				exit();*/
 				//Règlement total
 				if(strtr(round($res->devise_mt_total,2),array(','=>'.')) == strtr(round($mt_devise,2),array(','=>'.'))){
 
