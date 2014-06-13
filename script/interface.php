@@ -79,11 +79,11 @@ function _numberformat($price, $type='price2num'){
 	
 	switch ($type) {
 		case 'price2num':
-			return array('montant'=>strtr(price2num($price),array(','=>''))); //conversion d'un prix en nombre
+			return array('montant'=>strtr(price2num($price,2),array(','=>''))); //conversion d'un prix en nombre
 			break;
 
 		case 'price':
-			return array('montant'=>price($price,'MT'));//conversion d'un nombre en prix
+			return array('montant'=>price($price,'MT','',1,2,2));//conversion d'un nombre en prix
 			break;
 
 		default:
