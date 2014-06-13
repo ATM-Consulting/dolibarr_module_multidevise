@@ -814,17 +814,15 @@ class TMultidevise{
 			}
 		}
 		
-		//pre($TDevise); exit;
-		
 		if(!empty($TDevise)){
 			$db->commit();
 			$db->commit();
 
 			$note = "";
 			$somme = 0.00;
-			
+
 			foreach($TDevise  as $id_fac => $mt_devise){
-				$somme += str_replace(',','.',$mt_devise);
+				$somme += price2num($mt_devise);
 				
 				if($action == "PAYMENT_CUSTOMER_CREATE"){
 					$facture = new Facture($db);
@@ -837,19 +835,15 @@ class TMultidevise{
 					$element = "facture_fourn";
 				}
 
-				$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;					
+				$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;
 				$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
 
 				$account = new Account($db);
 				$account->fetch($TRequest['accountid']);
-				
-				/*echo "\$account->currency_code : ".$account->currency_code."<br />";
-				echo "\$facture->devise_code : ".$res->devise_code;*/
-				/*pre($TRequest);
-				exit();*/
+
 				//Règlement total
-				if(strtr(round($res->devise_mt_total,2),array(','=>'.')) == strtr(round($mt_devise,2),array(','=>'.'))){
+				if(price2num($res->devise_mt_total) == price2num($mt_devise)){
 
 					$facture->set_paid($user);
 
@@ -870,14 +864,14 @@ class TMultidevise{
 				
 				if($action == "PAYMENT_CUSTOMER_CREATE"){
 					//MAJ du montant paiement_facture
-					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$TRequest['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.price2num($mt_devise).'" , devise_taux = "'.$TRequest['taux_devise'].'", devise_code = "'.$res->devise_code.'"
 								WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
 
 					$db->query('UPDATE '.MAIN_DB_PREFIX."paiement SET note = '".$note."' WHERE rowid = ".$object->id);
 				}
 				else{
-					//MAJ du montant paiement_facture
-					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiementfourn_facturefourn SET devise_mt_paiement = "'.str_replace(',','.',$mt_devise).'" , devise_taux = "'.$TRequest['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+					//MAJ du montant paiement_facturefourn
+					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiementfourn_facturefourn SET devise_mt_paiement = "'.price2num($mt_devise).'" , devise_taux = "'.$TRequest['taux_devise'].'", devise_code = "'.$res->devise_code.'"
 								WHERE fk_paiementfourn = '.$object->id.' AND fk_facturefourn = '.$facture->id);
 
 					$db->query('UPDATE '.MAIN_DB_PREFIX."paiementfourn SET note = '".$note."' WHERE rowid = ".$object->id);
@@ -891,11 +885,11 @@ class TMultidevise{
 class TMultideviseClient extends TObjetStd {
 	function __construct() { /* declaration */
 		global $langs;
-		
+
 		parent::set_table(MAIN_DB_PREFIX.'societe');
 		parent::add_champs('fk_devise','type=entier;');
 		parent::add_champs('devise_code','type=chaine;');
-		
+
 		parent::_init_vars();
 		parent::start();
 	}

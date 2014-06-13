@@ -325,9 +325,37 @@ class InterfaceMultideviseWorkflow
 		if($action == "PROPAL_BUILDDOC" || $action == "ORDER_BUILDDOC"  || $action == "BILL_BUILDDOC" || $action == "ORDER_SUPPLIER_BUILDDOC" || $action == "BILL_SUPPLIER_BUILDDOC") {
 			
 			$object->fetch($object->id);
-			
+
 		}
 		
+		//Sur l'ajout du paiement dans le compte bancaire on multiplie toujours le montant dolibarr par le taux de la devise du compte bancaire
+		if($action == "PAYMENT_ADD_TO_BANK"){
+			
+			$db->commit();
+			
+			//Récupération du taux de la devise du compte bancaire
+			$sql = "SELECT cr.rate
+					FROM ".MAIN_DB_PREFIX."currency_rate as cr
+						LEFT JOIN ".MAIN_DB_PREFIX."currency as c ON (c.rowid = cr.id_currency)
+						LEFT JOIN ".MAIN_DB_PREFIX."bank_account as ba ON (ba.currency_code = c.code)
+					WHERE ba.rowid = ".$_REQUEST['accountid']."
+					ORDER BY cr.dt_sync DESC LIMIT 1";
+
+			$resql = $db->query($sql);
+			$res = $db->fetch_object($resql);
+
+			$rate = $res->rate;
+			
+			//Mise à jour de l'objet avec le total * taux
+			$total = $object->total * $rate;
+
+			$db->query('UPDATE '.MAIN_DB_PREFIX.'bank SET amount = "'.$total.'"
+						WHERE rowid = (SELECT rowid 
+									   FROM '.MAIN_DB_PREFIX.'bank 
+									   WHERE amount = '.$object->total.'
+									   		AND fk_account = '.$_REQUEST['accountid'].' 
+									   ORDER BY rowid DESC LIMIT 1)');
+		}
 		
 		return 1;
 	}
