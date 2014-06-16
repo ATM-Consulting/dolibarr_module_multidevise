@@ -42,7 +42,7 @@ class TCurrency extends TObjetStd {
 		if(empty($date))$date = date('Y-m-d');
 		
 		$db->Execute("SELECT rate 
-		FROM ".MAIN_DB_PREFIX."currency_rate cr INNER JOIN ".MAIN_DB_PREFIX."currency c ON (cr.id_currency=c.id)
+		FROM ".MAIN_DB_PREFIX."currency_rate cr INNER JOIN ".MAIN_DB_PREFIX."currency c ON (cr.id_currency=c.rowid)
 		WHERE c.code = '".$code."' AND cr.dt_sync>='".$date."'
 		ORDER BY cr.dt_sync DESC
 		LIMIT 1
