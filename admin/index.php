@@ -84,7 +84,7 @@ print '</tr>';
 $sql = "SELECT cr.id_currency, cr.rowid, c.name, c.code, cr.rate, cr.dt_sync
 		FROM ".MAIN_DB_PREFIX."currency_rate AS cr
 		LEFT JOIN ".MAIN_DB_PREFIX."currency AS c ON (cr.id_currency = c.rowid)
-		WHERE cr.id_entity = ".$conf->entity."
+		WHERE cr.id_entity IN(0, ".(! empty($conf->multicompany->enabled) && ! empty($conf->multicompany->transverse_mode) ? '1,':''). $conf->entity.")
 		AND cr.dt_sync = (SELECT MAX(cr2.dt_sync) FROM ".MAIN_DB_PREFIX."currency_rate AS cr2 WHERE cr.id_currency = cr2.id_currency)
 		GROUP BY cr.id_currency
 		ORDER BY cr.dt_sync DESC, c.name ASC";

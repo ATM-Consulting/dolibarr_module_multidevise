@@ -620,7 +620,7 @@ class ActionsMultidevise
 										    LEFT JOIN '.MAIN_DB_PREFIX.'currency as c ON (c.rowid = f.fk_devise)
 										    LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate as cr ON (cr.id_currency = c.rowid)
 										   WHERE f.rowid = '.$facture->id.'
-										   AND cr.id_entity = '.$conf->entity.'
+										   AND cr.id_entity IN(0, '.(! empty($conf->multicompany->enabled) && ! empty($conf->multicompany->transverse_mode) ? '1,':''). $conf->entity.')
 										   ORDER BY cr.dt_sync DESC LIMIT 1');
 				
 				$res = $db->fetch_object($resql);
