@@ -30,7 +30,8 @@ class ActionsMultidevise
 		dol_include_once("/core/lib/company.lib.php");
 		dol_include_once("/core/lib/functions.lib.php");
 		define('INC_FROM_DOLIBARR',true);
-		dol_include_once("/multidevise/config.php");		
+		dol_include_once("/multidevise/config.php");
+		dol_include_once("/multidevise/class/multidevise.class.php");
 
 		if (in_array('thirdpartycard',explode(':',$parameters['context']))
 			|| in_array('propalcard',explode(':',$parameters['context']))
