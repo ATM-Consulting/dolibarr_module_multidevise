@@ -83,7 +83,7 @@ function _numberformat($price, $type='price2num'){
 			break;
 
 		case 'price':
-			return array('montant'=>price($price,'MT','',1,2,2));//conversion d'un nombre en prix
+			return array('montant'=>strtr(price($price,'MT','',1,2,2),array("&nbsp;"=>" ")));//conversion d'un nombre en prix
 			break;
 
 		default:

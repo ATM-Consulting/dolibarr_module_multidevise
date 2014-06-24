@@ -471,7 +471,7 @@ class ActionsMultidevise
 						$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
 						$(this).children().eq(5).after('<td align="right" class="recu_devise"></td>');
 						$(this).children().eq(7).after('<td align="right" class="reste_devise"></td>');
-						$(this).children().eq(9).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(9).children().next().attr('name')+']" size="8"></td>');
+						$(this).children().eq(9).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(9).children().last().attr('name')+']" size="8"></td>');
 					});
 					
 					$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
@@ -499,7 +499,7 @@ class ActionsMultidevise
 						$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
 						$(this).children().eq(6).after('<td align="right" class="recu_devise"></td>');
 						$(this).children().eq(8).after('<td align="right" class="reste_devise"></td>');
-						$(this).children().eq(10).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(10).children().attr('name')+']" size="8"></td>');
+						$(this).children().eq(10).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(10).children().last().attr('name')+']" size="8"></td>');
 					});
 					
 					$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
@@ -676,7 +676,8 @@ class ActionsMultidevise
 								json : 1
 							}
 						}).done(function(val){
-							resmontant = val['montant'];
+							if(val != null) resmontant = val['montant'];
+							else resmontant = 0;
 						});
 						
 						return (type == 'price2num') ? parseFloat(resmontant) : resmontant;
@@ -703,7 +704,7 @@ class ActionsMultidevise
 
 						if($('td[class=total_reste_devise]').length > 0){
 							
-							$('td[class=total_recu_devise]').html(number_format($('td[class=total_recu_devise]').val() + <?php echo price($total_recu_devise,'MT'); ?>,'price'));
+							$('td[class=total_recu_devise]').html(number_format($('td[class=total_recu_devise]').val() + <?php echo price2num($total_recu_devise,'MT'); ?>,'price'));
 							
 							total_reste_devise = number_format($('td[class=total_reste_devise]').html(),'price2num');
 							
@@ -757,13 +758,13 @@ class ActionsMultidevise
 				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total
 								 FROM '.MAIN_DB_PREFIX.'paiementfourn_facturefourn as pf
 								 	LEFT JOIN '.MAIN_DB_PREFIX.'facture_fourn as f On (f.rowid = pf.fk_facturefourn)
-								 WHERE pf.rowid = '.$_REQUEST['id']);
+								 WHERE pf.fk_paiement = '.$_REQUEST['id']);
 			}
 			else{ //cas facture client
 				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total
 								 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
 								 	LEFT JOIN '.MAIN_DB_PREFIX.'facture as f On (f.rowid = pf.fk_facture)
-								 WHERE pf.rowid = '.$_REQUEST['id']);
+								 WHERE pf.fk_paiement = '.$_REQUEST['id']);
 			}
 			$res = $db->fetch_object($resql);
 			?>

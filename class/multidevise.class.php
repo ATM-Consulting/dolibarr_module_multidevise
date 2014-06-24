@@ -815,6 +815,7 @@ class TMultidevise{
 			}
 		}
 		
+		//pre($TDevise,true);exit;
 		if(!empty($TDevise)){
 			$db->commit();
 			$db->commit();
@@ -842,15 +843,13 @@ class TMultidevise{
 
 				$account = new Account($db);
 				$account->fetch($TRequest['accountid']);
-
+				
 				//Règlement total
 				if(price2num($res->devise_mt_total) == price2num($mt_devise)){
 
 					$facture->set_paid($user);
 
-					if($account->currency_code == $res->devise_code) {
-						return null;
-					} else {
+					if($account->currency_code != $res->devise_code) {
 						// TODO Ecriture comptable à enregistrer dans un compte. En dessous la note n'a pas de sens : ($_REQUEST['amount_'.$facture->id] - $facture->total_ttc) ne correspond jamais à un gain ou à une perte suite à une conversion
 
 						//Ajout de la note si des écarts sont lié aux conversions de devises
