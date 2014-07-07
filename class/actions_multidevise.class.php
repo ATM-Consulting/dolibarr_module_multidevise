@@ -55,6 +55,9 @@ class ActionsMultidevise
 					|| ($object->origin && $object->origin_id )){
 					
 					$origin = ($_REQUEST['origin']) ? $_REQUEST['origin'] : $object->origin;
+					
+					if($origin == 'order_supplier') $origin = "commande_fournisseur";
+					
 					$origin_id = ($_REQUEST['originid']) ? $_REQUEST['originid'] : $object->origin_id;
 					
 					$sql = 'SELECT fk_devise, devise_code';
