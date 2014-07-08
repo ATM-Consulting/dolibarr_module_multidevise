@@ -1,3 +1,4 @@
+#!/usr/local/bin/php
 <?php
 	
 	//TODO récupérer les taux pour chaque entité en fonction de leur devise respective

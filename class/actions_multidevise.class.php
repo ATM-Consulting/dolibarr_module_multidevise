@@ -306,7 +306,7 @@ class ActionsMultidevise
 						$('#idprodfournprice').change( function(){
 							$.ajax({
 								type: "POST"
-								,url: "<?=dol_buildpath('/multidevise/script/interface.php',1); ?>"
+								,url: "<?php echo dol_buildpath('/multidevise/script/interface.php',1); ?>"
 								,dataType: "json"
 								,data: {
 									fk_product: $('#idprodfournprice').val(),
@@ -670,7 +670,7 @@ class ActionsMultidevise
 						$.ajax({
 							async : false
 							,type: "POST"
-							,url: "<?=dol_buildpath('/multidevise/script/interface.php',1); ?>"
+							,url: "<?php echo dol_buildpath('/multidevise/script/interface.php',1); ?>"
 							,dataType: "json"
 							,data: {
 								montant : montant,
