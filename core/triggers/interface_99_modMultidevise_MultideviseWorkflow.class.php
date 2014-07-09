@@ -357,6 +357,63 @@ class InterfaceMultideviseWorkflow
 									   ORDER BY rowid DESC LIMIT 1)');
 		}
 		
+		if($action == "DISCOUNT_CREATE") {
+			
+			global $conf;
+			/*
+			// On récupère la devise du client
+			$sql = "SELECT devise_code";
+			$sql.= " FROM ".MAIN_DB_PREFIX."societe";
+			$sql.= " WHERE rowid = ".$object->fk_soc;
+			$resql = $db->query($sql);
+			if($resql->num_rows > 0) {
+				$res = $db->fetch_object($resql);
+				$devise_code = $res->devise_code;
+			}
+			
+			// On récupère le taux de conversion pour cette devise
+			$sql = "SELECT rate";
+			$sql.= " FROM ".MAIN_DB_PREFIX."currency_rate cr";
+			$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."currency c on c.rowid = cr.id_currency";
+			$sql.= " WHERE code = '".$devise_code."'";
+			$sql.= " AND cr.id_entity = ".$conf->entity;
+			$sql.= " ORDER BY cr.dt_sync DESC";
+			$sql.= " LIMIT 1";
+			$resql = $db->query($sql);
+			if($resql->num_rows > 0) {
+				$res = $db->fetch_object($resql);
+				$rate = $res->rate;
+			}
+			*/
+			
+			dol_include_once("/compta/facture/class/facture.class.php");
+			
+			$fact = new Facture($this->db);
+			$fact->fetch($_REQUEST['facid']);
+			$montant_total_acompte = 0;
+			foreach($fact->lines as $line) {
+				
+				$sql = "SELECT devise_mt_ligne";
+				$sql.= " FROM ".MAIN_DB_PREFIX."facturedet";
+				$sql.= " WHERE rowid = ".$line->rowid;
+				$resql = $this->db->query($sql);
+				if($resql->num_rows > 0) {
+					$res = $this->db->fetch_object($resql);
+					$devise_mt_ligne = $res->devise_mt_ligne;
+				}
+				$montant_total_acompte += $devise_mt_ligne;
+			}
+			
+			$sql = " UPDATE ".MAIN_DB_PREFIX."societe_remise_except";
+			$sql.= " SET amount_ht = ".$montant_total_acompte;
+			$sql.= ", amount_ttc = ".$montant_total_acompte;
+			$sql.= " WHERE rowid = ".$object->id;
+			$resql = $this->db->query($sql);
+			
+			$this->db->commit();
+			
+		}
+		
 		return 1;
 	}
 }
