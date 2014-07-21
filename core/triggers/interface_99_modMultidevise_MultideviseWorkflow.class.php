@@ -390,27 +390,44 @@ class InterfaceMultideviseWorkflow
 			
 			$fact = new Facture($this->db);
 			$fact->fetch($_REQUEST['facid']);
-			$montant_total_acompte = 0;
-			foreach($fact->lines as $line) {
-				
-				$sql = "SELECT devise_mt_ligne";
-				$sql.= " FROM ".MAIN_DB_PREFIX."facturedet";
-				$sql.= " WHERE rowid = ".$line->rowid;
-				$resql = $this->db->query($sql);
-				if($resql->num_rows > 0) {
-					$res = $this->db->fetch_object($resql);
-					$devise_mt_ligne = $res->devise_mt_ligne;
-				}
-				$montant_total_acompte += $devise_mt_ligne;
-			}
 			
-			$sql = " UPDATE ".MAIN_DB_PREFIX."societe_remise_except";
-			$sql.= " SET amount_ht = ".$montant_total_acompte;
-			$sql.= ", amount_ttc = ".$montant_total_acompte;
-			$sql.= " WHERE rowid = ".$object->id;
+			// On récupère la devise de la facture
+			$sql = "SELECT devise_code";
+			$sql.= " FROM ".MAIN_DB_PREFIX."facture";
+			$sql.= " WHERE rowid = ".$_REQUEST['facid'];
 			$resql = $this->db->query($sql);
+			$res = $this->db->fetch_object($resql);
+			$monnaie_facture = $res->devise_code;
 			
-			$this->db->commit();
+			// On récupère la monnaie du dolibarr
+			$monnaie_dolibarr = $conf->global->MAIN_MONNAIE;
+			
+			// Si la monnaie est différente de celle du dolibarr
+			if($monnaie_dolibarr !== $monnaie_facture) {
+			
+				$montant_total_acompte = 0;
+				foreach($fact->lines as $line) {
+					
+					$sql = "SELECT devise_mt_ligne";
+					$sql.= " FROM ".MAIN_DB_PREFIX."facturedet";
+					$sql.= " WHERE rowid = ".$line->rowid;
+					$resql = $this->db->query($sql);
+					if($resql->num_rows > 0) {
+						$res = $this->db->fetch_object($resql);
+						$devise_mt_ligne = $res->devise_mt_ligne;
+					}
+					$montant_total_acompte += $devise_mt_ligne;
+				}
+				
+				$sql = " UPDATE ".MAIN_DB_PREFIX."societe_remise_except";
+				$sql.= " SET amount_ht = ".$montant_total_acompte;
+				$sql.= ", amount_ttc = ".$montant_total_acompte;
+				$sql.= " WHERE rowid = ".$object->id;
+				$resql = $this->db->query($sql);
+				
+				$this->db->commit();
+				
+			}
 			
 		}
 		
