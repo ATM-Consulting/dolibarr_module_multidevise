@@ -287,7 +287,7 @@ class TMultidevise{
 				$resql = $db->query('SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
 									 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
 									 WHERE c.code = "'.$currency.'" 
-									 AND cr.id_entity IN(0, '.(! empty($conf->multicompany->enabled) && ! empty($conf->multicompany->transverse_mode) ? '1,':''). $conf->entity.') ORDER BY cr.dt_sync DESC LIMIT 1');
+									 AND cr.id_entity = '.$conf->entity.' ORDER BY cr.dt_sync DESC LIMIT 1');
 				if($res = $db->fetch_object($resql)){
 					$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$res->rowid.', devise_code = "'.$res->code.'", devise_taux = '.$res->rate.' WHERE rowid = '.$object->id);
 				}
