@@ -48,13 +48,13 @@ class TMultidevise{
 						$res = $db->fetch_object($resl);
 
 						if($res){
-							$line->tva_tx = 0;
+							//$line->tva_tx = 0; TODO WTF ???
 							$line->subprice = round($res->devise_pu,2);
 							$line->price = round($res->devise_pu,2);
 							$line->pu_ht = round($res->devise_pu,2);
 							$line->total_ht = round($res->devise_mt_ligne,2);
 							$line->total_ttc = round($res->devise_mt_ligne,2);
-							$line->total_tva = 0;
+							//$line->total_tva = 0; TODO WTF ???
 						}
 					}
 				}
@@ -469,7 +469,7 @@ class TMultidevise{
 					$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$_REQUEST['qty'],$ligne->product_id,'HT',0,0,0,true);
 				}
 				else {
-					$object->update(1);
+					$object->update(1, 1);
 				}
 				
 			}
