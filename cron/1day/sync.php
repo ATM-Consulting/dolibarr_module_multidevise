@@ -5,6 +5,7 @@
 	//TODO récupérer les taux de conversion uniquement pour les devises sélectionné en conf
 	
 	define('INC_FROM_CRON_SCRIPT', true);
+	chdir(dirname(__FILE__));
 	require('../../config.php');
 	dol_include_once('/multidevise/class/class.currency.php');
 	
