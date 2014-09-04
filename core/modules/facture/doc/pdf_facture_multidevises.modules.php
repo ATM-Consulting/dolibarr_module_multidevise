@@ -170,7 +170,7 @@ class pdf_facture_multidevises extends ModelePDFFactures
 				while ($result = $db->fetch_object($req)) {
 					$paid += $result->devise_mt_paiement;
 				}
-				
+								
 				$deja_regle = $paid;
 			} else {
 				$deja_regle = $object->getSommePaiement();
@@ -608,7 +608,7 @@ class pdf_facture_multidevises extends ModelePDFFactures
 		// Loop on each deposits and credit notes included
 		$sql = "SELECT re.rowid, re.amount_ht, re.amount_tva, re.amount_ttc,";
 		$sql.= " re.description, re.fk_facture_source,";
-		$sql.= " f.type, f.datef";
+		$sql.= " f.type, f.datef, f.devise_code, f.devise_mt_total";
 		$sql.= " FROM ".MAIN_DB_PREFIX ."societe_remise_except as re, ".MAIN_DB_PREFIX ."facture as f";
 		$sql.= " WHERE re.fk_facture_source = f.rowid AND re.fk_facture = ".$object->id;
 		$resql=$this->db->query($sql);
@@ -631,7 +631,13 @@ class pdf_facture_multidevises extends ModelePDFFactures
 				$pdf->SetXY($tab3_posx, $tab3_top+$y);
 				$pdf->MultiCell(20, 3, dol_print_date($obj->datef,'day',false,$outputlangs,true), 0, 'L', 0);
 				$pdf->SetXY($tab3_posx+21, $tab3_top+$y);
-				$pdf->MultiCell(20, 3, price($obj->amount_ttc, 0, $outputlangs), 0, 'L', 0);
+				
+				if ($doli_devise != $obj->devise_code) {
+					$pdf->MultiCell(20, 3, price($obj->devise_mt_total, 0, $outputlangs), 0, 'L', 0);
+				} else {
+					$pdf->MultiCell(20, 3, price($obj->amount_ttc, 0, $outputlangs), 0, 'L', 0);
+				}
+
 				$pdf->SetXY($tab3_posx+40, $tab3_top+$y);
 				$pdf->MultiCell(20, 3, $text, 0, 'L', 0);
 				$pdf->SetXY($tab3_posx+58, $tab3_top+$y);
@@ -1096,7 +1102,38 @@ class pdf_facture_multidevises extends ModelePDFFactures
 		$creditnoteamount=$object->getSumCreditNotesUsed();
 		$depositsamount=$object->getSumDepositsUsed();
 		//print "x".$creditnoteamount."-".$depositsamount;exit;
-		$resteapayer = price2num($object->total_ttc - $deja_regle - $creditnoteamount - $depositsamount, 'MT');
+		
+		$doli_devise = $conf->global->MAIN_MONNAIE;
+		
+		$req = 'SELECT devise_code, devise_mt_total FROM ' . MAIN_DB_PREFIX . 'facture WHERE rowid = ' . $object->id;
+		$resql = $this->db->query($req);
+		$result = $this->db->fetch_object($resql);
+		
+		if ($doli_devise != $result->devise_code) {
+			/*
+			$sql = "SELECT re.rowid, re.amount_ht, re.amount_tva, re.amount_ttc,";
+			$sql.= " re.description, re.fk_facture_source,";
+			$sql.= " f.type, f.datef, f.devise_code, f.devise_mt_total";
+			$sql.= " FROM ".MAIN_DB_PREFIX ."societe_remise_except as re, ".MAIN_DB_PREFIX ."facture as f";
+			$sql.= " WHERE re.fk_facture_source = f.rowid AND re.fk_facture = ".$object->id;
+			*/
+			
+			$query_sql = 'SELECT f.rowid, f.devise_mt_total, re.fk_facture_source 
+				FROM ' . MAIN_DB_PREFIX . 'societe_remise_except as re
+				INNER JOIN ' . MAIN_DB_PREFIX . 'facture as f ON re.fk_facture_source = f.rowid
+				WHERE re.fk_facture = ' . $object->id;
+			$query = $this->db->query($query_sql);
+			
+			$depositsamount = 0;
+			while ($result_query = $this->db->fetch_object($query)) {
+				$depositsamount += $result_query->devise_mt_total;
+			}
+			
+			$resteapayer = price2num($result->devise_mt_total - $deja_regle - $creditnoteamount - $depositsamount, 'MT');
+		} else {
+			$resteapayer = price2num($object->total_ttc - $deja_regle - $creditnoteamount - $depositsamount, 'MT');
+		}
+		
 		if ($object->paye) $resteapayer=0;
 
 		if ($deja_regle > 0 || $creditnoteamount > 0 || $depositsamount > 0)
