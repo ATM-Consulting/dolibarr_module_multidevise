@@ -14,10 +14,10 @@ class ActionsMultidevise
 		
 		define('INC_FROM_DOLIBARR',true);
 		
-		dol_include_once('/multidevise/config.php');
+		/*ol_include_once('/multidevise/config.php');
 		dol_include_once('/multidevise/class/multidevise.class.php');
 		
-		TMultidevise::doActionsMultidevise($parameters, $object, $action, $hookmanager);
+		TMultidevise::doActionsMultidevise($parameters, $object, $action, $hookmanager);*/
 
         return 0;
     }
