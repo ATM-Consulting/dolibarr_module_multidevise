@@ -93,6 +93,29 @@ class ActionsMultidevise
 				}
 				
 				
+				?>
+				<script type="text/javascript">
+					$(document).ready(function(){
+						$('select[name=currency]').change(function(){
+							$.ajax({
+								type: "POST"
+								,url: "<?php echo dol_buildpath('/custom/multidevise/script/interface.php',1); ?>"
+								,dataType: "json"
+								,data: {
+									get : "getcurrencyrate",
+									currency_code: $('select[name=currency]').val(),
+									json : 1
+									}
+								},"json").then(function(select){
+									if(select.currency_rate != ""){
+										$('#taux_devise').val(select.currency_rate);
+									}
+								});
+						});
+					});
+				</script>
+				<?php
+				
 				$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ($object->table_element != "societe") ? ', devise_taux, devise_mt_total' : "";
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id;

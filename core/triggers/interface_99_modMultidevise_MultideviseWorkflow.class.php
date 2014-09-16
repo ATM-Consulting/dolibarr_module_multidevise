@@ -319,7 +319,6 @@ class InterfaceMultideviseWorkflow
 					$object->total_tva = 0;
 				}
 			}
-				
 		}	
 		
 		if($action == "PROPAL_BUILDDOC" || $action == "ORDER_BUILDDOC"  || $action == "BILL_BUILDDOC" || $action == "ORDER_SUPPLIER_BUILDDOC" || $action == "BILL_SUPPLIER_BUILDDOC") {
@@ -407,7 +406,6 @@ class InterfaceMultideviseWorkflow
 			
 				$montant_total_acompte = 0;
 				foreach($fact->lines as $line) {
-					
 					$sql = "SELECT devise_mt_ligne";
 					$sql.= " FROM ".MAIN_DB_PREFIX."facturedet";
 					$sql.= " WHERE rowid = ".$line->rowid;
@@ -419,13 +417,13 @@ class InterfaceMultideviseWorkflow
 					$montant_total_acompte += $devise_mt_ligne;
 				}
 				
-				$sql = " UPDATE ".MAIN_DB_PREFIX."societe_remise_except";
+				/*$sql = " UPDATE ".MAIN_DB_PREFIX."societe_remise_except";
 				$sql.= " SET amount_ht = ".$montant_total_acompte;
 				$sql.= ", amount_ttc = ".$montant_total_acompte;
 				$sql.= " WHERE rowid = ".$object->id;
 				$resql = $this->db->query($sql);
 				
-				$this->db->commit();
+				$this->db->commit();*/
 				
 			}
 			

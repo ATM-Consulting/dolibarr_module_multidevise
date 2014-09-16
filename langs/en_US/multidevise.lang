@@ -1,0 +1,10 @@
+Module104030Name = Multi-Currency
+Module104030Desc =  Manage multiple currencies 
+
+# ADMIN
+MulticurrencySetupPage = Configuration of the multi-currency Module 
+MulticurrencyExchangeRatesSetup = Configuration exchange rates 
+ExchangeRate = Exchange Rate 
+Currency = Currency 
+CurrencyRate = Rate Currency 
+CurrencyTotal = CurrencyTotal
