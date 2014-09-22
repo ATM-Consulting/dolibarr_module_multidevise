@@ -70,7 +70,7 @@ class pdf_facture_multidevises extends ModelePDFFactures
 		$langs->load("bills");
 
 		$this->db = $db;
-		$this->name = "facture_multidevises";
+		$this->name = "crabe_multicurrency";
 		$this->description = 'Modèle PDF adapté à Multidevises';
 
 		// Dimension page pour format A4
@@ -127,6 +127,8 @@ class pdf_facture_multidevises extends ModelePDFFactures
 		$this->atleastonediscount=0;
 	}
 
+	
+
 
 	/**
      *  Function to build pdf onto disk
@@ -157,25 +159,12 @@ class pdf_facture_multidevises extends ModelePDFFactures
 		{
 			$object->fetch_thirdparty();
 			
-			$req = $db->query('SELECT devise_code FROM ' . MAIN_DB_PREFIX . 'facture WHERE rowid = ' . $object->id);
-			$result = $db->fetch_object($req);
+			list($paid) = TMultidevise::preparePDF($object, $this->emetteur);
 			
-			$object_devise = $result->devise_code;
 			$doli_devise = $conf->global->MAIN_MONNAIE;
 			
-			if ($doli_devise != $object_devise) {
-				$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiement_facture WHERE fk_facture = ' . $object->id);
-				
-				$paid = 0;
-				while ($result = $db->fetch_object($req)) {
-					$paid += $result->devise_mt_paiement;
-				}
-								
-				$deja_regle = $paid;
-			} else {
-				$deja_regle = $object->getSommePaiement();
-			}
-			
+			$deja_regle = $paid;
+		
 			$amount_credit_notes_included = $object->getSumCreditNotesUsed();
 			$amount_deposits_included = $object->getSumDepositsUsed();
 

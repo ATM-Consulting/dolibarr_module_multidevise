@@ -797,6 +797,65 @@ class TMultidevise{
 		
 	}
 
+	static function preparePDF(&$object, &$societe) {
+	global $conf, $db;
+				
+			$req = $db->query('SELECT devise_code, devise_taux FROM ' . MAIN_DB_PREFIX . 'facture WHERE rowid = ' . $object->id);
+			$result = $db->fetch_object($req);
+			
+			$conf->currency  = $result->devise_code;
+			$devise_rate = $result->devise_taux;
+			
+			if(!empty($societe->capital))$societe->capital = round($societe->capital * $devise_rate); // capital pied de page
+			
+			/* paiements */
+			$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiement_facture WHERE fk_facture = ' . $object->id);
+			
+			$paid = 0;
+			while ($result = $db->fetch_object($req)) {
+				$paid += $result->devise_mt_paiement;
+			}
+					
+			// 2 - Dans les lignes
+			foreach($object->lines as &$line){
+				//Modification des montant si la devise a changé
+				$lineid = (($line->rowid) ? $line->rowid : $line->id);
+				
+				$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.$lineid );
+				$res = $db->fetch_object($resl);
+
+				if($res){
+					$line->tva_tx = 0;
+					$line->subprice = round($res->devise_pu,2);
+					$line->price = round($res->devise_pu,2);
+					$line->pu_ht = round($res->devise_pu,2);
+					$line->total_ht = round($res->devise_mt_ligne,2);
+					$line->total_ttc = round($res->devise_mt_ligne,2);
+					$line->total_tva = 0; // TODO do not fuck the rate
+				}
+			
+			}
+			
+			// 3 - Dans le bas du document
+			//Modification des TOTAUX si la devise a changé
+			
+				
+			$resl = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
+			$res = $db->fetch_object($resl);
+
+			if($res){
+				$object->total_ht = round($res->devise_mt_total,2);
+				$object->total_ttc = round($res->devise_mt_total,2);
+				$object->total_tva = 0;
+			}
+			
+		
+			return array(
+				$paid
+			);
+		
+	}
+
 
 	static function addpaiement(&$db,&$TRequest,&$object,$action){
 		global $user,$conf;
