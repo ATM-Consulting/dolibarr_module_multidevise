@@ -805,7 +805,7 @@ class TMultidevise{
 	static function preparePDF(&$object, &$societe) {
 	global $conf, $db;
 				
-			$req = $db->query('SELECT devise_code, devise_taux FROM ' . MAIN_DB_PREFIX . 'facture WHERE rowid = ' . $object->id);
+			$req = $db->query('SELECT devise_code, devise_taux FROM ' . MAIN_DB_PREFIX .$object->table_element. ' WHERE rowid = ' . $object->id);
 			$result = $db->fetch_object($req);
 			
 			$conf->currency  = $result->devise_code;
@@ -813,15 +813,21 @@ class TMultidevise{
 			
 			if(!empty($societe->capital))$societe->capital = round($societe->capital * $devise_rate); // capital pied de page
 			
-			/* paiements */
-			$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiement_facture WHERE fk_facture = ' . $object->id);
-			
 			$paid = 0;
-			while ($result = $db->fetch_object($req)) {
-				$paid += $result->devise_mt_paiement;
+			if($object->table_element=='facture') {
+				/* paiements */
+				$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiement_facture WHERE fk_facture = ' . $object->id);
+				
+				
+				while ($result = $db->fetch_object($req)) {
+					$paid += $result->devise_mt_paiement;
+				}
+				
+				
 			}
-					
+			
 			$total_tva = 0;
+				
 			// 2 - Dans les lignes
 			foreach($object->lines as &$line){
 				//Modification des montant si la devise a changé
@@ -843,8 +849,7 @@ class TMultidevise{
 				}
 			
 			}
-			
-			// 3 - Dans le bas du document
+				// 3 - Dans le bas du document
 			//Modification des TOTAUX si la devise a changé
 			
 				
