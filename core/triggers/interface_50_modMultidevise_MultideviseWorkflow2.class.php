@@ -173,7 +173,6 @@ class InterfaceMultideviseWorkflow2
 				$sql = "SELECT devise_price FROM ".MAIN_DB_PREFIX."product_price WHERE fk_product=".$fk_product." AND devise_code='".$devise_code."' ORDER BY rowid DESC LIMIT 1";
 				$res = $db->query($sql);
 				if(!empty($res) && $devise_taux>0 && $obj=$db->fetch_object($res)) {
-						
 							
 						$devise_price = (float)$obj->devise_price;
 						$price = $devise_price / $devise_taux;
@@ -183,6 +182,7 @@ class InterfaceMultideviseWorkflow2
 						
 						$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
 						$db->query($sql);
+						
 				}
 				
 			}

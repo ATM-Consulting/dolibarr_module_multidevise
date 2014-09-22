@@ -12,7 +12,9 @@ class TMultidevise{
 		if (in_array('ordercard',explode(':',$parameters['context'])) || in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('expeditioncard',explode(':',$parameters['context'])) || in_array('invoicecard',explode(':',$parameters['context']))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context'])) || in_array('invoicesuppliercard',explode(':',$parameters['context']))){
-
+			
+			 
+			/* jusqu'à la 3.7
         	if ($action == 'builddoc')
 			{
 				//Compatibilité SelectBank	
@@ -139,7 +141,7 @@ class TMultidevise{
 				//Devise retrouve ça valeur d'origine
 				if($last_devise != $conf->currency && $last_devise != 0)
 					$conf->currency = $last_devise;
-			}
+			}*/
 		}
 	}
 	static function getActionByTable($table) {
@@ -589,7 +591,9 @@ class TMultidevise{
 			|| $action==='PROPAL_CREATE' || $action==='BILL_CREATE' || $action==='ORDER_CREATE' ){
 				
 			    $pu_devise = !empty($object->device_pu) ? $object->device_pu : $object->subprice * $devise_taux;
-
+				
+				$tva_devise = !empty($object->total_tva_device) ? $$object->total_tva_device : $object->total_tva * $devise_taux;
+				
 				$pu_devise = round($pu_devise,2);
 
 				$devise_mt_ligne = $pu_devise * $object->qty;
@@ -636,7 +640,8 @@ class TMultidevise{
 	            $res = $db->fetch_object($resql);
 				
 				$pu_devise = !empty($object->device_pu) ? $object->device_pu : $res->subprice * $devise_taux;
-
+				$tva_devise = !empty($object->total_tva_device) ? $$object->total_tva_device : $object->total_tva * $devise_taux;
+			
 				$pu_devise = round($pu_devise,2);
 				
 				$devise_mt_ligne = $pu_devise * $res->qty;
@@ -816,6 +821,7 @@ class TMultidevise{
 				$paid += $result->devise_mt_paiement;
 			}
 					
+			$total_tva = 0;
 			// 2 - Dans les lignes
 			foreach($object->lines as &$line){
 				//Modification des montant si la devise a changé
@@ -825,13 +831,15 @@ class TMultidevise{
 				$res = $db->fetch_object($resl);
 
 				if($res){
-					$line->tva_tx = 0;
+			//		$line->tva_tx = 0;
 					$line->subprice = round($res->devise_pu,2);
 					$line->price = round($res->devise_pu,2);
 					$line->pu_ht = round($res->devise_pu,2);
 					$line->total_ht = round($res->devise_mt_ligne,2);
-					$line->total_ttc = round($res->devise_mt_ligne,2);
-					$line->total_tva = 0; // TODO do not fuck the rate
+					$line->total_ttc = round($res->devise_mt_ligne + ($line->total_tva * $devise_rate),2);
+					$line->total_tva = $line->total_ttc - $line->total_ht; 
+					
+					$total_tva+= $line->total_tva;
 				}
 			
 			}
@@ -845,8 +853,9 @@ class TMultidevise{
 
 			if($res){
 				$object->total_ht = round($res->devise_mt_total,2);
-				$object->total_ttc = round($res->devise_mt_total,2);
-				$object->total_tva = 0;
+				$object->total_tva = round($total_tva,2);
+				$object->total_ttc = round($object->total_ht + $object->total_tva,2);
+				
 			}
 			
 		
