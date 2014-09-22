@@ -161,7 +161,7 @@ class pdf_facture_multidevises extends ModelePDFFactures
 		{
 			$object->fetch_thirdparty();
 			
-			list($paid) = TMultidevise::preparePDF($object, $this->emetteur);
+			list($paid) = TMultidevise::preparePDF($object);
 			
 			$doli_devise = $conf->global->MAIN_MONNAIE;
 			

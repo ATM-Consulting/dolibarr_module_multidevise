@@ -154,7 +154,7 @@ class pdf_azur_currency extends ModelePDFPropales
 		$outputlangs->load("propal");
 		$outputlangs->load("products");
 
-		TMultidevise::preparePDF($object, $this->emetteur);
+		TMultidevise::preparePDF($object);
 
 		$nblignes = count($object->lines);
 

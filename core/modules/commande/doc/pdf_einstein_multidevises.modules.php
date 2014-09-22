@@ -161,6 +161,8 @@ class pdf_einstein_multidevises extends ModelePDFCommandes
 		{
             $object->fetch_thirdparty();
 
+			TMultidevise::preparePDF($object);
+
             $deja_regle = "";
 
             // Definition of $dir and $file

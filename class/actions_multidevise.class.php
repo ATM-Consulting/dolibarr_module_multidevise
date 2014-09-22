@@ -8,6 +8,19 @@ class ActionsMultidevise
       *  @return       void 
       */ 
     
+    function beforePDFCreation($parameters, &$object, &$action, $hookmanager) {
+    	
+		// pour implementation dans Dolibarr 3.7
+		if (in_array('pdfgeneration',explode(':',$parameters['context']))) {
+			
+			TMultidevise::preparePDF($object);
+			
+		}
+		
+		
+    }
+	
+    
     function doActions($parameters, &$object, &$action, $hookmanager) 
     {
     	global $langs, $db, $conf, $user;

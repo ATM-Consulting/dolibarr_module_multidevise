@@ -802,7 +802,7 @@ class TMultidevise{
 		
 	}
 
-	static function preparePDF(&$object, &$societe) {
+	static function preparePDF(&$object) {
 	global $conf, $db;
 				
 			$req = $db->query('SELECT devise_code, devise_taux FROM ' . MAIN_DB_PREFIX .$object->table_element. ' WHERE rowid = ' . $object->id);
@@ -812,8 +812,6 @@ class TMultidevise{
 			$conf->currency  = $result->devise_code;
 			
 			$devise_rate = $result->devise_taux;
-			
-			//if(!empty($societe->capital))$societe->capital = round($societe->capital * $devise_rate); // capital pied de page
 			
 			$paid = 0;
 			if($object->table_element=='facture') {

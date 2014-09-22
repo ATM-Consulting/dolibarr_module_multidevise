@@ -161,6 +161,8 @@ class pdf_muscadet_multidevises extends ModelePDFSuppliersOrders
 		{
 			$object->fetch_thirdparty();
 
+			TMultidevise::preparePDF($object);
+
 			$deja_regle = "";
 			$amount_credit_notes_included = 0;
 			$amount_deposits_included = 0;
