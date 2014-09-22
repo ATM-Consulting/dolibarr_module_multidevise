@@ -367,6 +367,7 @@ class ActionsMultidevise
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
 							$('input[name=amount]').val(mt);
 						});
+						
 			     	});
 			    </script>	
 		    	<?php
@@ -488,6 +489,18 @@ class ActionsMultidevise
 						$('input[name=dp_pu_devise]').keyup(function(){
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
 							$('input[name=price_ht]').val(mt);
+						});
+						
+						$('input#prod_entry_mode_predef, select#idprod, select#select_type').change(function() {
+							if($('input#prod_entry_mode_predef').is(':checked')) {
+								
+								$('input[name=dp_pu_devise]').hide();
+								
+							}
+							else{
+								$('input[name=dp_pu_devise]').show();
+							}
+							
 						});
 			     	});
 			    </script>	
