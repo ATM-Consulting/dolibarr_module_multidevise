@@ -32,6 +32,9 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/pdf.lib.php';
 
+define('INC_FROM_DOLIBARR',true);
+dol_include_once('/multidevise/config.php');
+
 
 /**
  *	Classe permettant de generer les commandes au modele Einstein

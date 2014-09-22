@@ -24,4 +24,5 @@
 
 	dol_include_once('/abricot/inc.core.php');
 	dol_include_once('/core/lib/price.lib.php');
+	dol_include_once('/multidevise/class/multidevise.class.php');
 	
