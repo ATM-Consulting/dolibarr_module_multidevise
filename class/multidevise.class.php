@@ -808,10 +808,12 @@ class TMultidevise{
 			$req = $db->query('SELECT devise_code, devise_taux FROM ' . MAIN_DB_PREFIX .$object->table_element. ' WHERE rowid = ' . $object->id);
 			$result = $db->fetch_object($req);
 			
+			if(empty($object->origin_currency))$object->origin_currency = $conf->currency;
 			$conf->currency  = $result->devise_code;
+			
 			$devise_rate = $result->devise_taux;
 			
-			if(!empty($societe->capital))$societe->capital = round($societe->capital * $devise_rate); // capital pied de page
+			//if(!empty($societe->capital))$societe->capital = round($societe->capital * $devise_rate); // capital pied de page
 			
 			$paid = 0;
 			if($object->table_element=='facture') {
@@ -837,18 +839,26 @@ class TMultidevise{
 				$res = $db->fetch_object($resl);
 
 				if($res){
+					
+					if(empty($line->total_tva_devise)) {
+						$line->total_tva_devise = $line->total_tva * $devise_rate;
+						
+					}
+					
 			//		$line->tva_tx = 0;
 					$line->subprice = round($res->devise_pu,2);
 					$line->price = round($res->devise_pu,2);
 					$line->pu_ht = round($res->devise_pu,2);
 					$line->total_ht = round($res->devise_mt_ligne,2);
-					$line->total_ttc = round($res->devise_mt_ligne + ($line->total_tva * $devise_rate),2);
+					$line->total_ttc = round($res->devise_mt_ligne + $line->total_tva_devise,2);
 					$line->total_tva = $line->total_ttc - $line->total_ht; 
 					
 					$total_tva+= $line->total_tva;
 				}
 			
 			}
+
+
 				// 3 - Dans le bas du document
 			//Modification des TOTAUX si la devise a changé
 			
