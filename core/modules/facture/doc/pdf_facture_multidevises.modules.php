@@ -1519,7 +1519,7 @@ class pdf_facture_multidevises extends ModelePDFFactures
 			$conf->currency = $object->origin_currency;
 		}
 		
-		return pdf_pagefoot($pdf,$outputlangs,'FACTURE_FREE_TEXT',$this->emetteur,$this->marge_basse,$this->marge_gauche,$this->page_hauteur,$object,0,$hidefreetext);
+		$res = pdf_pagefoot($pdf,$outputlangs,'FACTURE_FREE_TEXT',$this->emetteur,$this->marge_basse,$this->marge_gauche,$this->page_hauteur,$object,0,$hidefreetext);
 		
 		if(!empty($last_currency)) $conf->currency = $last_currency;
 		

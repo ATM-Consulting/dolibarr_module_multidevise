@@ -1267,7 +1267,7 @@ class pdf_einstein_multidevises extends ModelePDFCommandes
 			$conf->currency = $object->origin_currency;
 		}
 		
-		return pdf_pagefoot($pdf,$outputlangs,'COMMANDE_FREE_TEXT',$this->emetteur,$this->marge_basse,$this->marge_gauche,$this->page_hauteur,$object,0,$hidefreetext);
+		$res = pdf_pagefoot($pdf,$outputlangs,'COMMANDE_FREE_TEXT',$this->emetteur,$this->marge_basse,$this->marge_gauche,$this->page_hauteur,$object,0,$hidefreetext);
 		
 		if(!empty($last_currency)) $conf->currency = $last_currency;
 		
