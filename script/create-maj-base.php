@@ -6,7 +6,6 @@
  	define('INC_FROM_CRON_SCRIPT', true);
 	
 	require('../config.php');
-	require('../class/multidevise.class.php');
 	require('../class/class.currency.php');
 
 	$ATMdb=new TPDOdb;

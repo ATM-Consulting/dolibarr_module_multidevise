@@ -14,9 +14,7 @@ class ActionsMultidevise
 		if (in_array('pdfgeneration',explode(':',$parameters['context']))) {
 			
 			TMultidevise::preparePDF($object);
-			
 		}
-		
 		
     }
 	
@@ -112,7 +110,7 @@ class ActionsMultidevise
 						$('select[name=currency]').change(function(){
 							$.ajax({
 								type: "POST"
-								,url: "<?php echo dol_buildpath('/custom/multidevise/script/interface.php',1); ?>"
+								,url: "<?php echo dol_buildpath('/multidevise/script/interface.php',2); ?>"
 								,dataType: "json"
 								,data: {
 									get : "getcurrencyrate",
@@ -174,8 +172,12 @@ class ActionsMultidevise
 							print '<td colspan="3"><span title="'.$res->devise_taux.'">'.price(__val($res->devise_taux,1),0,'',1,2,2).'</span><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></td>';	
 						}
 						print '</tr>';
-						
+						//pre($object);exit;
 						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
+						
+						print '<tr><td>'.$langs->trans('CurrencyVAT').'</td><td colspan="3">'.price($object->total_tva*$res->devise_taux,0,'',1,2,2).'</td></tr>';
+						
+						print '<tr><td>'.$langs->trans('CurrencyTotalVAT').'</td><td colspan="3">'.price($res->devise_mt_total + ($object->total_tva*$res->devise_taux),0,'',1,2,2).'</td></tr>';
 					}
 					elseif($action=='edit_currency'){
 						print '<input type="submit" value="'.$langs->trans('Modify').'" />';
@@ -514,23 +516,26 @@ class ActionsMultidevise
 				$(document).ready(function(){
 					$('.liste_titre').children().eq(1).after('<td align="right" >Devise</td>');
 					$('.liste_titre').children().eq(2).after('<td align="right" >Taux Devise actuel</td>');
-					$('.liste_titre').children().eq(5).after('<td align="right" >Reçu devise</td>');
+					$('.liste_titre').children().eq(4).after('<td align="right" >Montant TTC Devise</td>');
+					$('.liste_titre').children().eq(6).after('<td align="right" >Reçu devise</td>');
 					$('.liste_titre').children().eq(7).after('<td align="right" >Reste à encaisser devise</td>');
 					$('.liste_titre > td:last-child').before('<td align="right" >Montant règlement devise</td>');
 					
 					$('tr[class=impair], tr[class=pair]').each(function(){
 						$(this).children().eq(1).after('<td align="right" class="devise"></td>');
 						$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
-						$(this).children().eq(5).after('<td align="right" class="recu_devise"></td>');
+						$(this).children().eq(4).after('<td align="right" class="ttc_devise"></td>');
+						$(this).children().eq(6).after('<td align="right" class="recu_devise"></td>');
 						$(this).children().eq(7).after('<td align="right" class="reste_devise"></td>');
-						$(this).children().eq(9).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(9).children().last().attr('name')+']" size="8"></td>');
+						$(this).children().eq(10).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(10).children().last().attr('name')+']" size="8"></td>');
 					});
 					
 					$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
 					$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
-					$('tr[class=liste_total]').children().eq(4).after('<td align="right" class="total_recu_devise"></td>');
+					$('tr[class=liste_total]').children().eq(3).after('<td align="right" class="total_ttc_devise"></td>');
+					$('tr[class=liste_total]').children().eq(5).after('<td align="right" class="total_recu_devise"></td>');
 					$('tr[class=liste_total]').children().eq(6).after('<td align="right" class="total_reste_devise">0</td>');
-					$('tr[class=liste_total]').children().eq(8).after('<td align="right" class="total_montant_devise"></td>');
+					$('tr[class=liste_total]').children().eq(9).after('<td align="right" class="total_montant_devise"></td>');
 				});
 		    </script>
 	    	<?php
@@ -542,6 +547,7 @@ class ActionsMultidevise
 				$(document).ready(function(){
 					$('.liste_titre').children().eq(2).after('<td align="right" >Devise</td>');
 					$('.liste_titre').children().eq(3).after('<td align="right" >Taux Devise actuel</td>');
+					$('.liste_titre').children().eq(6).after('<td align="right" >Montant TTC Devise</td>');
 					$('.liste_titre').children().eq(7).after('<td align="right" >Reçu devise</td>');
 					$('.liste_titre').children().eq(9).after('<td align="right" >Reste à encaisser devise</td>');
 					$('.liste_titre > td:last-child').after('<td align="right" >Montant règlement devise</td>');
@@ -549,14 +555,16 @@ class ActionsMultidevise
 					$('tr[class=impair], tr[class=pair]').each(function(){
 						$(this).children().eq(1).after('<td align="right" class="devise"></td>');
 						$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
+						$(this).children().eq(5).after('<td align="right" class="ttc_devise"></td>');
 						$(this).children().eq(6).after('<td align="right" class="recu_devise"></td>');
 						$(this).children().eq(8).after('<td align="right" class="reste_devise"></td>');
-						$(this).children().eq(10).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(10).children().last().attr('name')+']" size="8"></td>');
+						$(this).children().eq(11).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(11).children().last().attr('name')+']" size="8"></td>');
 					});
 					
 					$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
 					$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
-					$('tr[class=liste_total]').children().eq(4).after('<td align="right" class="total_recu_devise"></td>');
+					$('tr[class=liste_total]').children().eq(2).after('<td align="right" class="total_ttc_devise"></td>');
+					$('tr[class=liste_total]').children().eq(3).after('<td align="right" class="total_recu_devise"></td>');
 					$('tr[class=liste_total]').children().eq(6).after('<td align="right" class="total_reste_devise">0</td>');
 					$('tr[class=liste_total]').children().eq(8).after('<td align="right" class="total_montant_devise"></td>');
 				});
@@ -667,7 +675,7 @@ class ActionsMultidevise
 									 WHERE pf.fk_facture = '.$facture->id);
 				$res = $db->fetch_object($resql);
 				$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0.00";
-				
+
 				$resql = $db->query('SELECT f.total as total, c.code as code, c.name as name, cr.rate as taux, f.devise_mt_total as total_devise
 										   FROM '.MAIN_DB_PREFIX.'facture as f
 										    LEFT JOIN '.MAIN_DB_PREFIX.'currency as c ON (c.rowid = f.fk_devise)
@@ -675,9 +683,9 @@ class ActionsMultidevise
 										   WHERE f.rowid = '.$facture->id.'
 										   AND cr.id_entity IN(0, '.(! empty($conf->multicompany->enabled) && ! empty($conf->multicompany->transverse_mode) ? '1,':''). $conf->entity.')
 										   ORDER BY cr.dt_sync DESC LIMIT 1');
-				
+
 				$res = $db->fetch_object($resql);
-				
+
 				if($action == "add_paiement"){
 					$champ = "remain";
 				}
@@ -696,7 +704,7 @@ class ActionsMultidevise
 									 WHERE pf.fk_facturefourn = '.$facture->id);
 				$res = $db->fetch_object($resql);
 				$total_recu_devise = ($res->total_paiement) ? $res->total_paiement : $total_recu_devise = "0.00";
-				
+
 				$resql = $db->query('SELECT f.total_ttc as total, c.code as code, c.name as name, cr.rate as taux, f.devise_mt_total as total_devise
 										   FROM '.MAIN_DB_PREFIX.'facture_fourn as f
 										    LEFT JOIN '.MAIN_DB_PREFIX.'currency as c ON (c.rowid = f.fk_devise)
@@ -704,15 +712,14 @@ class ActionsMultidevise
 										   WHERE f.rowid = '.$facture->id.'
 										   AND cr.id_entity = '.$conf->entity.'
 										   ORDER BY cr.dt_sync DESC LIMIT 1');
-				
+
 				$res = $db->fetch_object($resql);
-				
+
 				$champ = "amount";
 				$champ2 = "remain";
 			}
 			
 			if($res->code){
-				
 				?>
 				<script type="text/javascript">
 					function number_format (montant,type){
@@ -731,12 +738,12 @@ class ActionsMultidevise
 							if(val != null) resmontant = val['montant'];
 							else resmontant = 0;
 						});
-						
+
 						return (type == 'price2num') ? parseFloat(resmontant) : resmontant;
 					}
 
 					$(document).ready(function(){
-						
+
 						<?php
 						if(!empty($_REQUEST['devise'])){
 							foreach($_REQUEST['devise'] as $id_input => $mt_devise){
@@ -745,6 +752,7 @@ class ActionsMultidevise
 								echo "$('input[name=\"devise[".$id_input."]\"]').parent().append('<input type=\"hidden\" value=\"".price2num($mt_devise,'MT')."\" name=\"devise[".$id_input."]\" />');";
 							}
 						}
+						
 						?>
 						
 						ligne = $('input[name=<?php echo $champ."_".$facture->id; ?>]').parent().parent();
@@ -752,18 +760,18 @@ class ActionsMultidevise
 						$(ligne).find('> td[class=taux_devise]').append('<?php echo price($res->taux); ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $res->taux; ?>" name="taux_devise" />');
 						$(ligne).find('> td[class=recu_devise]').append('<?php echo price($total_recu_devise,'MT'); ?>');
-						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(($res->total_devise - $total_recu_devise),'MT'); ?>');
+						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(number_format($object->total_ttc * $res->taux,2),'MT'); ?>');
+						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(number_format(($object->total_ttc * $res->taux) - $total_recu_devise,2),'MT'); ?>');
 
 						if($('td[class=total_reste_devise]').length > 0){
-							
+
 							$('td[class=total_recu_devise]').html(number_format($('td[class=total_recu_devise]').val() + <?php echo price2num($total_recu_devise,'MT'); ?>,'price'));
-							
+
 							total_reste_devise = number_format($('td[class=total_reste_devise]').html(),'price2num');
-							
-							$('td[class=total_reste_devise]').html(number_format(total_reste_devise + <?php echo price2num($res->total_devise - $total_recu_devise,'MT'); ?>,'price'));
+
+							$('td[class=total_reste_devise]').html(number_format(total_reste_devise + <?php echo price2num(($object->total_ttc * $res->taux) - $total_recu_devise,'MT'); ?>,'price'));
 						}
-						
-						
+
 						//Modification du montant règlement devise
 						$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").blur(function() {
 							total = 0;
@@ -804,19 +812,26 @@ class ActionsMultidevise
 		 * 
 		 */	
 		elseif(in_array('viewpaiementcard',explode(':',$parameters['context']))){
-			
+
 			//Cas facture fournisseur
 			if($object->ref_supplier){
-				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total
-								 FROM '.MAIN_DB_PREFIX.'paiementfourn_facturefourn as pf
-								 	LEFT JOIN '.MAIN_DB_PREFIX.'facture_fourn as f On (f.rowid = pf.fk_facturefourn)
-								 WHERE pf.fk_paiement = '.$_REQUEST['id']);
+				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total, f.devise_taux
+									 FROM '.MAIN_DB_PREFIX.'paiementfourn_facturefourn as pf
+									 	LEFT JOIN '.MAIN_DB_PREFIX.'facture_fourn as f On (f.rowid = pf.fk_facturefourn)
+									 WHERE pf.fk_paiementfourn = '.$_REQUEST['id'].' AND f.rowid = '.$object->rowid);
+
+				$facture = new FactureFournisseur($db);
+				$facture->fetch($object->rowid);
+				
+				$object->facid = $object->rowid;
 			}
 			else{ //cas facture client
-				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total
-								 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
-								 	LEFT JOIN '.MAIN_DB_PREFIX.'facture as f On (f.rowid = pf.fk_facture)
-								 WHERE pf.fk_paiement = '.$_REQUEST['id']);
+				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total, f.devise_taux
+									 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
+									 	LEFT JOIN '.MAIN_DB_PREFIX.'facture as f On (f.rowid = pf.fk_facture)
+									 WHERE pf.fk_paiement = '.$_REQUEST['id'].' AND f.rowid = '.$object->facid);
+				$facture = new Facture($db);
+				$facture->fetch($object->facid);
 			}
 			$res = $db->fetch_object($resql);
 			?>
@@ -828,7 +843,7 @@ class ActionsMultidevise
 							break;
 
 						case 2:
-							$(element).after('<td align="right"><?php echo round($res->devise_mt_total,2);?></td>');
+							$(element).after('<td align="right"><?php echo price(round($res->devise_mt_total + ($facture->total_tva * $res->devise_taux),2),'MT');?></td>');
 							break;
 						
 						case 3:
@@ -836,7 +851,7 @@ class ActionsMultidevise
 							break;
 
 						case 4:
-							$(element).after('<td align="right"><?php echo round($res->devise_mt_total,2) - $res->devise_mt_paiement;?></td>');
+							$(element).after('<td align="right"><?php echo round($res->devise_mt_total + ($facture->total_tva * $res->devise_taux) - $res->devise_mt_paiement,2);?></td>');
 							break;
 					}
 				});

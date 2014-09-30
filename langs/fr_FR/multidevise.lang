@@ -7,4 +7,6 @@ MulticurrencyExchangeRatesSetup = Configuration des taux de change
 ExchangeRate = Taux de change
 Currency = Devise
 CurrencyRate = Taux devise
-CurrencyTotal = Montant devise
+CurrencyTotal = Total HT Devise
+CurrencyVAT = Montant TVA Devise
+CurrencyTotalVAT = Total TTC Devise
