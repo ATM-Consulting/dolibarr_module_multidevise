@@ -13,6 +13,8 @@ class ActionsMultidevise
 		// pour implementation dans Dolibarr 3.7
 		if (in_array('pdfgeneration',explode(':',$parameters['context']))) {
 			
+			dol_include_once('/multidevise/class/multidevise.class.php');
+			
 			TMultidevise::preparePDF($object);
 		}
 		
