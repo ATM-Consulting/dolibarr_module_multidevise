@@ -512,68 +512,6 @@ class ActionsMultidevise
 	    	}
 	    }
 	    
-		if(in_array('paiementcard',explode(':',$parameters['context']))){
-			?>
-			<script type="text/javascript">
-				$(document).ready(function(){
-					$('.liste_titre').children().eq(1).after('<td align="right" >Devise</td>');
-					$('.liste_titre').children().eq(2).after('<td align="right" >Taux Devise actuel</td>');
-					$('.liste_titre').children().eq(4).after('<td align="right" >Montant TTC Devise</td>');
-					$('.liste_titre').children().eq(6).after('<td align="right" >Reçu devise</td>');
-					$('.liste_titre').children().eq(7).after('<td align="right" >Reste à encaisser devise</td>');
-					$('.liste_titre > td:last-child').before('<td align="right" >Montant règlement devise</td>');
-					
-					$('tr[class=impair], tr[class=pair]').each(function(){
-						$(this).children().eq(1).after('<td align="right" class="devise"></td>');
-						$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
-						$(this).children().eq(4).after('<td align="right" class="ttc_devise"></td>');
-						$(this).children().eq(6).after('<td align="right" class="recu_devise"></td>');
-						$(this).children().eq(7).after('<td align="right" class="reste_devise"></td>');
-						$(this).children().eq(10).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(10).children().last().attr('name')+']" size="8"></td>');
-					});
-					
-					$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
-					$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
-					$('tr[class=liste_total]').children().eq(3).after('<td align="right" class="total_ttc_devise"></td>');
-					$('tr[class=liste_total]').children().eq(5).after('<td align="right" class="total_recu_devise"></td>');
-					$('tr[class=liste_total]').children().eq(6).after('<td align="right" class="total_reste_devise">0</td>');
-					$('tr[class=liste_total]').children().eq(9).after('<td align="right" class="total_montant_devise"></td>');
-				});
-		    </script>
-	    	<?php
-		}
-
-		if(in_array('paymentsupplier',explode(':',$parameters['context']))){
-			?>
-			<script type="text/javascript">
-				$(document).ready(function(){
-					$('.liste_titre').children().eq(2).after('<td align="right" >Devise</td>');
-					$('.liste_titre').children().eq(3).after('<td align="right" >Taux Devise actuel</td>');
-					$('.liste_titre').children().eq(6).after('<td align="right" >Montant TTC Devise</td>');
-					$('.liste_titre').children().eq(7).after('<td align="right" >Reçu devise</td>');
-					$('.liste_titre').children().eq(9).after('<td align="right" >Reste à encaisser devise</td>');
-					$('.liste_titre > td:last-child').after('<td align="right" >Montant règlement devise</td>');
-					
-					$('tr[class=impair], tr[class=pair]').each(function(){
-						$(this).children().eq(1).after('<td align="right" class="devise"></td>');
-						$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
-						$(this).children().eq(5).after('<td align="right" class="ttc_devise"></td>');
-						$(this).children().eq(6).after('<td align="right" class="recu_devise"></td>');
-						$(this).children().eq(8).after('<td align="right" class="reste_devise"></td>');
-						$(this).children().eq(11).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(11).children().last().attr('name')+']" size="8"></td>');
-					});
-					
-					$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
-					$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
-					$('tr[class=liste_total]').children().eq(2).after('<td align="right" class="total_ttc_devise"></td>');
-					$('tr[class=liste_total]').children().eq(3).after('<td align="right" class="total_recu_devise"></td>');
-					$('tr[class=liste_total]').children().eq(6).after('<td align="right" class="total_reste_devise">0</td>');
-					$('tr[class=liste_total]').children().eq(8).after('<td align="right" class="total_montant_devise"></td>');
-				});
-		    </script>
-	    	<?php
-		}
-		
 		return 0;
 	}
 	
@@ -665,8 +603,43 @@ class ActionsMultidevise
 		 * 
 		 */
 		if(in_array('paiementcard',explode(':',$parameters['context'])) || in_array('paymentsupplier',explode(':',$parameters['context']))){
-			
 			if(in_array('paiementcard',explode(':',$parameters['context']))){
+				
+				if(!defined('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE')) { // à cause du manque d'un hook dans le 3.6
+					define('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE',1);
+				
+				
+				?>
+				<script type="text/javascript">
+					$(document).ready(function(){
+						$('.liste_titre').children().eq(1).after('<td align="right" >Devise</td>');
+						$('.liste_titre').children().eq(2).after('<td align="right" >Taux Devise actuel</td>');
+						$('.liste_titre').children().eq(4).after('<td align="right" >Montant TTC Devise</td>');
+						$('.liste_titre').children().eq(6).after('<td align="right" >Reçu devise</td>');
+						$('.liste_titre').children().eq(7).after('<td align="right" >Reste à encaisser devise</td>');
+						$('.liste_titre > td:last-child').before('<td align="right" >Montant règlement devise</td>');
+						
+						$('tr[class=impair], tr[class=pair]').each(function(){
+							$(this).children().eq(1).after('<td align="right" class="devise"></td>');
+							$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
+							$(this).children().eq(4).after('<td align="right" class="ttc_devise"></td>');
+							$(this).children().eq(6).after('<td align="right" class="recu_devise"></td>');
+							$(this).children().eq(7).after('<td align="right" class="reste_devise"></td>');
+							$(this).children().eq(10).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(10).children().last().attr('name')+']" size="8"></td>');
+						});
+						
+						$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
+						$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
+						$('tr[class=liste_total]').children().eq(3).after('<td align="right" class="total_ttc_devise"></td>');
+						$('tr[class=liste_total]').children().eq(5).after('<td align="right" class="total_recu_devise"></td>');
+						$('tr[class=liste_total]').children().eq(6).after('<td align="right" class="total_reste_devise">0</td>');
+						$('tr[class=liste_total]').children().eq(9).after('<td align="right" class="total_montant_devise"></td>');
+					});
+			    </script>
+		    	<?php
+		    	
+		    	}
+			
 				
 				$facture = new Facture($db);
 				$facture->fetch($object->facid);
@@ -696,6 +669,40 @@ class ActionsMultidevise
 				}
 			}
 			else{
+				
+					if(!defined('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE')) { // à cause du manque d'un hook dans le 3.6
+					define('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE',1);
+				
+					?>
+					<script type="text/javascript">
+						$(document).ready(function(){
+							$('.liste_titre').children().eq(2).after('<td align="right" >Devise</td>');
+							$('.liste_titre').children().eq(3).after('<td align="right" >Taux Devise actuel</td>');
+							$('.liste_titre').children().eq(6).after('<td align="right" >Montant TTC Devise</td>');
+							$('.liste_titre').children().eq(7).after('<td align="right" >Reçu devise</td>');
+							$('.liste_titre').children().eq(9).after('<td align="right" >Reste à encaisser devise</td>');
+							$('.liste_titre > td:last-child').after('<td align="right" >Montant règlement devise</td>');
+							
+							$('tr[class=impair], tr[class=pair]').each(function(){
+								$(this).children().eq(1).after('<td align="right" class="devise"></td>');
+								$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
+								$(this).children().eq(5).after('<td align="right" class="ttc_devise"></td>');
+								$(this).children().eq(6).after('<td align="right" class="recu_devise"></td>');
+								$(this).children().eq(8).after('<td align="right" class="reste_devise"></td>');
+								$(this).children().eq(11).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(11).children().last().attr('name')+']" size="8"></td>');
+							});
+							
+							$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
+							$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
+							$('tr[class=liste_total]').children().eq(2).after('<td align="right" class="total_ttc_devise"></td>');
+							$('tr[class=liste_total]').children().eq(3).after('<td align="right" class="total_recu_devise"></td>');
+							$('tr[class=liste_total]').children().eq(6).after('<td align="right" class="total_reste_devise">0</td>');
+							$('tr[class=liste_total]').children().eq(8).after('<td align="right" class="total_montant_devise"></td>');
+						});
+				    </script>
+			    	<?php
+				}
+				
 				
 				$facture = new FactureFournisseur($db);
 				$facture->fetch($object->facid);
