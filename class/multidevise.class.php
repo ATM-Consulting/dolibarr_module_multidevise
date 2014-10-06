@@ -195,6 +195,7 @@ class TMultidevise{
 				case 'LINEBILL_DELETE':
 				case 'LINEBILL_UPDATE':
 				case 'BILL_CREATE':
+				case 'PAYMENT_CUSTOMER_CREATE':
 					$element = "facture";
 					$element_line = "facturedet";
 					$fk_element = "fk_facture";
@@ -935,7 +936,7 @@ class TMultidevise{
 				$account->fetch($TRequest['accountid']);
 				
 				//Règlement total
-				if(price2num($res->devise_mt_total) == price2num($mt_devise)){
+				if(price2num($res->devise_mt_total+$facture->total_tva) == price2num($mt_devise)){
 
 					$facture->set_paid($user);
 
