@@ -928,7 +928,7 @@ class TMultidevise{
 					$element = "facture_fourn";
 				}
 
-				$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;
+				$sql = 'SELECT devise_mt_total, devise_code,devise_taux FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;
 				$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
 
@@ -936,7 +936,7 @@ class TMultidevise{
 				$account->fetch($TRequest['accountid']);
 				
 				//Règlement total
-				if(price2num($res->devise_mt_total+$facture->total_tva) == price2num($mt_devise)){
+				if(price2num($res->devise_mt_total+($facture->total_tva*$res->devise_taux)) == price2num($mt_devise)){
 
 					$facture->set_paid($user);
 
