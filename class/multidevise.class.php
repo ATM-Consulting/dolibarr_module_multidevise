@@ -471,7 +471,16 @@ class TMultidevise{
 					$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$_REQUEST['qty'],$ligne->product_id,'HT',0,0,0,true);
 				}
 				else {
-					$object->update(1, 1);
+					//var_dump($object); exit;
+					$qty = price2num(GETPOST('qty_predef'));
+					if($qty==0)$qty = $_REQUEST['qty'];
+					
+					if($action == 'LINEBILL_SUPPLIER_CREATE') {
+						$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$qty,$ligne->product_id,'HT',0,0,0,true);
+					}
+					else {
+						$object->update($user, 1);	
+					}
 				}
 				
 			}

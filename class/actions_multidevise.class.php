@@ -769,8 +769,8 @@ class ActionsMultidevise
 						$(ligne).find('> td[class=taux_devise]').append('<?php echo price($res->taux); ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $res->taux; ?>" name="taux_devise" />');
 						$(ligne).find('> td[class=recu_devise]').append('<?php echo price($total_recu_devise,'MT'); ?>');
-						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(number_format($object->total_ttc * $res->taux,2),'MT'); ?>');
-						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(number_format(($object->total_ttc * $res->taux) - $total_recu_devise,2),'MT'); ?>');
+						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(round($facture->total_ttc * $res->taux,2),'MT'); ?>');
+						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(round(($facture->total_ttc * $res->taux) - $total_recu_devise,2),'MT'); ?>');
 
 						if($('td[class=total_reste_devise]').length > 0){
 
@@ -778,7 +778,7 @@ class ActionsMultidevise
 
 							total_reste_devise = number_format($('td[class=total_reste_devise]').html(),'price2num');
 
-							$('td[class=total_reste_devise]').html(number_format(total_reste_devise + <?php echo price2num(($object->total_ttc * $res->taux) - $total_recu_devise,'MT'); ?>,'price'));
+							$('td[class=total_reste_devise]').html(number_format(total_reste_devise + <?php echo price2num(($facture->total_ttc * $res->taux) - $total_recu_devise,'MT'); ?>,'price'));
 						}
 
 						//Modification du montant règlement devise
