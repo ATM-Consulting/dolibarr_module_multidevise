@@ -195,6 +195,7 @@ class TMultidevise{
 				case 'LINEBILL_DELETE':
 				case 'LINEBILL_UPDATE':
 				case 'BILL_CREATE':
+				case 'PAYMENT_CUSTOMER_CREATE':
 					$element = "facture";
 					$element_line = "facturedet";
 					$fk_element = "fk_facture";
@@ -471,7 +472,16 @@ class TMultidevise{
 					$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$_REQUEST['qty'],$ligne->product_id,'HT',0,0,0,true);
 				}
 				else {
-					$object->update(1, 1);
+					//var_dump($object); exit;
+					$qty = price2num(GETPOST('qty_predef'));
+					if($qty==0)$qty = $_REQUEST['qty'];
+					
+					if($action == 'LINEBILL_SUPPLIER_CREATE') {
+						$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$qty,$ligne->product_id,'HT',0,0,0,true);
+					}
+					else {
+						$object->update($user, 1);	
+					}
 				}
 				
 			}
@@ -918,7 +928,7 @@ class TMultidevise{
 					$element = "facture_fourn";
 				}
 
-				$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;
+				$sql = 'SELECT devise_mt_total, devise_code,devise_taux FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;
 				$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
 
@@ -926,7 +936,7 @@ class TMultidevise{
 				$account->fetch($TRequest['accountid']);
 				
 				//Règlement total
-				if(price2num($res->devise_mt_total) == price2num($mt_devise)){
+				if(price2num($res->devise_mt_total+($facture->total_tva*$res->devise_taux)) == price2num($mt_devise)){
 
 					$facture->set_paid($user);
 
