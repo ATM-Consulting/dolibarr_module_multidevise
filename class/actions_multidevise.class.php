@@ -404,7 +404,7 @@ class ActionsMultidevise
 						$('#idprodfournprice').change( function(){
 							$.ajax({
 								type: "POST"
-								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/interface.php"
+								,url: "<?php echo DOL_URL_ROOT; ?>/custom/multidevise/script/interface.php"
 								,dataType: "json"
 								,data: {
 									fk_product: $('#idprodfournprice').val(),
@@ -470,7 +470,7 @@ class ActionsMultidevise
 						$('#idprod').change( function(){
 							$.ajax({
 								type: "POST"
-								,url: "<?=DOL_URL_ROOT; ?>/custom/multidevise/script/interface.php"
+								,url: "<?php echo DOL_URL_ROOT; ?>/custom/multidevise/script/interface.php"
 								,dataType: "json"
 								,data: {
 									fk_product: $('#idprod').val(),

@@ -27,7 +27,7 @@
 	
 	
 	$(document).ready(function() {
-		var ref="<?=$referrer?>";
+		var ref="<?php echo $referrer?>";
 		if(ref.indexOf('/htdocs/product/price.php?action=edit_price')!=-1) {
 			/*
 			 * Fiche price
@@ -41,7 +41,7 @@
 					null; // monnaie courante du logiciel obligatoire
 				}
 				else {
-					$select = $("<?=addslashes($select_currency ) ?>");
+					$select = $("<?php echo addslashes($select_currency ) ?>");
 					$select.attr('id', 'currency_'+i);
 					
 					$(this).after($select);	
@@ -54,7 +54,7 @@
 			
 			foreach($Tab as $price_level=>$cur) {
 				?>
-				$('#currency_<?=$price_level ?>').val('<?=$cur ?>');
+				$('#currency_<?php echo $price_level ?>').val('<?php echo $cur ?>');
 				<?
 			}
 			
@@ -68,7 +68,7 @@
 			
 			foreach($Tab as $price_level=>$cur) {
 				?>
-				TCurrency[<?=$price_level ?>] = '<?=$cur ?>';
+				TCurrency[<?php echo $price_level ?>] = '<?php echo $cur ?>';
 				<?
 			}
 			?>
