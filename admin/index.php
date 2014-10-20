@@ -30,6 +30,17 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == "modtaux"){
 		}
 	}
 }
+elseif($action=='save') {
+	
+	foreach($_REQUEST['TMultidevise'] as $name=>$param) {
+		
+		dolibarr_set_const($db, $name, $param, 'chaine', 0, '', $conf->entity);
+
+	}
+	
+	setEventMessage("Configuration enregistrée");
+}
+
 
 /*
  * View
@@ -49,6 +60,39 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == "updateall"){
 	</script>
 	<?php
 }
+
+$form=new TFormCore;
+
+showParameters($form);
+
+function showParameters(&$form) {
+	global $db,$conf,$langs;
+	
+	$html=new Form($db);
+	
+	?>
+	<form action="<?php echo $_SERVER['PHP_SELF'] ?>" name="load-<?php echo $typeDoc ?>" method="POST" enctype="multipart/form-data">
+		<input type="hidden" name="action" value="save" />
+		<table width="100%" class="noborder" style="background-color: #fff;">
+			<tr class="liste_titre">
+				<td colspan="2"><?php echo $langs->trans('Parameters') ?></td>
+			</tr>
+			
+			<tr>
+				<td><?php echo $langs->trans('UseRateOnInvoiceDate') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_USE_RATE_ON_INVOICE_DATE]',array('0'=>'Non','1'=>'Oui'),$conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE); ?></td>				
+			</tr>
+			
+		</table>
+		<p align="right">
+			
+			<input type="submit" name="bt_save" value="<?php echo $langs->trans('Save') ?>" /> 
+			
+		</p>
+	
+	</form>
+	<?php
+}
+
 
 print '<br>';
 

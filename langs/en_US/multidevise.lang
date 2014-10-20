@@ -10,3 +10,4 @@ CurrencyRate = Currency Rate
 CurrencyTotal = Total ET Devise
 CurrencyVAT = Total VAT Currency
 CurrencyTotalVAT = Total ATI Devise
+UseRateOnInvoiceDate = Use invoice date currency rate if exist

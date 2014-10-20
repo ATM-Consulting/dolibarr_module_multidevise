@@ -10,3 +10,4 @@ CurrencyRate = Taux devise
 CurrencyTotal = Total HT Devise
 CurrencyVAT = Montant TVA Devise
 CurrencyTotalVAT = Total TTC Devise
+UseRateOnInvoiceDate = Utiliser le taux correspondant à la date de facture si existant
