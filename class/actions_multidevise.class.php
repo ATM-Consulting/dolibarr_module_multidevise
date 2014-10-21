@@ -25,24 +25,37 @@ class ActionsMultidevise
     {
     	global $langs, $db, $conf, $user;
 
-		if($action == 'setinvoicedate'){
+		if($action == 'setinvoicedate' || $action == 'setdate' || $action == 'setdatef'){
 			
 			define('INC_FROM_DOLIBARR',true);
-			require('../custom/multidevise/config.php');
+			dol_include_once('/multidevise/config.php');
 			dol_include_once('/multidevise/class/multidevise.class.php');
-			
-			if(isset($_REQUEST['invoicedate'])){
-				$object->date = $_REQUEST['invoicedate'];
-			}
-			
-			$sql = "SELECT c.code FROM ".MAIN_DB_PREFIX."currency as c 
-					LEFT JOIN ".MAIN_DB_PREFIX.$object->table_element." as f ON (f.fk_devise = c.rowid) 
-					WHERE f.rowid = ".$object->id;
-			$resql = $db->query($sql);
-			$res = $db->fetch_object($resql);
-			$currency = $res->code;
 
-			TMultidevise::_setCurrencyRate($db, $object, $currency);
+			if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE && 
+				(isset($_REQUEST['invoicedate']) || isset($_REQUEST['re']) || isset($_REQUEST['order_']) || isset($_REQUEST['datef']))){
+
+				if($_REQUEST['re']){	
+					$object->date = dol_mktime(12, 0, 0, $_REQUEST ['remonth'], $_REQUEST ['reday'], $_REQUEST ['reyear']);
+				}
+				elseif($_REQUEST['invoicedate']){
+					$object->date = dol_mktime(12, 0, 0, $_REQUEST ['invoicedatemonth'], $_REQUEST ['invoicedateday'], $_REQUEST ['invoicedateyear']);
+				}
+				elseif($_REQUEST['order_']){
+					$object->date = dol_mktime(12, 0, 0, $_REQUEST ['order_month'], $_REQUEST ['order_day'], $_REQUEST ['order_year']);
+				}
+				elseif($_REQUEST['datef']){
+					$object->date = dol_mktime(12, 0, 0, $_REQUEST ['datefmonth'], $_REQUEST ['datefday'], $_REQUEST ['datefyear']);
+				}
+
+				$sql = "SELECT c.code FROM ".MAIN_DB_PREFIX."currency as c 
+						LEFT JOIN ".MAIN_DB_PREFIX.$object->table_element." as f ON (f.fk_devise = c.rowid) 
+						WHERE f.rowid = ".$object->id;
+				$resql = $db->query($sql);
+				$res = $db->fetch_object($resql);
+				$currency = $res->code;
+
+				TMultidevise::_setCurrencyRate($db, $object, $currency);
+			}
 			
 		}
 
