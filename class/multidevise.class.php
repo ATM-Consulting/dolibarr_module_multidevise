@@ -305,8 +305,8 @@ class TMultidevise{
 		
 	}
 	
-	static function _setCurrencyRate(&$db,&$object,$currency){
-		global $conf;	
+	static function _setCurrencyRate(&$db,&$object,$currency,$get=0){
+		global $conf;
 
 		if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
 			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
@@ -319,9 +319,14 @@ class TMultidevise{
 		//echo $sql;
 		$resql = $db->query($sql);
 		if($res = $db->fetch_object($resql)){
+			
 			$rowid = $res->rowid;
 			$code = $res->code;
 			$rate = $res->rate;
+			
+			if($get){
+				return $res->rate;
+			}
 		}
 		else{
 			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate

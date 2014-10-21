@@ -630,6 +630,48 @@ class ActionsMultidevise
 		 * 
 		 */
 		if(in_array('paiementcard',explode(':',$parameters['context'])) || in_array('paymentsupplier',explode(':',$parameters['context']))){
+			
+			if(in_array('paiementcard',explode(':',$parameters['context']))){
+				$context = 'paiementcard';
+			}
+			else{
+				$context = 'paymentsupplier';
+			}
+			
+			if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
+				//Récupération du taux en date de la facture
+				?>
+				<script type="text/javascript">
+					$(document).ready(function(){
+						$("#reday").attr('onchange','_changedate();');
+					});
+					
+					function _changedate(){
+						$.ajax({
+							type: "POST"
+							,url: "<?php echo DOL_URL_ROOT; ?>/custom/multidevise/script/interface.php"
+							,dataType: "json"
+							,data: {
+								reday: $('#reday').val(),
+								remonth : $('#remonth').val(),
+								reyear :  $('#reyear').val(),
+								socid : $('input[name=socid]').val(),
+								context : "<?php echo $context; ?>",
+								get : "getpaymentrate",
+								json : 1
+							}
+						},"json").then(function(TFactureRate){
+							for(var idFac in TFactureRate){
+								$("input[name=amount_"+idFac+"]").closest('tr').children(':eq(3)').html(TFactureRate[idFac]);
+								$("input[name=amount_"+idFac+"]").closest('tr').children(':eq(3)').append('<input type="hidden" name="taux_devise" value="'+TFactureRate[idFac]+'">');
+							}
+						});
+					}
+				</script>
+				<?php
+			}
+			
+			
 			if(in_array('paiementcard',explode(':',$parameters['context']))){
 				
 				if(!defined('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE')) { // à cause du manque d'un hook dans le 3.6
@@ -697,7 +739,7 @@ class ActionsMultidevise
 			}
 			else{
 				
-					if(!defined('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE')) { // à cause du manque d'un hook dans le 3.6
+				if(!defined('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE')) { // à cause du manque d'un hook dans le 3.6
 					define('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE',1);
 				
 					?>
