@@ -145,8 +145,8 @@ class InterfaceMultideviseWorkflow
 				$objectid = __get('facid', __get('id'));
 
 				$sql = 'SELECT o.fk_devise, o.devise_code, o.devise_taux
-									 FROM '.MAIN_DB_PREFIX.$object->table_element.' AS o
-									 WHERE o.rowid = '.$objectid;
+						 FROM '.MAIN_DB_PREFIX.$object->table_element.' AS o
+						 WHERE o.rowid = '.$objectid;
 
 				$resql = $db->query($sql);
 

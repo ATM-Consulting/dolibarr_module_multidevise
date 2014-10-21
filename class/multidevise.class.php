@@ -285,29 +285,59 @@ class TMultidevise{
 	}
 
 	static function createDoc(&$db, &$object,$currency,$origin) {
-	global $conf;
-			if($currency){
-				$resql = $db->query('SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
-									 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
-									 WHERE c.code = "'.$currency.'" 
-									 AND cr.id_entity = '.$conf->entity.' ORDER BY cr.dt_sync DESC LIMIT 1');
-				if($res = $db->fetch_object($resql)){
-					$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$res->rowid.', devise_code = "'.$res->code.'", devise_taux = '.$res->rate.' WHERE rowid = '.$object->id);
-				}
-				
-			}
-			
-			//Création a partir d'un objet d'origine (propale ou commande)
-			if(!empty($origin) && !empty($object->origin_id)){
-				
-				list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object, $origin);
-				
-				$resql = $db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
-				$res = $db->fetch_object($resql);
-				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
-			
-			}
+		global $conf;
 		
+		if($currency){	
+			
+			TMultidevise::_setCurrencyRate($db,$object,$currency);
+		}
+		
+		//Création a partir d'un objet d'origine (propale ou commande)
+		if(!empty($origin) && !empty($object->origin_id)){
+			
+			list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object, $origin);
+			
+			$resql = $db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
+			$res = $db->fetch_object($resql);
+			$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
+		
+		}
+		
+	}
+	
+	static function _setCurrencyRate(&$db,&$object,$currency){
+		global $conf;	
+
+		if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE && $object->element == 'facture'){
+			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
+					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
+					 WHERE c.code = "'.$currency.'" 
+					 	AND cr.id_entity = '.$conf->entity.'
+					  	AND cr.date_cre LIKE "'.date('Y-m-d',$object->date).'%"
+					 ORDER BY cr.dt_sync DESC LIMIT 1';
+		}
+		$resql = $db->query($sql);
+		if($res = $db->fetch_object($resql)){
+			$rowid = $res->rowid;
+			$code = $res->code;
+			$rate = $res->rate;
+		}
+		else{
+			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
+					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
+					 WHERE c.code = "'.$currency.'" 
+					 AND cr.id_entity = '.$conf->entity.' ORDER BY cr.dt_sync DESC LIMIT 1';
+
+			$resql = $db->query($sql);
+			if($res = $db->fetch_object($resql)){
+				$rowid = $res->rowid;
+				$code = $res->code;
+				$rate = $res->rate;
+			}
+		}
+		/*echo $rate;
+		echo 'UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$rowid.', devise_code = "'.$code.'", devise_taux = '.$rate.' WHERE rowid = '.$object->id;exit;*/
+		$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$rowid.', devise_code = "'.$code.'", devise_taux = '.$rate.' WHERE rowid = '.$object->id);
 	}
 
 	static function insertLine(&$db, &$object,&$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice) {

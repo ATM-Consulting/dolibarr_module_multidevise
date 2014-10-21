@@ -24,15 +24,29 @@ class ActionsMultidevise
     function doActions($parameters, &$object, &$action, $hookmanager) 
     {
     	global $langs, $db, $conf, $user;
-		
-		define('INC_FROM_DOLIBARR',true);
-		
-		/*ol_include_once('/multidevise/config.php');
-		dol_include_once('/multidevise/class/multidevise.class.php');
-		
-		TMultidevise::doActionsMultidevise($parameters, $object, $action, $hookmanager);*/
 
-        return 0;
+		if($action == 'setinvoicedate'){
+			
+			define('INC_FROM_DOLIBARR',true);
+			require('../custom/multidevise/config.php');
+			dol_include_once('/multidevise/class/multidevise.class.php');
+			
+			if(isset($_REQUEST['invoicedate'])){
+				$object->date = $_REQUEST['invoicedate'];
+			}
+			
+			$sql = "SELECT c.code FROM ".MAIN_DB_PREFIX."currency as c 
+					LEFT JOIN ".MAIN_DB_PREFIX.$object->table_element." as f ON (f.fk_devise = c.rowid) 
+					WHERE f.rowid = ".$object->id;
+			$resql = $db->query($sql);
+			$res = $db->fetch_object($resql);
+			$currency = $res->code;
+
+			TMultidevise::_setCurrencyRate($db, $object, $currency);
+			
+		}
+
+        return 1;
     }
     
     function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
