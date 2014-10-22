@@ -316,7 +316,7 @@ class TMultidevise{
 					  	AND cr.date_cre LIKE "'.date('Y-m-d',$object->date).'%"
 					 ORDER BY cr.dt_sync DESC LIMIT 1';
 		}
-		//echo $sql;
+		//echo $sql."<br>";
 		$resql = $db->query($sql);
 		if($res = $db->fetch_object($resql)){
 			

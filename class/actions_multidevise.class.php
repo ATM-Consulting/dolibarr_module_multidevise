@@ -858,7 +858,7 @@ class ActionsMultidevise
 
 							$('td[class=total_reste_devise]').html(number_format(total_reste_devise + <?php echo price2num(($facture->total_ttc * $devise_taux) - $total_recu_devise,'MT'); ?>,'price'));
 						}
-
+						
 						//Modification du montant règlement devise
 						$("#payment_form").find("input[name*=\"devise[<?php echo $champ."_".$facture->id; ?>\"]").blur(function() {
 							total = 0;
@@ -871,9 +871,9 @@ class ActionsMultidevise
 								$('td[class=total_montant_devise]').empty();
 								$('td[class=total_montant_devise]').html(number_format(total,'price'));
 							}
-							
+
 							mt_devise = number_format($(this).val(),'price2num');
-							mt_devise = mt_devise / parseFloat(<?php echo $devise_taux; ?>);
+							mt_devise = mt_devise / parseFloat($(ligne).find('> td[class=taux_devise]').find('> input[name=taux_devise]').val());
 
 							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise,'price'));
 						});
@@ -883,7 +883,7 @@ class ActionsMultidevise
 						$("#payment_form").find("input[name*=\"<?php echo $champ."_".$facture->id; ?>\"]").blur(function() {
 							
 							mt_rglt = number_format($(this).val(),'price2num');
-							mt_rglt = mt_rglt * <?php echo $devise_taux; ?>;
+							mt_rglt = mt_rglt * $(ligne).find('> td[class=taux_devise]').find('> input[name=taux_devise]').val();
 							
 							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt,'price'));
 							
