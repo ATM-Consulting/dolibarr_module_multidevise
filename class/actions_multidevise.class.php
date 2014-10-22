@@ -624,7 +624,10 @@ class ActionsMultidevise
 		
 		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/fourn/class/fournisseur.facture.class.php");
-
+		
+		define('INC_FROM_DOLIBARR',true);
+		dol_include_once("/multidevise/config.php");
+		dol_include_once("/multidevise/class/multidevise.class.php");
 		/*
 		 * Création de règlements
 		 * 
@@ -643,7 +646,7 @@ class ActionsMultidevise
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
-						$("#reday").attr('onchange','_changedate();');
+						$("#reyear").attr('onchange','_changedate();');
 					});
 					
 					function _changedate(){
@@ -797,6 +800,12 @@ class ActionsMultidevise
 				$champ2 = "remain";
 			}
 			
+			//Récupération du taux en date de règlement si conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE
+			$devise_taux = $res->taux;
+			if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
+				$devise_taux = TMultidevise::_setCurrencyRate($db, $facture, $res->code,1);
+			}
+			
 			if($res->code){
 				?>
 				<script type="text/javascript">
@@ -835,11 +844,11 @@ class ActionsMultidevise
 						
 						ligne = $('input[name=<?php echo $champ."_".$facture->id; ?>]').parent().parent();
 						$(ligne).find('> td[class=devise]').append('<?php echo $res->name.' ('.$res->code.')'; ?>');
-						$(ligne).find('> td[class=taux_devise]').append('<?php echo price($res->taux); ?>');
-						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $res->taux; ?>" name="taux_devise" />');
+						$(ligne).find('> td[class=taux_devise]').append('<?php echo price($devise_taux); ?>');
+						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $devise_taux; ?>" name="taux_devise" />');
 						$(ligne).find('> td[class=recu_devise]').append('<?php echo price($total_recu_devise,'MT'); ?>');
-						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(round($facture->total_ttc * $res->taux,2),'MT'); ?>');
-						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(round(($facture->total_ttc * $res->taux) - $total_recu_devise,2),'MT'); ?>');
+						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(round($facture->total_ttc * $devise_taux,2),'MT'); ?>');
+						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(round(($facture->total_ttc * $devise_taux) - $total_recu_devise,2),'MT'); ?>');
 
 						if($('td[class=total_reste_devise]').length > 0){
 
@@ -847,14 +856,14 @@ class ActionsMultidevise
 
 							total_reste_devise = number_format($('td[class=total_reste_devise]').html(),'price2num');
 
-							$('td[class=total_reste_devise]').html(number_format(total_reste_devise + <?php echo price2num(($facture->total_ttc * $res->taux) - $total_recu_devise,'MT'); ?>,'price'));
+							$('td[class=total_reste_devise]').html(number_format(total_reste_devise + <?php echo price2num(($facture->total_ttc * $devise_taux) - $total_recu_devise,'MT'); ?>,'price'));
 						}
 
 						//Modification du montant règlement devise
-						$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").blur(function() {
+						$("#payment_form").find("input[name*=\"devise[<?php echo $champ."_".$facture->id; ?>\"]").blur(function() {
 							total = 0;
 							
-							$("#payment_form").find("input[name*=\"devise[<?php echo $champ; ?>_\"]").each(function(){
+							$("#payment_form").find("input[name*=\"devise[<?php echo $champ."_".$facture->id; ?>\"]").each(function(){
 								if( $(this).val() != "") total = total + number_format($(this).val(),'price2num');
 							});
 							
@@ -864,17 +873,17 @@ class ActionsMultidevise
 							}
 							
 							mt_devise = number_format($(this).val(),'price2num');
-							mt_devise = mt_devise / parseFloat(<?php echo $res->taux; ?>);
+							mt_devise = mt_devise / parseFloat(<?php echo $devise_taux; ?>);
 
 							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise,'price'));
 						});
 						
 						
 						//Modification du montant règlement
-						$("#payment_form").find("input[name*=\"<?php echo $champ; ?>_\"]").blur(function() {
+						$("#payment_form").find("input[name*=\"<?php echo $champ."_".$facture->id; ?>\"]").blur(function() {
 							
 							mt_rglt = number_format($(this).val(),'price2num');
-							mt_rglt = mt_rglt * <?php echo $res->taux; ?>;
+							mt_rglt = mt_rglt * <?php echo $devise_taux; ?>;
 							
 							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt,'price'));
 							
@@ -893,7 +902,7 @@ class ActionsMultidevise
 
 			//Cas facture fournisseur
 			if($object->ref_supplier){
-				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total, f.devise_taux
+				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total, pf.devise_taux
 									 FROM '.MAIN_DB_PREFIX.'paiementfourn_facturefourn as pf
 									 	LEFT JOIN '.MAIN_DB_PREFIX.'facture_fourn as f On (f.rowid = pf.fk_facturefourn)
 									 WHERE pf.fk_paiementfourn = '.$_REQUEST['id'].' AND f.rowid = '.$object->rowid);
@@ -904,7 +913,7 @@ class ActionsMultidevise
 				$object->facid = $object->rowid;
 			}
 			else{ //cas facture client
-				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total, f.devise_taux
+				$resql = $db->query('SELECT pf.devise_taux, pf.devise_mt_paiement, pf.devise_code, f.devise_mt_total, pf.devise_taux
 									 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
 									 	LEFT JOIN '.MAIN_DB_PREFIX.'facture as f On (f.rowid = pf.fk_facture)
 									 WHERE pf.fk_paiement = '.$_REQUEST['id'].' AND f.rowid = '.$object->facid);
