@@ -21,7 +21,7 @@ class TCurrency extends TObjetStd {
 	}
 	
 	function addRate($rate, $id_entity, $date='') {
-		if(empty($date))$date = date('Y-m-d');
+		if(empty($date))$date = date('Y-m-d h:i:s');
 		foreach($this->TCurrencyRate as &$row) {
 			if($row->get_date('dt_sync','Y-m-d') == $date && $row->id_entity == $id_entity) {
 				$row->rate = $rate;
