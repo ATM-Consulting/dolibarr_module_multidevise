@@ -952,8 +952,20 @@ class ActionsMultidevise
 		 */
 		elseif(in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
+					
+				
 			
-			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element." WHERE rowid = ".$object->id);
+			if(DOL_VERSION>3.5) {
+				$idLine = $parameters['line']->id;	
+				$tableElement = $object->table_element_line;
+			}
+			else{
+				$idLine = $object->id;
+				$tableElement = $object->table_element;
+			}
+			
+			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tableElement." 
+			WHERE rowid = ".$idLine);
 			$res = $db->fetch_object($resql);
 			
 			?>
@@ -973,10 +985,13 @@ class ActionsMultidevise
 		}
 		elseif(in_array('pricesuppliercard',explode(':',$parameters['context']))){
 			
+			$id_pdf = __val($parameters['id_pfp'], $object->product_fourn_price_id);
+			
 			$resql = $db->query("SELECT s.devise_code 
 								 FROM ".MAIN_DB_PREFIX."societe as s
 									LEFT JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON (pfp.fk_soc = s.rowid)								 
-								 WHERE pfp.rowid = ".$object->product_fourn_price_id);
+								 WHERE pfp.rowid = ".(int)$id_pdf);
+								 
 			$res = $db->fetch_object($resql);
 			
 			?>
