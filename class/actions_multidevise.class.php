@@ -59,7 +59,7 @@ class ActionsMultidevise
 			
 		}
 
-        return 1;
+        return 0;
     }
     
     function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
