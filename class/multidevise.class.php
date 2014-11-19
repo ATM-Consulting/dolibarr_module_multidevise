@@ -308,6 +308,7 @@ class TMultidevise{
 	static function _setCurrencyRate(&$db,&$object,$currency,$get=0){
 		global $conf;
 		//pre($object,true);
+		$multidevise_use_rate=false;
 		if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
 			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
 					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
@@ -315,17 +316,26 @@ class TMultidevise{
 					 	AND cr.id_entity = '.$conf->entity.'
 					  	AND cr.date_cre LIKE "'.date('Y-m-d',($object->date) ? $object->date : time()).'%"
 					 ORDER BY cr.dt_sync DESC LIMIT 1';
-		}
-		else{
+					 
+			$resql = $db->query($sql);
 			
+			if($res = $db->fetch_object($resql)){
+				$multidevise_use_rate = true;
+			}
+		}
+
+		if(!$multidevise_use_rate){
+
 			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
 					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
 					 WHERE c.code = "'.$currency.'" 
 					 AND cr.id_entity = '.$conf->entity.' ORDER BY cr.dt_sync DESC LIMIT 1';
+	
 			
+			//echo $sql."<br>";exit;
+			$resql = $db->query($sql);
 		}
-		//echo $sql."<br>";exit;
-		$resql = $db->query($sql);
+		
 		if($res = $db->fetch_object($resql)){
 			
 			$rowid = $res->rowid;
@@ -336,7 +346,7 @@ class TMultidevise{
 				return $res->rate;
 			}
 		}
-		
+
 		$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$rowid.', devise_code = "'.$code.'", devise_taux = '.$rate.' WHERE rowid = '.$object->id);
 	}
 
