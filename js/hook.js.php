@@ -55,7 +55,7 @@
 			foreach($Tab as $price_level=>$cur) {
 				?>
 				$('#currency_<?php echo $price_level ?>').val('<?php echo $cur ?>');
-				<?
+				<?php
 			}
 			
 			
@@ -69,7 +69,7 @@
 			foreach($Tab as $price_level=>$cur) {
 				?>
 				TCurrency[<?php echo $price_level ?>] = '<?php echo $cur ?>';
-				<?
+				<?php
 			}
 			?>
 			
