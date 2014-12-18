@@ -1112,8 +1112,7 @@ class pdf_facture_multidevises extends ModelePDFFactures
 			while ($result_query = $this->db->fetch_object($query)) {
 				$depositsamount += $result_query->devise_mt_total;
 			}
-			
-			$resteapayer = price2num(($result->devise_mt_total + ($object->total_tva * $result->devise_taux))  - $deja_regle - $creditnoteamount - $depositsamount, 'MT');
+			$resteapayer = price2num($result->devise_mt_total + $object->total_tva  - $deja_regle - $creditnoteamount - $depositsamount, 'MT');
 		} else {
 			$resteapayer = price2num($object->total_ttc - $deja_regle - $creditnoteamount - $depositsamount, 'MT');
 		}
