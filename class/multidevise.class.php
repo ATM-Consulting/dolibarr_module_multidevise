@@ -269,7 +269,7 @@ class TMultidevise{
 			$tabledet_origin = "propaldet";
 			$originid = $object->origin_id;
     	}
-		elseif($origin == "commande"){
+		elseif($origin == "commande" || $origin == "shipping"){
 			$table_origin = "commande";
 			$tabledet_origin = "commandedet";
 			$originid = $object->origin_id;
@@ -279,7 +279,7 @@ class TMultidevise{
 			$tabledet_origin = "commande_fournisseurdet";
 			$originid = $object->origin_id;
 		}
-		
+
 		return array($table_origin, $tabledet_origin, $originid);
 		
 	}
