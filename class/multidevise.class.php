@@ -269,7 +269,7 @@ class TMultidevise{
 			$tabledet_origin = "propaldet";
 			$originid = $object->origin_id;
     	}
-		elseif($origin == "commande" || $origin == "shipping"){
+		elseif($origin == "commande"){
 			$table_origin = "commande";
 			$tabledet_origin = "commandedet";
 			$originid = $object->origin_id;
@@ -278,6 +278,12 @@ class TMultidevise{
 			$table_origin = "commande_fournisseur";
 			$tabledet_origin = "commande_fournisseurdet";
 			$originid = $object->origin_id;
+		}
+		elseif($origin == "shipping"){
+			$table_origin = "commande";
+			$tabledet_origin = "commandedet";
+			$object->fetchObjectLinked();
+			$originid = $object->linkedObjects['shipping'][0]->origine_id;
 		}
 
 		return array($table_origin, $tabledet_origin, $originid);

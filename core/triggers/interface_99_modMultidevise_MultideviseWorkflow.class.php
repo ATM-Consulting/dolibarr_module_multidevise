@@ -134,7 +134,7 @@ class InterfaceMultideviseWorkflow
 		if($action === "ORDER_CREATE" || $action  ===  "PROPAL_CREATE" || $action  ===  "BILL_CREATE" 
 		|| $action === "ORDER_SUPPLIER_CREATE" || $action  === "BILL_SUPPLIER_CREATE"){
 			
-			$currency=__get('currency','');
+			$currency = __get('currency',$conf->currency);
 
 			$origin=__get('origin', $object->origin);
 
