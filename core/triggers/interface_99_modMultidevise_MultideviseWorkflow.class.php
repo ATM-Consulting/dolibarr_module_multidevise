@@ -179,14 +179,18 @@ class InterfaceMultideviseWorkflow
 				// Quand workflow activé et qu'une commande se crée en auto après la signature d'une propal
 				// les PU Devise et Total Devise n'étaient pas récupérés, d'où cette répétition de code : (Ticket 1731)
 				
-				$object->fetch_lines();
+				if(get_class($object) === "Commande") {
 				
-				foreach($object->lines as &$line) {
-						
-					$id_line = ($action==='BILL_SUPPLIER_CREATE') ? $line->rowid : $line->id ;
-
-					TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);	
-
+					$object->fetch_lines();
+					
+					foreach($object->lines as &$line) {
+							
+						$id_line = ($action==='BILL_SUPPLIER_CREATE') ? $line->rowid : $line->id ;
+	
+						TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);	
+	
+					}
+					
 				}
 				
 			}
