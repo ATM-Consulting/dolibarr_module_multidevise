@@ -178,7 +178,7 @@ class InterfaceMultideviseWorkflow
 				
 				// Quand workflow activé et qu'une commande se crée en auto après la signature d'une propal
 				// les PU Devise et Total Devise n'étaient pas récupérés, d'où cette répétition de code : (Ticket 1731)
-				
+			
 				if(get_class($object) === "Commande") {
 				
 					$object->fetch_lines();
@@ -189,10 +189,8 @@ class InterfaceMultideviseWorkflow
 	
 						TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);	
 	
-					}
-					
-				}
-				
+					}					
+				}				
 			}
 			
 			//Clonage => On récupère la devise et le taux de l'objet cloné
@@ -207,7 +205,7 @@ class InterfaceMultideviseWorkflow
 			else{
 				
 				TMultidevise::createDoc($db, $object,$currency,$origin);
-
+				
 			}
 		}
 		
@@ -236,8 +234,20 @@ class InterfaceMultideviseWorkflow
 				
 			}
 			else {
-				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
+				//Spécifique nomadic : récupération des services pour la facturation depuis une expédition   ticket 1774
+				if ($conf->clinomadic->enabled) {
+					if ($object->product_type == 1 && empty($object->origin)) {
+						$object->origin = 'shipping';
+					}
+				}
 
+				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
+				
+				if ($conf->global->PH_TEST == "ph2") {
+					exit;
+				} 
+				
+				$conf->global->PH_TEST = "ph2";
 			}				
 		}
 	
