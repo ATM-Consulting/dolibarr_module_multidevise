@@ -243,11 +243,6 @@ class InterfaceMultideviseWorkflow
 
 				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
 				
-				if ($conf->global->PH_TEST == "ph2") {
-					exit;
-				} 
-				
-				$conf->global->PH_TEST = "ph2";
 			}				
 		}
 	
