@@ -133,10 +133,14 @@ class InterfaceMultideviseWorkflow
 		 */
 		if($action === "ORDER_CREATE" || $action  ===  "PROPAL_CREATE" || $action  ===  "BILL_CREATE" 
 		|| $action === "ORDER_SUPPLIER_CREATE" || $action  === "BILL_SUPPLIER_CREATE"){
-			
-			$currency = __get('currency',$conf->currency);
 
 			$origin=__get('origin', $object->origin);
+			
+			// Pour le cas où l'on vient de replanish : s'il n'y a pas d'origine, on récupère la devise du tiers
+			if(empty($origin)) $used_currency = TMultidevise::getThirdCurrency($object->socid);
+			else $used_currency = $conf->currency;
+			
+			$currency = __get('currency',$used_currency);
 
 			$actioncard = __get('action','');
 
@@ -218,7 +222,29 @@ class InterfaceMultideviseWorkflow
 			$origin=__get('origin', $object->origin);
 			$originid=__get('originid', $object->origin_id);
 			$dp_pu_devise = __get('dp_pu_devise');
+			
 			$idProd=__get('idprodfournprice', __get('productid', __get('idprod', __get('id', 0)) )  ); 
+			if(empty($idProd) && isset($_REQUEST['valid']) && !empty($object->lines)){
+				$idProd = $object->lines[count($object->lines)-1]->fk_product;
+				
+				if($action==='LINEORDER_SUPPLIER_CREATE') {
+					list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
+					$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".(($object->{"fk_".$element})? $object->{"fk_".$element} : $object->id) ;
+					
+	                $resql = $db->query($sql);
+	                $res = $db->fetch_object($resql);
+					$devise_taux = __val($res->devise_taux,1);
+					
+					
+					if(empty($devise_taux)) {
+						if(empty($origin) && empty($currency)) $currency = TMultidevise::getThirdCurrency($object->socid);
+						TMultidevise::createDoc($db, $object,$currency,$origin);
+					} 
+					
+				}
+			
+			}
+			
 			$quantity = __get('qty',0);	 
 			$quantity_predef=__get('qty_predef',0);	
 			$remise_percent =__get('remise_percent',0);	 
