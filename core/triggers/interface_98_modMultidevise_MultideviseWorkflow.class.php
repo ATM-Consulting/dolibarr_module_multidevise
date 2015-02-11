@@ -140,7 +140,8 @@ class InterfaceMultideviseWorkflow
 			if(empty($origin)) $used_currency = TMultidevise::getThirdCurrency($object->socid);
 			else $used_currency = $conf->currency;
 			
-			$currency = __get('currency',$used_currency);
+			//Il est possible que les tiers n'aient pas de devise assigné car lors de l'import initiale on ne renseigne pas les champs de multidevise
+			$currency = __get('currency',($used_currency) ? $used_currency : $conf->currency );
 
 			$actioncard = __get('action','');
 
