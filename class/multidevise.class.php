@@ -289,7 +289,14 @@ class TMultidevise{
 		return array($table_origin, $tabledet_origin, $originid);
 		
 	}
-	
+	static function getElementCurrency($element) {
+		global $db;
+			$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
+			$res = $db->fetch_object($resql);
+			$devise_taux = __val($res->devise_taux,1);
+			
+			return $devise_taux;
+	}
 	static function getThirdCurrency($socid) {
 		
 		global $db;
@@ -569,11 +576,7 @@ class TMultidevise{
 			}
 			elseif($idProd==0 && !$dp_pu_devise && $_REQUEST['action'] == 'setabsolutediscount'){
 				// autre ligne, ex : acompte
-				
-				// TODO function
-				$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
-				$res = $db->fetch_object($resql);
-				$devise_taux = __val($res->devise_taux,1);
+				$devise_taux = TMultidevise::getElementCurrency($element);
 				
 				$devise_pu = round($object->subprice * $devise_taux ,2);
 				
