@@ -202,6 +202,7 @@ class TMultidevise{
 					break;
 				case 'LINEORDER_SUPPLIER_UPDATE':
 				case 'LINEORDER_SUPPLIER_CREATE':
+                case 'LINEORDER_SUPPLIER_DELETE':
 				case 'ORDER_SUPPLIER_CREATE':
 					$element = "commande_fournisseur";
 					$element_line = "commande_fournisseurdet";
@@ -210,6 +211,7 @@ class TMultidevise{
 				case 'LINEBILL_SUPPLIER_UPDATE':
 				case 'LINEBILL_SUPPLIER_CREATE':
 				case 'BILL_SUPPLIER_CREATE':
+                case 'LINEBILL_SUPPLIER_DELETE':
 					$element = "facture_fourn";
 					$element_line = "facture_fourn_det";
 					$fk_element = "fk_facture_fourn";
@@ -222,41 +224,19 @@ class TMultidevise{
 	static function deleteLine(&$db, &$object, $action, $id, $lineid) {
 		global $conf;
 		
-		if ($action === 'LINEORDER_SUPPLIER_DELETE' || $action === 'LINEBILL_SUPPLIER_DELETE') {
-			
-			//Obligé puisque dans le cas d'une suppresion le trigger est appelé avant et non après
-			$object->deleteline($lineid, TRUE); // TODO est si on echappe simplement la ligne dans ce qui suit
-			$db->commit();
-			
-			$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne 
-				    FROM '.MAIN_DB_PREFIX.$object->table_element_line.' 
-				    WHERE '.$object->fk_element.' = '.$id;
-
-			$resql = $db->query($sql);
-			$res = $db->fetch_object($resql);
-			
-			$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' 
-			SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : 0 /* Si y a 0, on met 0 sinon c'est pas sûr hein */)." 
-			WHERE rowid = ".(($object->{'fk_'.$object->table_element}) ? $object->{'fk_'.$object->table_element} : $id )); // TODO c'est la même chose qu'en dessous non ?
-			
-		}
-		else {
-			list($parent_object) = TMultidevise::getTableByAction($action);
-		
-			$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne 
-				    FROM '.MAIN_DB_PREFIX.$object->table_element.' 
-				    WHERE fk_'.$parent_object.' = '.$object->{"fk_".$parent_object};
-			
-			$resql = $db->query($sql);
-			$res = $db->fetch_object($resql);
-			
-			$db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.' 
-					SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")." 
-					WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $id ));
-			
-		}
-			
-			
+		list($element, $element_line, $fk_element) =   TMultidevise::getTableByAction($action);   
+        $id = $object->{$fk_element} ? $object->{$fk_element} : $id ;
+        
+		$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne 
+                    FROM '.MAIN_DB_PREFIX.$element_line.' 
+                    WHERE '.$fk_element.' = '.$id;
+            
+        $resql = $db->query($sql);
+        $res = $db->fetch_object($resql);
+        
+        $db->query('UPDATE '.MAIN_DB_PREFIX.$element.' 
+                SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : 0)." 
+                WHERE rowid = ".$id;	
 		
 	}
 	

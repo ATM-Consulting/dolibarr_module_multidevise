@@ -107,27 +107,28 @@ class InterfaceMultideviseWorkflow2
 	function run_trigger($action,&$object,$user,$langs,$conf)
 	{
 		
-		if(!defined('INC_FROM_DOLIBARR'))define('INC_FROM_DOLIBARR',true);
-		dol_include_once('/tarif/config.php');
-		dol_include_once('/commande/class/commande.class.php');
-		dol_include_once('/compta/facture/class/facture.class.php');
-		dol_include_once('/comm/propal/class/propal.class.php');
-		dol_include_once("/societe/class/societe.class.php");
-		dol_include_once("/core/lib/functions.lib.class.php");
-		
-		$db = &$this->db;
-		
 		/*
 		 * Enregistrement sur PRODUCT_PRICE_MODIFY
 		 */
 		if($action == "PRODUCT_PRICE_MODIFY"){
-			if(!empty($_REQUEST['currency'])){
-				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$_REQUEST['currency'].'" LIMIT 1');
+		    if(!defined('INC_FROM_DOLIBARR'))define('INC_FROM_DOLIBARR',true);
+            dol_include_once('/tarif/config.php');
+            dol_include_once('/commande/class/commande.class.php');
+            dol_include_once('/compta/facture/class/facture.class.php');
+            dol_include_once('/comm/propal/class/propal.class.php');
+            dol_include_once("/societe/class/societe.class.php");
+            dol_include_once("/core/lib/functions.lib.class.php");
+            
+            $db = &$this->db;
+            
+            $currency = GETPOST('currency');
+			if(!empty($$currency)){
+				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$currency.'" LIMIT 1');
 				if($res = $db->fetch_object($resql)){
 					//var_dump($object);exit;
 					
 					$sql = 'UPDATE '.MAIN_DB_PREFIX.'product_price 
-					SET fk_devise = '.$res->rowid.', devise_code = "'.$_REQUEST['currency'].'", devise_price=price
+					SET fk_devise = '.$res->rowid.', devise_code = "'.$currency.'", devise_price=price
 					WHERE fk_product = '.$object->id." AND price_level=".$object->level;
 					$db->query($sql);
 					
@@ -135,113 +136,7 @@ class InterfaceMultideviseWorkflow2
 			}
 				
 		}
-		
- 		/*
-		 *CREATION P.U. DEVISE + TOTAL DEVISE PAR LIGNE DE COMMANDE, PROPAL OU FACTURE
-		 */
-		else if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT') {
-			
-			// TODO DELETE en doublon dans autre trigger
-			
-			if($action == "LINEORDER_INSERT" || $action == 'LINEORDER_UPDATE'){
-				$table = "commande";
-				$tabledet = "commandedet";
-			}
-			elseif($action == 'LINEPROPAL_INSERT' || $action == 'LINEPROPAL_UPDATE'){
-				$table = "propal";
-				$tabledet = "propaldet";
-			}
-			elseif($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_UPDATE'){
-				$table = "facture";
-				$tabledet = "facturedet";
-			}
-			
-			$idligne = $object->rowid;
-			$fk_product = $object->fk_product;
 
-			$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid=".$object->{'fk_'.$table};
-			$res=$db->query($sql);
-			
-			if(!empty($res) && $fk_product > 0) {
-				$obj = $db->fetch_object($res);
-			
-				$devise_code = $obj->devise_code;
-				$devise_taux = $obj->devise_taux;
-
-				$sql = "SELECT devise_price FROM ".MAIN_DB_PREFIX."product_price WHERE fk_product=".$fk_product." AND devise_code='".$devise_code."' ORDER BY rowid DESC LIMIT 1";
-				$res = $db->query($sql);
-				
-				if(!empty($res) && $devise_taux>0 && $obj=$db->fetch_object($res)) {
-					$devise_price = (float)$obj->devise_price;
-					$price = $devise_price / $devise_taux;
-					
-					$object->subprice = $price;
-					$object->devise_pu = $devise_price;
-					
-					$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
-					$db->query($sql);
-				} else if (!empty($_REQUEST['fac_avoir'])) { // AVOIR
-					$devise_price = $object->subprice;
-					$price = $devise_price / $devise_taux;
-						
-					$object->subprice = $price;
-					$object->devise_pu = $devise_price;
-
-					$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
-					$db->query($sql);
-				}
-			} else if ($table == 'facture' && !empty($_REQUEST['fac_avoir'])) { // AVOIR
-				// Récupération de la devise de la facture de base
-				$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ". $_REQUEST['fac_avoir'];
-				$res = $db->query($sql);
-				$obj = $db->fetch_object($res);
-
-				if (!empty($obj)) {
-					$devise_code = $obj->devise_code;
-					$devise_taux = $obj->devise_taux;
-				} else {
-					$devise_taux = 1;
-				}
-
-				$devise_price = $object->subprice;
-				$price = $devise_price / $devise_taux;
-				
-				$object->subprice = $price;
-				$object->devise_pu = $devise_price;
-				
-				$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
-				$db->query($sql);
-			} else if ($table == 'facture' && !empty($_REQUEST['fac_replacement'])) { // ACOMPTE
-				// Récupération de la devise de la commande de base
-				$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$_REQUEST['origin']." WHERE rowid = ". $_REQUEST['originid'];
-				$res = $db->query($sql);
-				$obj = $db->fetch_object($res);
-
-				if (!empty($obj)) {
-					$devise_code = $obj->devise_code;
-					$devise_taux = $obj->devise_taux;
-				} else {
-					$devise_taux = 1;
-				}
-								
-				$devise_price = $object->subprice;
-				$price = $devise_price / $devise_taux;
-				
-				$object->subprice = $price;
-				$object->devise_pu = $devise_price;
-				
-				$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
-				$db->query($sql);
-			}
-			else {
-				
-				// TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice)
-			}
-			
-		/*	var_dump($object);
-			exit;
-			*/
-		}
 		
 		return 1;
 	}
