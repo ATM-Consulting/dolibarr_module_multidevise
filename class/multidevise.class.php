@@ -384,7 +384,7 @@ class TMultidevise{
 		
 		global $conf;
 		
-		
+		// TODO replace by updateLine
 
 		list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
 
@@ -565,6 +565,23 @@ class TMultidevise{
 				$devise_mt_ligne = $devise_pu * $quantity;
 				
 				$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				
+			}
+			elseif($idProd==0 && !$dp_pu_devise && $_REQUEST['action'] == 'setabsolutediscount'){
+				// autre ligne, ex : acompte
+				
+				// TODO function
+				$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
+				$res = $db->fetch_object($resql);
+				$devise_taux = __val($res->devise_taux,1);
+				
+				$devise_pu = round($object->subprice * $devise_taux ,2);
+				
+				$devise_mt_ligne = $devise_pu * $object->qty;
+				
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				
+				
 				
 			}
 			
