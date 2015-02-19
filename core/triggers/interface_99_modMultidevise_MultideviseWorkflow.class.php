@@ -134,7 +134,7 @@ class InterfaceMultideviseWorkflow
 		if($action === "ORDER_CREATE" || $action  ===  "PROPAL_CREATE" || $action  ===  "BILL_CREATE" 
 		|| $action === "ORDER_SUPPLIER_CREATE" || $action  === "BILL_SUPPLIER_CREATE"){
 			
-			$currency=__get('currency','');
+			$currency = __get('currency',$conf->currency);
 
 			$origin=__get('origin', $object->origin);
 
@@ -145,8 +145,8 @@ class InterfaceMultideviseWorkflow
 				$objectid = __get('facid', __get('id'));
 
 				$sql = 'SELECT o.fk_devise, o.devise_code, o.devise_taux
-									 FROM '.MAIN_DB_PREFIX.$object->table_element.' AS o
-									 WHERE o.rowid = '.$objectid;
+						 FROM '.MAIN_DB_PREFIX.$object->table_element.' AS o
+						 WHERE o.rowid = '.$objectid;
 
 				$resql = $db->query($sql);
 
@@ -173,6 +173,25 @@ class InterfaceMultideviseWorkflow
 				}
 				
 				
+				
+			} else {
+				
+				// Quand workflow activé et qu'une commande se crée en auto après la signature d'une propal
+				// les PU Devise et Total Devise n'étaient pas récupérés, d'où cette répétition de code : (Ticket 1731)
+				
+				if(get_class($object) === "Commande") {
+				
+					$object->fetch_lines();
+					
+					foreach($object->lines as &$line) {
+							
+						$id_line = ($action==='BILL_SUPPLIER_CREATE') ? $line->rowid : $line->id ;
+	
+						TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);	
+	
+					}
+					
+				}
 				
 			}
 			
@@ -268,58 +287,10 @@ class InterfaceMultideviseWorkflow
 		}
 	
 		if($action == "BEFORE_PROPAL_BUILDDOC" || $action == "BEFORE_ORDER_BUILDDOC"  || $action == "BEFORE_BILL_BUILDDOC" || $action == "BEFORE_ORDER_SUPPLIER_BUILDDOC" || $action == "BEFORE_BILL_SUPPLIER_BUILDDOC"){
-				
 			
-			$devise_change = false;
-			//Modification des prix si la devise est différente
-				
-			$resl = $db->query('SELECT devise_code FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
-			$res = $db->fetch_object($resl);
-			$last_devise = 0;
 			
-			if($res){
-				
-				if($conf->currency != $res->devise_code){
-					$last_devise = $conf->currency;
-					$conf->currency  = $res->devise_code;
-					$devise_change = true;
-				}
-			}
+			TMultidevise::preparePDF($object,$object->societe);
 			
-			// 2 - Dans les lignes
-			foreach($object->lines as $line){
-				//Modification des montant si la devise a changé
-				if($devise_change){
-					
-					$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.(($line->rowid) ? $line->rowid : $line->id) );
-					$res = $db->fetch_object($resl);
-
-					if($res){
-						$line->tva_tx = 0;
-						$line->subprice = round($res->devise_pu,2);
-						$line->price = round($res->devise_pu,2);
-						$line->pu_ht = round($res->devise_pu,2);
-						$line->total_ht = round($res->devise_mt_ligne,2);
-						$line->total_ttc = round($res->devise_mt_ligne,2);
-						$line->total_tva = 0;
-					}
-				}
-			}
-			
-			// 3 - Dans le bas du document
-			//Modification des TOTAUX si la devise a changé
-			if($devise_change){
-				
-				$resl = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
-				$res = $db->fetch_object($resl);
-
-				if($res){
-					$object->total_ht = round($res->devise_mt_total,2);
-					$object->total_ttc = round($res->devise_mt_total,2);
-					$object->total_tva = 0;
-				}
-			}
-				
 		}	
 		
 		if($action == "PROPAL_BUILDDOC" || $action == "ORDER_BUILDDOC"  || $action == "BILL_BUILDDOC" || $action == "ORDER_SUPPLIER_BUILDDOC" || $action == "BILL_SUPPLIER_BUILDDOC") {
@@ -355,6 +326,79 @@ class InterfaceMultideviseWorkflow
 									   WHERE amount = '.$object->total.'
 									   		AND fk_account = '.$_REQUEST['accountid'].' 
 									   ORDER BY rowid DESC LIMIT 1)');
+		}
+		
+		if($action == "DISCOUNT_CREATE") {
+			
+			global $conf;
+			/*
+			// On récupère la devise du client
+			$sql = "SELECT devise_code";
+			$sql.= " FROM ".MAIN_DB_PREFIX."societe";
+			$sql.= " WHERE rowid = ".$object->fk_soc;
+			$resql = $db->query($sql);
+			if($resql->num_rows > 0) {
+				$res = $db->fetch_object($resql);
+				$devise_code = $res->devise_code;
+			}
+			
+			// On récupère le taux de conversion pour cette devise
+			$sql = "SELECT rate";
+			$sql.= " FROM ".MAIN_DB_PREFIX."currency_rate cr";
+			$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."currency c on c.rowid = cr.id_currency";
+			$sql.= " WHERE code = '".$devise_code."'";
+			$sql.= " AND cr.id_entity = ".$conf->entity;
+			$sql.= " ORDER BY cr.dt_sync DESC";
+			$sql.= " LIMIT 1";
+			$resql = $db->query($sql);
+			if($resql->num_rows > 0) {
+				$res = $db->fetch_object($resql);
+				$rate = $res->rate;
+			}
+			*/
+			
+			dol_include_once("/compta/facture/class/facture.class.php");
+			
+			$fact = new Facture($this->db);
+			$fact->fetch($_REQUEST['facid']);
+			
+			// On récupère la devise de la facture
+			$sql = "SELECT devise_code";
+			$sql.= " FROM ".MAIN_DB_PREFIX."facture";
+			$sql.= " WHERE rowid = ".$_REQUEST['facid'];
+			$resql = $this->db->query($sql);
+			$res = $this->db->fetch_object($resql);
+			$monnaie_facture = $res->devise_code;
+			
+			// On récupère la monnaie du dolibarr
+			$monnaie_dolibarr = $conf->global->MAIN_MONNAIE;
+			
+			// Si la monnaie est différente de celle du dolibarr
+			if($monnaie_dolibarr !== $monnaie_facture) {
+			
+				$montant_total_acompte = 0;
+				foreach($fact->lines as $line) {
+					$sql = "SELECT devise_mt_ligne";
+					$sql.= " FROM ".MAIN_DB_PREFIX."facturedet";
+					$sql.= " WHERE rowid = ".$line->rowid;
+					$resql = $this->db->query($sql);
+					if($resql->num_rows > 0) {
+						$res = $this->db->fetch_object($resql);
+						$devise_mt_ligne = $res->devise_mt_ligne;
+					}
+					$montant_total_acompte += $devise_mt_ligne;
+				}
+				
+				/*$sql = " UPDATE ".MAIN_DB_PREFIX."societe_remise_except";
+				$sql.= " SET amount_ht = ".$montant_total_acompte;
+				$sql.= ", amount_ttc = ".$montant_total_acompte;
+				$sql.= " WHERE rowid = ".$object->id;
+				$resql = $this->db->query($sql);
+				
+				$this->db->commit();*/
+				
+			}
+			
 		}
 		
 		return 1;

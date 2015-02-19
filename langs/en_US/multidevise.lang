@@ -1,0 +1,13 @@
+Module104030Name = Multi-Currency
+Module104030Desc =  Manage multiple currencies 
+
+# ADMIN
+MulticurrencySetupPage = Configuration of the multi-currency Module 
+MulticurrencyExchangeRatesSetup = Configuration exchange rates 
+ExchangeRate = Exchange Rate 
+Currency = Currency
+CurrencyRate = Currency Rate
+CurrencyTotal = Total ET Devise
+CurrencyVAT = Total VAT Currency
+CurrencyTotalVAT = Total ATI Devise
+UseRateOnInvoiceDate = Use invoice date currency rate if exist

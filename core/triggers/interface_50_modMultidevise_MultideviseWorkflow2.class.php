@@ -160,31 +160,59 @@ class InterfaceMultideviseWorkflow2
 			
 			$idligne = $object->rowid;
 			$fk_product = $object->fk_product;
-		
+
 			$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid=".$object->{'fk_'.$table};
 			$res=$db->query($sql);
 			
-			if(!empty($res) && $fk_product>0) {
+			if(!empty($res) && $fk_product > 0) {
 				$obj = $db->fetch_object($res);
 			
 				$devise_code = $obj->devise_code;
 				$devise_taux = $obj->devise_taux;
-				
+
 				$sql = "SELECT devise_price FROM ".MAIN_DB_PREFIX."product_price WHERE fk_product=".$fk_product." AND devise_code='".$devise_code."' ORDER BY rowid DESC LIMIT 1";
 				$res = $db->query($sql);
-				if(!empty($res) && $devise_taux>0 && $obj=$db->fetch_object($res)) {
-						
-							
-						$devise_price = (float)$obj->devise_price;
-						$price = $devise_price / $devise_taux;
-						
-						$object->subprice = $price;
-						$object->devise_pu = $devise_price;
-						
-						$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
-						$db->query($sql);
-				}
 				
+				if(!empty($res) && $devise_taux>0 && $obj=$db->fetch_object($res)) {
+					$devise_price = (float)$obj->devise_price;
+					$price = $devise_price / $devise_taux;
+					
+					$object->subprice = $price;
+					$object->devise_pu = $devise_price;
+					
+					$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
+					$db->query($sql);
+				} else if (!empty($_REQUEST['fac_avoir'])) { // AVOIR
+					$devise_price = $object->subprice;
+					$price = $devise_price / $devise_taux;
+						
+					$object->subprice = $price;
+					$object->devise_pu = $devise_price;
+
+					$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
+					$db->query($sql);
+				}
+			} else if ($table == 'facture' && !empty($_REQUEST['fac_avoir'])) { // AVOIR
+				// Récupération de la devise de la facture de base
+				$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$table." WHERE rowid = ". $_REQUEST['fac_avoir'];
+				$res = $db->query($sql);
+				$obj = $db->fetch_object($res);
+
+				if (!empty($obj)) {
+					$devise_code = $obj->devise_code;
+					$devise_taux = $obj->devise_taux;
+				} else {
+					$devise_taux = 1;
+				}
+
+				$devise_price = $object->subprice;
+				$price = $devise_price / $devise_taux;
+				
+				$object->subprice = $price;
+				$object->devise_pu = $devise_price;
+				
+				$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
+				$db->query($sql);
 			}
 			
 				

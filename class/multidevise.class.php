@@ -12,7 +12,9 @@ class TMultidevise{
 		if (in_array('ordercard',explode(':',$parameters['context'])) || in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('expeditioncard',explode(':',$parameters['context'])) || in_array('invoicecard',explode(':',$parameters['context']))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context'])) || in_array('invoicesuppliercard',explode(':',$parameters['context']))){
-
+			
+			 
+			/* jusqu'à la 3.7
         	if ($action == 'builddoc')
 			{
 				//Compatibilité SelectBank	
@@ -48,13 +50,13 @@ class TMultidevise{
 						$res = $db->fetch_object($resl);
 
 						if($res){
-							$line->tva_tx = 0;
+							//$line->tva_tx = 0; TODO WTF ???
 							$line->subprice = round($res->devise_pu,2);
 							$line->price = round($res->devise_pu,2);
 							$line->pu_ht = round($res->devise_pu,2);
 							$line->total_ht = round($res->devise_mt_ligne,2);
 							$line->total_ttc = round($res->devise_mt_ligne,2);
-							$line->total_tva = 0;
+							//$line->total_tva = 0; TODO WTF ???
 						}
 					}
 				}
@@ -139,7 +141,7 @@ class TMultidevise{
 				//Devise retrouve ça valeur d'origine
 				if($last_devise != $conf->currency && $last_devise != 0)
 					$conf->currency = $last_devise;
-			}
+			}*/
 		}
 	}
 	static function getActionByTable($table) {
@@ -193,6 +195,7 @@ class TMultidevise{
 				case 'LINEBILL_DELETE':
 				case 'LINEBILL_UPDATE':
 				case 'BILL_CREATE':
+				case 'PAYMENT_CUSTOMER_CREATE':
 					$element = "facture";
 					$element_line = "facturedet";
 					$fk_element = "fk_facture";
@@ -276,35 +279,81 @@ class TMultidevise{
 			$tabledet_origin = "commande_fournisseurdet";
 			$originid = $object->origin_id;
 		}
-		
+		elseif($origin == "shipping"){
+			$table_origin = "commande";
+			$tabledet_origin = "commandedet";
+			$object->fetchObjectLinked();
+			$originid = $object->linkedObjects['shipping'][0]->origine_id;
+		}
+
 		return array($table_origin, $tabledet_origin, $originid);
 		
 	}
 
 	static function createDoc(&$db, &$object,$currency,$origin) {
-	global $conf;
-			if($currency){
-				$resql = $db->query('SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
-									 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
-									 WHERE c.code = "'.$currency.'" 
-									 AND cr.id_entity IN(0, '.(! empty($conf->multicompany->enabled) && ! empty($conf->multicompany->transverse_mode) ? '1,':''). $conf->entity.') ORDER BY cr.dt_sync DESC LIMIT 1');
-				if($res = $db->fetch_object($resql)){
-					$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$res->rowid.', devise_code = "'.$res->code.'", devise_taux = '.$res->rate.' WHERE rowid = '.$object->id);
-				}
-				
-			}
-			
-			//Création a partir d'un objet d'origine (propale ou commande)
-			if(!empty($origin) && !empty($object->origin_id)){
-				
-				list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object, $origin);
-				
-				$resql = $db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
-				$res = $db->fetch_object($resql);
-				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
-			
-			}
+		global $conf;
 		
+		if($currency){	
+			
+			TMultidevise::_setCurrencyRate($db,$object,$currency);
+		}
+		
+		//Création a partir d'un objet d'origine (propale ou commande)
+		if(!empty($origin) && !empty($object->origin_id)){
+			
+			list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object, $origin);
+			
+			$resql = $db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
+			$res = $db->fetch_object($resql);
+			$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
+		
+		}
+		
+	}
+	
+	static function _setCurrencyRate(&$db,&$object,$currency,$get=0){
+		global $conf;
+		//pre($object,true);
+		$multidevise_use_rate=false;
+		if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
+			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
+					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
+					 WHERE c.code = "'.$currency.'" 
+					 	AND cr.id_entity = '.$conf->entity.'
+					  	AND cr.date_cre LIKE "'.date('Y-m-d',($object->date) ? $object->date : time()).'%"
+					 ORDER BY cr.dt_sync DESC LIMIT 1';
+					 
+			$resql = $db->query($sql);
+			
+			if($res = $db->fetch_object($resql)){
+				$multidevise_use_rate = true;
+			}
+		}
+
+		if(!$multidevise_use_rate){
+
+			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
+					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
+					 WHERE c.code = "'.$currency.'" 
+					 AND cr.id_entity = '.$conf->entity.' ORDER BY cr.dt_sync DESC LIMIT 1';
+	
+			
+			//echo $sql."<br>";exit;
+			$resql = $db->query($sql);
+		}
+		
+		if($res = $db->fetch_object($resql)){
+			
+			$rowid = $res->rowid;
+			$code = $res->code;
+			$rate = $res->rate;
+			
+			if($get){ // TODO créer fonction GET
+				return $res->rate;
+			}
+		}
+
+		$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET fk_devise = '.$rowid.', devise_code = "'.$code.'", devise_taux = '.$rate.' WHERE rowid = '.$object->id);
 	}
 
 	static function insertLine(&$db, &$object,&$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice) {
@@ -469,7 +518,16 @@ class TMultidevise{
 					$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$_REQUEST['qty'],$ligne->product_id,'HT',0,0,0,true);
 				}
 				else {
-					$object->update(1);
+					//var_dump($object); exit;
+					$qty = price2num(GETPOST('qty_predef'));
+					if($qty==0)$qty = $_REQUEST['qty'];
+					
+					if($action == 'LINEBILL_SUPPLIER_CREATE') {
+						$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$qty,$ligne->product_id,'HT',0,0,0,true);
+					}
+					else {
+						$object->update($user, 1);	
+					}
 				}
 				
 			}
@@ -589,7 +647,9 @@ class TMultidevise{
 			|| $action==='PROPAL_CREATE' || $action==='BILL_CREATE' || $action==='ORDER_CREATE' ){
 				
 			    $pu_devise = !empty($object->device_pu) ? $object->device_pu : $object->subprice * $devise_taux;
-
+				
+				$tva_devise = !empty($object->total_tva_device) ? $$object->total_tva_device : $object->total_tva * $devise_taux;
+				
 				$pu_devise = round($pu_devise,2);
 
 				$devise_mt_ligne = $pu_devise * $object->qty;
@@ -636,7 +696,8 @@ class TMultidevise{
 	            $res = $db->fetch_object($resql);
 				
 				$pu_devise = !empty($object->device_pu) ? $object->device_pu : $res->subprice * $devise_taux;
-
+				$tva_devise = !empty($object->total_tva_device) ? $$object->total_tva_device : $object->total_tva * $devise_taux;
+			
 				$pu_devise = round($pu_devise,2);
 				
 				$devise_mt_ligne = $pu_devise * $res->qty;
@@ -797,9 +858,85 @@ class TMultidevise{
 		
 	}
 
+	static function preparePDF(&$object) {
+	global $conf, $db;
+				
+			$req = $db->query('SELECT devise_code, devise_taux FROM ' . MAIN_DB_PREFIX .$object->table_element. ' WHERE rowid = ' . $object->id);
+			$result = $db->fetch_object($req);
+			
+			if(empty($object->origin_currency))$object->origin_currency = $conf->currency;
+			$conf->currency  = $result->devise_code;
+			
+			$devise_rate = $result->devise_taux;
+			
+			$paid = 0;
+			if($object->table_element=='facture') {
+				/* paiements */
+				$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiement_facture WHERE fk_facture = ' . $object->id);
+				
+				
+				while ($result = $db->fetch_object($req)) {
+					$paid += $result->devise_mt_paiement;
+				}
+				
+				
+			}
+			
+			$total_tva = 0;
+				
+			// 2 - Dans les lignes
+			foreach($object->lines as &$line){
+				//Modification des montant si la devise a changé
+				$lineid = (($line->rowid) ? $line->rowid : $line->id);
+				
+				$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.$lineid );
+				$res = $db->fetch_object($resl);
+
+				if($res){
+					
+					if(empty($line->total_tva_devise)) {
+						$line->total_tva_devise = $line->total_tva * $devise_rate;
+						
+					}
+					
+			//		$line->tva_tx = 0;
+					$line->subprice = round($res->devise_pu,2);
+					$line->price = round($res->devise_pu,2);
+					$line->pu_ht = round($res->devise_pu,2);
+					$line->total_ht = round($res->devise_mt_ligne,2);
+					$line->total_ttc = round($res->devise_mt_ligne + $line->total_tva_devise,2);
+					$line->total_tva = $line->total_ttc - $line->total_ht; 
+					
+					$total_tva+= $line->total_tva;
+				}
+			
+			}
+
+
+				// 3 - Dans le bas du document
+			//Modification des TOTAUX si la devise a changé
+			
+				
+			$resl = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
+			$res = $db->fetch_object($resl);
+
+			if($res){
+				$object->total_ht = round($res->devise_mt_total,2);
+				$object->total_tva = round($total_tva,2);
+				$object->total_ttc = round($object->total_ht + $object->total_tva,2);
+				
+			}
+			
+		
+			return array(
+				$paid
+			);
+		
+	}
+
 
 	static function addpaiement(&$db,&$TRequest,&$object,$action){
-		global $user,$conf;
+		global $user,$conf; $db;
 		
 		list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
 		
@@ -837,15 +974,20 @@ class TMultidevise{
 					$element = "facture_fourn";
 				}
 
-				$sql = 'SELECT devise_mt_total, devise_code FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;
+				$sql = 'SELECT devise_mt_total, devise_code, devise_taux FROM '.MAIN_DB_PREFIX.$element.' WHERE rowid = '.$facture->id;
 				$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
-
+				
+				$devise_taux = $res->devise_taux;
+				if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
+					$devise_taux = TMultidevise::_setCurrencyRate($db, $facture, $res->devise_code,1);
+				}
+				
 				$account = new Account($db);
 				$account->fetch($TRequest['accountid']);
 				
 				//Règlement total
-				if(price2num($res->devise_mt_total) == price2num($mt_devise)){
+				if(price2num($res->devise_mt_total+($facture->total_tva*$devise_taux)) == price2num($mt_devise)){
 
 					$facture->set_paid($user);
 
@@ -864,14 +1006,14 @@ class TMultidevise{
 				
 				if($action == "PAYMENT_CUSTOMER_CREATE"){
 					//MAJ du montant paiement_facture
-					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.price2num($mt_devise).'" , devise_taux = "'.$TRequest['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.price2num($mt_devise).'" , devise_taux = "'.$devise_taux.'", devise_code = "'.$res->devise_code.'"
 								WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
 
 					$db->query('UPDATE '.MAIN_DB_PREFIX."paiement SET note = '".$note."' WHERE rowid = ".$object->id);
 				}
 				else{
 					//MAJ du montant paiement_facturefourn
-					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiementfourn_facturefourn SET devise_mt_paiement = "'.price2num($mt_devise).'" , devise_taux = "'.$TRequest['taux_devise'].'", devise_code = "'.$res->devise_code.'"
+					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiementfourn_facturefourn SET devise_mt_paiement = "'.price2num($mt_devise).'" , devise_taux = "'.$devise_taux.'", devise_code = "'.$res->devise_code.'"
 								WHERE fk_paiementfourn = '.$object->id.' AND fk_facturefourn = '.$facture->id);
 
 					$db->query('UPDATE '.MAIN_DB_PREFIX."paiementfourn SET note = '".$note."' WHERE rowid = ".$object->id);

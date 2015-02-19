@@ -2057,7 +2057,7 @@ class CommandeFournisseur extends CommonOrder
 /**
  *  Classe de gestion des lignes de commande
  */
-class CommandeFournisseurLigne
+class CommandeFournisseurLigne extends CommonObject
 {
     // From llx_commandedet
     var $qty;
