@@ -248,16 +248,15 @@ class TMultidevise{
 				    WHERE fk_'.$parent_object.' = '.$object->{"fk_".$parent_object};
 			
 			$resql = $db->query($sql);
-			$res = $db->fetch_object($resql);
 			
-			$db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.' 
-					SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")." 
-					WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $id ));
+			if ($resql) {
+				$res = $db->fetch_object($resql);
 			
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.' 
+						SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")." 
+						WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $id ));
+			}
 		}
-			
-			
-		
 	}
 	
 	static function getTableByOrigin(&$object, $origin = '') {
