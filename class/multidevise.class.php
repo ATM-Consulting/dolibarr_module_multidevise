@@ -288,13 +288,14 @@ class TMultidevise{
 		return array($table_origin, $tabledet_origin, $originid);
 		
 	}
-	static function getElementCurrency($element) {
+	static function getElementCurrency($element,$object) {
 		global $db;
-			$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
-			$res = $db->fetch_object($resql);
-			$devise_taux = __val($res->devise_taux,1);
-			
-			return $devise_taux;
+		
+		$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
+		$res = $db->fetch_object($resql);
+		$devise_taux = __val($res->devise_taux,1);
+		
+		return $devise_taux;
 	}
 	static function getThirdCurrency($socid) {
 		
@@ -575,7 +576,20 @@ class TMultidevise{
 			}
 			elseif($idProd==0 && !$dp_pu_devise && $_REQUEST['action'] == 'setabsolutediscount'){
 				// autre ligne, ex : acompte
-				$devise_taux = TMultidevise::getElementCurrency($element);
+				$devise_taux = TMultidevise::getElementCurrency($element,$object);
+				
+				$devise_pu = round($object->subprice * $devise_taux ,2);
+				
+				$devise_mt_ligne = $devise_pu * $object->qty;
+				
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				
+				
+				
+			}
+			else{
+
+				$devise_taux = TMultidevise::getElementCurrency($element,$object);
 				
 				$devise_pu = round($object->subprice * $devise_taux ,2);
 				
