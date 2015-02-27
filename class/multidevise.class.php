@@ -253,13 +253,10 @@ class TMultidevise{
 				$res = $db->fetch_object($resql);
 			
 				$db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.' 
-					SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")." 
-					WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $id ));
+						SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")." 
+						WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $id ));
 			}
 		}
-			
-			
-		
 	}
 	
 	static function getTableByOrigin(&$object, $origin = '') {
@@ -300,9 +297,33 @@ class TMultidevise{
 		
 		return $devise_taux;
 	}
-	static function createDoc(&$db, &$object,$currency,$origin) {
-		global $conf;
+	static function getThirdCurrency($socid) {
 		
+		global $db;
+		
+		$sql = 'SELECT fk_devise
+				FROM '.MAIN_DB_PREFIX.'societe 
+				WHERE rowid = '.$socid;
+		
+		$resql = $db->query($sql);
+		$res = $db->fetch_object($resql);
+		
+		if($res->fk_devise > 0) {
+			$sql = 'SELECT code 
+					FROM '.MAIN_DB_PREFIX.'currency 
+					WHERE rowid = '.$res->fk_devise;
+		
+			$resql = $db->query($sql);
+			$res = $db->fetch_object($sql);
+			$code_currency = $res->code;
+		}
+		
+		return $code_currency;
+		
+	}
+
+	static function createDoc(&$db, &$object,$currency,$origin) {
+
 		if($currency){	
 			
 			TMultidevise::_setCurrencyRate($db,$object,$currency);
@@ -370,7 +391,7 @@ class TMultidevise{
 		
 		global $conf;
 		
-		
+		// TODO replace by updateLine
 
 		list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
 
@@ -455,7 +476,7 @@ class TMultidevise{
 			//Ligne de produit/service existant
 			if($idProd>0 && empty($dp_pu_devise)){
 					
-				$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".(($object->{"fk_".$element})? $object->{"fk_".$element} : $object->id) ;
+				$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".(($object->{"fk_".$element})? $object->{"fk_".$element} : $object->id) ;
 				
                 $resql = $db->query($sql);
                 $res = $db->fetch_object($resql);
@@ -477,9 +498,11 @@ class TMultidevise{
 				
 				//Cas ou le prix de référence est dans la devise fournisseur et non dans la devise du dolibarr
 				if(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY && ($action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE')){
+						
 					$devise_pu = $object->subprice;
 					$object->subprice = $devise_pu / $devise_taux;
 					$subprice = $object->subprice;
+					
 				}
 				else{
 					$subprice = $object->subprice;
@@ -591,7 +614,7 @@ class TMultidevise{
 			
 			$resql = $db->query($sql);
 			$res = $db->fetch_object($resql);
-
+			
 			$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".(($object->{'fk_'.$element})? $object->{'fk_'.$element} : $object->id) );
 		}
 		

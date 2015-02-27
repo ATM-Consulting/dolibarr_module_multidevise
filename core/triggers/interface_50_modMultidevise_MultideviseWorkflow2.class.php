@@ -141,9 +141,7 @@ class InterfaceMultideviseWorkflow2
 		 */
 		else if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT') {
 			
-			/*echo '<pre>';
-			print_r($object);
-			echo '</pre>';exit;*/
+			// TODO DELETE en doublon dans autre trigger
 			
 			if($action == "LINEORDER_INSERT" || $action == 'LINEORDER_UPDATE'){
 				$table = "commande";
@@ -234,6 +232,10 @@ class InterfaceMultideviseWorkflow2
 				
 				$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
 				$db->query($sql);
+			}
+			else {
+				
+				// TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice)
 			}
 			
 		/*	var_dump($object);

@@ -133,10 +133,15 @@ class InterfaceMultideviseWorkflow
 		 */
 		if($action === "ORDER_CREATE" || $action  ===  "PROPAL_CREATE" || $action  ===  "BILL_CREATE" 
 		|| $action === "ORDER_SUPPLIER_CREATE" || $action  === "BILL_SUPPLIER_CREATE"){
-			
-			$currency = __get('currency',$conf->currency);
 
 			$origin=__get('origin', $object->origin);
+			
+			// Pour le cas où l'on vient de replanish : s'il n'y a pas d'origine, on récupère la devise du tiers
+			if(empty($origin)) $used_currency = TMultidevise::getThirdCurrency($object->socid);
+			else $used_currency = $conf->currency;
+			
+			//Il est possible que les tiers n'aient pas de devise assigné car lors de l'import initiale on ne renseigne pas les champs de multidevise
+			$currency = __get('currency',($used_currency) ? $used_currency : $conf->currency );
 
 			$actioncard = __get('action','');
 
@@ -178,7 +183,7 @@ class InterfaceMultideviseWorkflow
 				
 				// Quand workflow activé et qu'une commande se crée en auto après la signature d'une propal
 				// les PU Devise et Total Devise n'étaient pas récupérés, d'où cette répétition de code : (Ticket 1731)
-				
+			
 				if(get_class($object) === "Commande") {
 				
 					$object->fetch_lines();
@@ -189,10 +194,8 @@ class InterfaceMultideviseWorkflow
 	
 						TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);	
 	
-					}
-					
-				}
-				
+					}					
+				}				
 			}
 			
 			//Clonage => On récupère la devise et le taux de l'objet cloné
@@ -207,7 +210,7 @@ class InterfaceMultideviseWorkflow
 			else{
 				
 				TMultidevise::createDoc($db, $object,$currency,$origin);
-
+				
 			}
 		}
 		
@@ -220,7 +223,29 @@ class InterfaceMultideviseWorkflow
 			$origin=__get('origin', $object->origin);
 			$originid=__get('originid', $object->origin_id);
 			$dp_pu_devise = __get('dp_pu_devise');
+			
 			$idProd=__get('idprodfournprice', __get('productid', __get('idprod', __get('id', 0)) )  ); 
+			if(empty($idProd) && isset($_REQUEST['valid']) && !empty($object->lines)){
+				$idProd = $object->lines[count($object->lines)-1]->fk_product;
+				
+				if($action==='LINEORDER_SUPPLIER_CREATE') {
+					list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
+					$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".(($object->{"fk_".$element})? $object->{"fk_".$element} : $object->id) ;
+					
+	                $resql = $db->query($sql);
+	                $res = $db->fetch_object($resql);
+					$devise_taux = __val($res->devise_taux,1);
+					
+					
+					if(empty($devise_taux)) {
+						if(empty($origin) && empty($currency)) $currency = TMultidevise::getThirdCurrency($object->socid);
+						TMultidevise::createDoc($db, $object,$currency,$origin);
+					} 
+					
+				}
+			
+			}
+			
 			$quantity = __get('qty',0);	 
 			$quantity_predef=__get('qty_predef',0);	
 			$remise_percent =__get('remise_percent',0);	 
@@ -236,8 +261,15 @@ class InterfaceMultideviseWorkflow
 				
 			}
 			else {
-				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
+				//Spécifique nomadic : récupération des services pour la facturation depuis une expédition   ticket 1774
+				if ($conf->clinomadic->enabled) {
+					if ($object->product_type == 1 && empty($object->origin)) {
+						$object->origin = 'shipping';
+					}
+				}
 
+				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
+				
 			}				
 		}
 	
