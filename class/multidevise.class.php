@@ -236,7 +236,7 @@ class TMultidevise{
         
         $db->query('UPDATE '.MAIN_DB_PREFIX.$element.' 
                 SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : 0)." 
-                WHERE rowid = ".$id;	
+                WHERE rowid = ".$id);	
 		
 	}
 	

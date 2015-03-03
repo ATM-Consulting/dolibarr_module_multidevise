@@ -88,6 +88,9 @@ function showParameters(&$form) {
                 <td><?php echo $langs->trans('MultiCurrencyRateSource') ?></td><td><input type="text" name="TMultidevise[MULTICURRENCY_RATE_SOURCE]" value="<?php echo $conf->global->MULTICURRENCY_RATE_SOURCE; ?>" /></td>               
             </tr>
             <tr>
+                <td><?php echo $langs->trans('MultiCurrencyFilter') ?></td><td><input type="text" name="TMultidevise[MULTICURRENCY_FILTER]" value="<?php echo $conf->global->MULTICURRENCY_FILTER; ?>" /></td>               
+            </tr>
+            <tr>
                 <td><?php echo $langs->trans('MultiBujyPriceInCurrency') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTICURRENCY_BUY_PRICE_IN_CURRENCY]',array('0'=>'Non','1'=>'Oui'),$conf->global->MULTICURRENCY_BUY_PRICE_IN_CURRENCY); ?></td>               
             </tr>
 			
