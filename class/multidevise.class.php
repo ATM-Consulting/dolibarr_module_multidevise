@@ -321,6 +321,33 @@ class TMultidevise{
 		return $code_currency;
 		
 	}
+	
+	static function getDocumentCurrency(&$object) {
+		
+		global $db;
+		
+		list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object);
+		
+		$sql = 'SELECT fk_devise
+				FROM '.MAIN_DB_PREFIX.$table_origin.' 
+				WHERE rowid = '.$originid;
+		
+		$resql = $db->query($sql);
+		$res = $db->fetch_object($resql);
+		
+		if($res->fk_devise > 0) {
+			$sql = 'SELECT code 
+					FROM '.MAIN_DB_PREFIX.'currency 
+					WHERE rowid = '.$res->fk_devise;
+		
+			$resql = $db->query($sql);
+			$res = $db->fetch_object($sql);
+			$code_currency = $res->code;
+		}
+		
+		return $code_currency;
+		
+	}
 
 	static function createDoc(&$db, &$object,$currency,$origin) {
 
@@ -468,10 +495,24 @@ class TMultidevise{
 				$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 							SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' 
 							WHERE rowid = '.(($object->rowid) ? $object->rowid : $object->id )); //TODO check id si rowid vide
-
-			}
+				
+				$sql = 'SELECT SUM(f.devise_mt_ligne) as total_devise 
+					FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)';
 			
-			
+				//MAJ du total devise de la commande/facture/propale
+				if($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT'){
+					$sql .= 'WHERE m.rowid = '.$object->{'fk_'.$element};
+				}
+				else{
+					$sql .= 'WHERE m.rowid = '.$object->id;
+				}
+				
+				$resql = $db->query($sql);
+				$res = $db->fetch_object($resql);
+				
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".(($object->{'fk_'.$element})? $object->{'fk_'.$element} : $object->id) );
+					
+				}			
 		}
 		else{
 			/* ***************************

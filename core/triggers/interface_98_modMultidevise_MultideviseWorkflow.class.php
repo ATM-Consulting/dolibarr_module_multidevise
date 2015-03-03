@@ -134,15 +134,23 @@ class InterfaceMultideviseWorkflow
 		if($action === "ORDER_CREATE" || $action  ===  "PROPAL_CREATE" || $action  ===  "BILL_CREATE" 
 		|| $action === "ORDER_SUPPLIER_CREATE" || $action  === "BILL_SUPPLIER_CREATE"){
 
+			//TODO mettre en fonction de là....
 			$origin=__get('origin', $object->origin);
 			
 			// Pour le cas où l'on vient de replanish : s'il n'y a pas d'origine, on récupère la devise du tiers
 			if(empty($origin)) $used_currency = TMultidevise::getThirdCurrency($object->socid);
-			else $used_currency = $conf->currency;
+			else{
+				$used_currency = TMultidevise::getDocumentCurrency($object);
+				if(empty($used_currency)){
+					$used_currency = $conf->currency;
+				}
+			}
 			
 			//Il est possible que les tiers n'aient pas de devise assigné car lors de l'import initiale on ne renseigne pas les champs de multidevise
 			$currency = __get('currency',($used_currency) ? $used_currency : $conf->currency );
-
+			
+			//TODO ... à de là !!
+			
 			$actioncard = __get('action','');
 
 			if($actioncard=='confirm_clone' && ($action==='ORDER_SUPPLIER_CREATE' || $action==='BILL_SUPPLIER_CREATE' || $action==='PROPAL_CREATE' || $action==='ORDER_CREATE' || $action==='BILL_CREATE') ) {
@@ -152,7 +160,7 @@ class InterfaceMultideviseWorkflow
 				$sql = 'SELECT o.fk_devise, o.devise_code, o.devise_taux
 						 FROM '.MAIN_DB_PREFIX.$object->table_element.' AS o
 						 WHERE o.rowid = '.$objectid;
-
+				
 				$resql = $db->query($sql);
 
 				if($res = $db->fetch_object($resql)){
