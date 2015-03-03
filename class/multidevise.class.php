@@ -444,15 +444,20 @@ class TMultidevise{
 					$db->commit();
 					$db->commit(); // J'ai été obligé mais je sais pas pourquoi 
 					
-					$commande_fourn_origine = new CommandeFournisseur($db);
-					$commande_fourn_origine->fetch($object->origin_id);
-					
-					$object->fetch_lines();
-					
-					$keys = array_keys($object->lines);
-					$last_key = $keys[count($keys)-1];
-					
-					$originid = $commande_fourn_origine->lines[$last_key]->id;
+					if(!empty($object->origin_line_id)){
+						$originid = $object->origin_line_id;
+					}
+					else{
+						$commande_fourn_origine = new CommandeFournisseur($db);
+						$commande_fourn_origine->fetch($object->origin_id);
+						
+						$object->fetch_lines();
+						
+						$keys = array_keys($object->lines);
+						$last_key = $keys[count($keys)-1];
+						
+						$originid = $commande_fourn_origine->lines[$last_key]->id;
+					}
 				}
 				
 				$resql = $db->query("SELECT devise_pu, devise_mt_ligne 
