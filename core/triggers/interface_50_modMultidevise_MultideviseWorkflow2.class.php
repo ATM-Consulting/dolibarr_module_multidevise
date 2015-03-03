@@ -110,7 +110,11 @@ class InterfaceMultideviseWorkflow2
 		/*
 		 * Enregistrement sur PRODUCT_PRICE_MODIFY
 		 */
-		if($action == "PRODUCT_PRICE_MODIFY"){
+	/*	
+     
+     * Prix devisé sur prix cascade. Honnêtement l'intérêt... :/
+     * 
+     if($action == "PRODUCT_PRICE_MODIFY"){
 		    if(!defined('INC_FROM_DOLIBARR'))define('INC_FROM_DOLIBARR',true);
             dol_include_once('/tarif/config.php');
             dol_include_once('/commande/class/commande.class.php');
@@ -122,10 +126,9 @@ class InterfaceMultideviseWorkflow2
             $db = &$this->db;
             
             $currency = GETPOST('currency');
-			if(!empty($$currency)){
+			if(!empty($currency)){
 				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$currency.'" LIMIT 1');
 				if($res = $db->fetch_object($resql)){
-					//var_dump($object);exit;
 					
 					$sql = 'UPDATE '.MAIN_DB_PREFIX.'product_price 
 					SET fk_devise = '.$res->rowid.', devise_code = "'.$currency.'", devise_price=price
@@ -136,7 +139,7 @@ class InterfaceMultideviseWorkflow2
 			}
 				
 		}
-
+*/
 		
 		return 1;
 	}

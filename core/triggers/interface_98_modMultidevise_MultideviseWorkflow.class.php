@@ -214,71 +214,14 @@ class InterfaceMultideviseWorkflow
 				
 			}
 		}
-		
-		/*
-		 *  CREATION P.U. DEVISE + TOTAL DEVISE PAR LIGNE DE COMMANDE, PROPAL, FACTURE, COMMANDE FOURNISSEUR OU FACTURE FOURNISSEUR
-		 */
-		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT'	|| $action == 'LINEBILL_INSERT' 
-		|| $action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE') {
-			
-			$origin=__get('origin', $object->origin);
-			$originid=__get('originid', $object->origin_id);
-			$dp_pu_devise = __get('dp_pu_devise');
-			
-			$idProd=__get('idprodfournprice', __get('productid', __get('idprod', __get('id', 0)) )  ); 
-			if(empty($idProd) && isset($_REQUEST['valid']) && !empty($object->lines)){
-				$idProd = $object->lines[count($object->lines)-1]->fk_product;
-				
-				if($action==='LINEORDER_SUPPLIER_CREATE') {
-					list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
-					$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".(($object->{"fk_".$element})? $object->{"fk_".$element} : $object->id) ;
-					
-	                $resql = $db->query($sql);
-	                $res = $db->fetch_object($resql);
-					$devise_taux = __val($res->devise_taux,1);
-					
-					
-					if(empty($devise_taux)) {
-						if(empty($origin) && empty($currency)) $currency = TMultidevise::getThirdCurrency($object->socid);
-						TMultidevise::createDoc($db, $object,$currency,$origin);
-					} 
-					
-				}
-			
-			}
-			
-			$quantity = __get('qty',0);	 
-			$quantity_predef=__get('qty_predef',0);	
-			$remise_percent =__get('remise_percent',0);	 
-			$idprodfournprice = __get('idprodfournprice',0);	 
-			$fournprice=__get('fournprice_predef','');
-			$buyingprice=__get('buying_price_predef','');	 
-				
-			$actioncard = __get('action','');
-				
-			if($actioncard=='confirm_clone') {
-				
-				null; //TMultidevise::updateLine($db, $object,$user, $action,$object->rowid,$object->remise_percent);
-				
-			}
-			else {
-				//Spécifique nomadic : récupération des services pour la facturation depuis une expédition   ticket 1774
-				if ($conf->clinomadic->enabled) {
-					if ($object->product_type == 1 && empty($object->origin)) {
-						$object->origin = 'shipping';
-					}
-				}
-
-				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
-				
-			}				
-		}
 	
-		/*
+    	/*
 		 * MODIFICATION LIGNE DE COMMANDE, PROPAL OU FACTURE = MAJ DU MONTANT TOTAL DEVISE
 		 */
 		if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE' 
-		|| $action == 'LINEORDER_SUPPLIER_UPDATE' || $action == 'LINEBILL_SUPPLIER_UPDATE'){
+		|| $action == 'LINEORDER_SUPPLIER_UPDATE' || $action == 'LINEBILL_SUPPLIER_UPDATE'
+        || $action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT' 
+        || $action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE'){
 			
 
 			switch ($action) {
@@ -289,12 +232,13 @@ class InterfaceMultideviseWorkflow
 					$id_line = __get('lineid',0);
 					break;
 				default:
-					$id_line = __get('id',0);
+					$id_line = __val($object->id, $object->rowid, 'int', true);
+                    if(empty($id_line))$id_line = __get('id',0);
+                    
 					break;
 			}
 
 			$remise_percent =__get('remise_percent',0);
-			
 			TMultidevise::updateLine($db, $object,$user, $action,$id_line,$remise_percent);
 
 		}
