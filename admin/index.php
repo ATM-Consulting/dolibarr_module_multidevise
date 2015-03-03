@@ -78,9 +78,18 @@ function showParameters(&$form) {
 				<td colspan="2"><?php echo $langs->trans('Parameters') ?></td>
 			</tr>
 			
-			<tr>
-				<td><?php echo $langs->trans('UseRateOnInvoiceDate') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_USE_RATE_ON_INVOICE_DATE]',array('0'=>'Non','1'=>'Oui'),$conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE); ?></td>				
-			</tr>
+            <tr>
+                <td><?php echo $langs->trans('UseRateOnInvoiceDate') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_USE_RATE_ON_INVOICE_DATE]',array('0'=>'Non','1'=>'Oui'),$conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE); ?></td>               
+            </tr>
+            <tr>
+                <td><?php echo $langs->trans('MultiCurrencyListSource') ?></td><td><input type="text" name="TMultidevise[MULTICURRENCY_LIST_SOURCE]" value="<?php echo $conf->global->MULTICURRENCY_LIST_SOURCE; ?>" /></td>               
+            </tr>
+            <tr>
+                <td><?php echo $langs->trans('MultiCurrencyRateSource') ?></td><td><input type="text" name="TMultidevise[MULTICURRENCY_RATE_SOURCE]" value="<?php echo $conf->global->MULTICURRENCY_RATE_SOURCE; ?>" /></td>               
+            </tr>
+            <tr>
+                <td><?php echo $langs->trans('MultiBujyPriceInCurrency') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTICURRENCY_BUY_PRICE_IN_CURRENCY]',array('0'=>'Non','1'=>'Oui'),$conf->global->MULTICURRENCY_BUY_PRICE_IN_CURRENCY); ?></td>               
+            </tr>
 			
 		</table>
 		<p align="right">

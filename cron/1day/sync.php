@@ -9,8 +9,8 @@
 	require('../../config.php');
 	dol_include_once('/multidevise/class/class.currency.php');
 	
-	$url_list = TCurrenty_list_source;
-	$url_rate =  strtr(TCurrenty_rate_source,array('{app_id}'=>TCurrenty_app_id));
+	$url_list = $conf->global->MULTICURRENCY_LIST_SOURCE;
+	$url_rate =  $conf->global->MULTICURRENCY_RATE_SOURCE;
 	
 	$TCurrency = json_decode( file_get_contents($url_list) );
 	

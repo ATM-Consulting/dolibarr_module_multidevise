@@ -58,7 +58,7 @@ class modmultidevise extends DolibarrModules
 		// Module description, used if translation string 'ModuleXXXDesc' not found (where XXX is value of numeric property 'numero' of module)
 		$this->description = "Gestion de devises multiple";
 		// Possible values for version are: 'development', 'experimental', 'dolibarr' or version
-		$this->version = '2.4.1';
+		$this->version = '3.0';
 		// Key used in llx_const table to save module status enabled/disabled (where MYMODULE is value of property name of module in uppercase)
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		// Where to store the module in setup page (0=common,1=interface,2=others,3=very specific)
@@ -128,6 +128,8 @@ class modmultidevise extends DolibarrModules
 		// );
 		$this->const = array(
 			array('MULTIDEVISE_MODIFY_RATE_APPLICATION','chaine','PU_DOLIBARR','Definie le sens d\'application des modifications de taux',1)
+            ,array('MULTICURRENCY_LIST_SOURCE','chaine', 'http://atmsrv1.atm-consulting.fr/currencies.json', 'url pour la synchro des device disponible',1)
+            ,array('MULTICURRENCY_RATE_SOURCE','chaine', 'http://atmsrv1.atm-consulting.fr/lastest.json', 'url pour la synchro des taux',1)
 		);
 
 		// Array to add new pages in new tabs

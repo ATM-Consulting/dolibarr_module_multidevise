@@ -378,7 +378,7 @@ class ActionsMultidevise
 								,data: {
 									fk_product: $('#idprodfournprice').val(),
 									get : "getproductfournprice",
-									<?php echo (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? "taux : taux," : '' ;?>
+									<?php echo !empty($conf->global->MULTICURRENCY_BUY_PRICE_IN_CURRENCY) ? "taux : taux," : '' ;?>
 									json : 1
 								}
 							},"json").then(function(select){
@@ -436,13 +436,13 @@ class ActionsMultidevise
 								,data: {
 									fk_product: $('#idprodfournprice').val(),
 									get : "getproductfournprice",
-									<?php echo (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? "taux : taux," : '' ;?>
+									<?php echo !empty($conf->global->MULTICURRENCY_BUY_PRICE_IN_CURRENCY) ? "taux : taux," : '' ;?>
 									json : 1
 								}
 								},"json").then(function(select){
 									if(select.price != ""){
 										<?php
-										if(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY)
+										if(!empty($conf->global->MULTICURRENCY_BUY_PRICE_IN_CURRENCY))
 											print 'price = Math.round((select.price * taux.replace(",",".") * 100)) / 100;';
 										else
 											print 'price = select.price * taux.replace(",",".");';

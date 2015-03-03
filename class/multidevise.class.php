@@ -477,7 +477,7 @@ class TMultidevise{
 				}
 				
 				//Cas ou le prix de référence est dans la devise fournisseur et non dans la devise du dolibarr
-				if(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY && ($action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE')){
+				if(!empty($conf->global->MULTICURRENCY_BUY_PRICE_IN_CURRENCY)  && ($action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE')){
 						
 					$devise_pu = $object->subprice;
 					$object->subprice = $devise_pu / $devise_taux;
@@ -514,7 +514,7 @@ class TMultidevise{
 				}
 				
 				// Marge
-				if ($conf->margin->enabled && $user->rights->margins->creer && defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY){			
+				if ($conf->margin->enabled && $user->rights->margins->creer && !empty($conf->global->MULTICURRENCY_BUY_PRICE_IN_CURRENCY) ){			
 					
 				//exit($fournprice);	
 					if($fournprice) {
@@ -527,7 +527,7 @@ class TMultidevise{
 				if(get_class($object)=='CommandeFournisseur') {
 					$object->updateline($object->rowid, $ligne->desc, $subprice, $ligne->qty, $ligne->remise_percent, $ligne->tva_tx,0,0,'HT',0, 0, true);
 				}
-				elseif(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY && $action == 'LINEBILL_SUPPLIER_CREATE'){
+				elseif(!empty($conf->global->MULTICURRENCY_BUY_PRICE_IN_CURRENCY)  && $action == 'LINEBILL_SUPPLIER_CREATE'){
 					$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$_REQUEST['qty'],$ligne->product_id,'HT',0,0,0,true);
 				}
 				else {
@@ -609,7 +609,7 @@ class TMultidevise{
 		$res = $db->fetch_object($resql);
 		
 		//Calcul du prix d'achat devisé
-		$buyingprice = (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? price2num($buyingprice) / $res->rate : $buyingprice ;
+		$buyingprice = !empty($conf->global->MULTICURRENCY_BUY_PRICE_IN_CURRENCY)  ? price2num($buyingprice) / $res->rate : $buyingprice ;
 //		echo $buyingprice;exit;
 		return $buyingprice;
 	}
