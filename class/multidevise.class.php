@@ -361,10 +361,14 @@ class TMultidevise{
 			
 			list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object, $origin);
 			
-			$resql = $db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
-			$res = $db->fetch_object($resql);
-			$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
-		
+			if (!empty($_REQUEST['valuedeposit']) && $_REQUEST['typedeposit'] == 'amount') {
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '. $_REQUEST['valuedeposit'] .' WHERE rowid = '.$object->id);
+			} else {
+				$resql = $db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
+				$res = $db->fetch_object($resql);
+
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
+			}
 		}
 		
 	}
@@ -431,12 +435,14 @@ class TMultidevise{
 		else{
 			$db->commit();
 		}
+
 		//Création a partir d'un objet d'origine (propale,commande client ou commande fournisseur)
 		if($origin && $originid){
-
-			if($origin == "propal" && !empty($originid))$originidpropal = $originid; // cas propal c'est l'idpropal qui est là;
+			if ($origin == 'commande' && !empty($originid)) $originidcommande = $originid;
+			if ($origin == "propal" && !empty($originid))$originidpropal = $originid; // cas propal c'est l'idpropal qui est là;
 
 			list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object, $origin);
+			
 			if($origin == "propal" && empty($originid)){
 				$propal = new Propal($db);
 				$propal->fetch($originidpropal);
@@ -449,8 +455,28 @@ class TMultidevise{
 				}	
 			}
 			
+			if ($origin == 'commande' && empty($originid)) {
+				$commande = new Commande($db);
+				$commande->fetch($originidcommande);
+				
+				foreach ($commande->lines as $line) {
+					if ($line->rang == $object->rang) {
+						$originid = $line->rowid;
+					}
+				}	
+			}
 			
-			if($object->origin == 'shipping'){
+			// Dans le cas d'un avoir
+			if (!empty($_REQUEST['valuedeposit']) && $_REQUEST['typedeposit'] == 'amount') {
+				if ($origin == 'commande') {
+					$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."commande WHERE rowid = " . $originidcommande);
+					$res = $db->fetch_object($resql);
+					
+					$devise_taux = __val($res->devise_taux, 1);
+					
+					$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
+				}	
+			} else if($object->origin == 'shipping'){
 				$db->commit();
 				$db->commit();
 				$db->commit(); // J'ai été obligé mais je sais pas pourquoi // TODO AA beh savoir pourquoi et me virer cette merde
