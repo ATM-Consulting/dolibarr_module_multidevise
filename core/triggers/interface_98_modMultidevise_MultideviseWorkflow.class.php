@@ -259,8 +259,8 @@ class InterfaceMultideviseWorkflow
 			$remise_percent =__get('remise_percent',0);	 
 			$idprodfournprice = __get('idprodfournprice',0);	 
 			$fournprice=__get('fournprice_predef','');
-			$buyingprice=__get('buying_price_predef','');	 
-				
+			$buyingprice=__get('buying_price','');
+			
 			$actioncard = __get('action','');
 				
 			if($actioncard=='confirm_clone') {
@@ -275,7 +275,7 @@ class InterfaceMultideviseWorkflow
 						$object->origin = 'shipping';
 					}
 				}
-
+				
 				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
 				
 			}				
