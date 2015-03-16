@@ -466,15 +466,23 @@ class TMultidevise{
 				}	
 			}
 			
-			// Dans le cas d'un avoir
+			// Dans le cas d'un acompte
 			if (!empty($_REQUEST['valuedeposit']) && $_REQUEST['typedeposit'] == 'amount') {
 				if ($origin == 'commande') {
-					$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."commande WHERE rowid = " . $originidcommande);
+					$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."facture WHERE rowid = " . $object->fk_facture);
 					$res = $db->fetch_object($resql);
 					
 					$devise_taux = __val($res->devise_taux, 1);
 					
-					$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
+					//On part du principe que le montant acompte est dans la devise du client et non celle de Dolibarr
+					$object->pu_ht = $object->subprice = $object->subprice / $devise_taux;
+					$object->total_ht = round($object->pu_ht * $object->qty,2);
+					$object->total_ttc = $object->total_ht * (1 + ( $object->tva_tx / 100));
+					//echo $object->pu_ht;exit;
+					
+					TMultidevise::updateLine($db, $object, $user, $action, $id_line, $remise_percent);
+					
+					//$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
 				}	
 			} else if($object->origin == 'shipping'){
 				$db->commit();
