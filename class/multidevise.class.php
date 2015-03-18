@@ -248,16 +248,15 @@ class TMultidevise{
 				    WHERE fk_'.$parent_object.' = '.$object->{"fk_".$parent_object};
 			
 			$resql = $db->query($sql);
-			$res = $db->fetch_object($resql);
 			
-			$db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.' 
-					SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")." 
-					WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $id ));
+			if ($resql) {
+				$res = $db->fetch_object($resql);
 			
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.' 
+						SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")." 
+						WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $id ));
+			}
 		}
-			
-			
-		
 	}
 	
 	static function getTableByOrigin(&$object, $origin = '') {
@@ -289,7 +288,15 @@ class TMultidevise{
 		return array($table_origin, $tabledet_origin, $originid);
 		
 	}
-	
+	static function getElementCurrency($element,$object) {
+		global $db;
+		
+		$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
+		$res = $db->fetch_object($resql);
+		$devise_taux = __val($res->devise_taux,1);
+		
+		return $devise_taux;
+	}
 	static function getThirdCurrency($socid) {
 		
 		global $db;
@@ -297,6 +304,33 @@ class TMultidevise{
 		$sql = 'SELECT fk_devise
 				FROM '.MAIN_DB_PREFIX.'societe 
 				WHERE rowid = '.$socid;
+		
+		$resql = $db->query($sql);
+		$res = $db->fetch_object($resql);
+		
+		if($res->fk_devise > 0) {
+			$sql = 'SELECT code 
+					FROM '.MAIN_DB_PREFIX.'currency 
+					WHERE rowid = '.$res->fk_devise;
+		
+			$resql = $db->query($sql);
+			$res = $db->fetch_object($sql);
+			$code_currency = $res->code;
+		}
+		
+		return $code_currency;
+		
+	}
+	
+	static function getDocumentCurrency(&$object) {
+		
+		global $db;
+		
+		list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object);
+		
+		$sql = 'SELECT fk_devise
+				FROM '.MAIN_DB_PREFIX.$table_origin.' 
+				WHERE rowid = '.$originid;
 		
 		$resql = $db->query($sql);
 		$res = $db->fetch_object($resql);
@@ -327,10 +361,14 @@ class TMultidevise{
 			
 			list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object, $origin);
 			
-			$resql = $db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
-			$res = $db->fetch_object($resql);
-			$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
-		
+			if (!empty($_REQUEST['valuedeposit']) && $_REQUEST['typedeposit'] == 'amount') {
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '. $_REQUEST['valuedeposit'] .' WHERE rowid = '.$object->id);
+			} else {
+				$resql = $db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
+				$res = $db->fetch_object($resql);
+
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
+			}
 		}
 		
 	}
@@ -383,7 +421,7 @@ class TMultidevise{
 	static function insertLine(&$db, &$object,&$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice) {
 		
 		global $conf;
-		
+
 		// TODO replace by updateLine
 
 		list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
@@ -397,12 +435,14 @@ class TMultidevise{
 		else{
 			$db->commit();
 		}
+
 		//Création a partir d'un objet d'origine (propale,commande client ou commande fournisseur)
 		if($origin && $originid){
-
-			if($origin == "propal" && !empty($originid))$originidpropal = $originid; // cas propal c'est l'idpropal qui est là;
+			if ($origin == 'commande' && !empty($originid)) $originidcommande = $originid;
+			if ($origin == "propal" && !empty($originid))$originidpropal = $originid; // cas propal c'est l'idpropal qui est là;
 
 			list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object, $origin);
+			
 			if($origin == "propal" && empty($originid)){
 				$propal = new Propal($db);
 				$propal->fetch($originidpropal);
@@ -415,8 +455,36 @@ class TMultidevise{
 				}	
 			}
 			
+			if ($origin == 'commande' && empty($originid)) {
+				$commande = new Commande($db);
+				$commande->fetch($originidcommande);
+				
+				foreach ($commande->lines as $line) {
+					if ($line->rang == $object->rang) {
+						$originid = $line->rowid;
+					}
+				}	
+			}
 			
-			if($object->origin == 'shipping'){
+			// Dans le cas d'un acompte
+			if (!empty($_REQUEST['valuedeposit']) && $_REQUEST['typedeposit'] == 'amount') {
+				if ($origin == 'commande') {
+					$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."facture WHERE rowid = " . $object->fk_facture);
+					$res = $db->fetch_object($resql);
+					
+					$devise_taux = __val($res->devise_taux, 1);
+					
+					//On part du principe que le montant acompte est dans la devise du client et non celle de Dolibarr
+					$object->pu_ht = $object->subprice = $object->subprice / $devise_taux;
+					$object->total_ht = round($object->pu_ht * $object->qty,2);
+					$object->total_ttc = $object->total_ht * (1 + ( $object->tva_tx / 100));
+					//echo $object->pu_ht;exit;
+					
+					TMultidevise::updateLine($db, $object, $user, $action, $id_line, $remise_percent);
+					
+					//$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
+				}	
+			} else if($object->origin == 'shipping'){
 				$db->commit();
 				$db->commit();
 				$db->commit(); // J'ai été obligé mais je sais pas pourquoi // TODO AA beh savoir pourquoi et me virer cette merde
@@ -437,15 +505,20 @@ class TMultidevise{
 					$db->commit();
 					$db->commit(); // J'ai été obligé mais je sais pas pourquoi 
 					
-					$commande_fourn_origine = new CommandeFournisseur($db);
-					$commande_fourn_origine->fetch($object->origin_id);
-					
-					$object->fetch_lines();
-					
-					$keys = array_keys($object->lines);
-					$last_key = $keys[count($keys)-1];
-					
-					$originid = $commande_fourn_origine->lines[$last_key]->id;
+					if(!empty($object->origin_line_id)){
+						$originid = $object->origin_line_id;
+					}
+					else{
+						$commande_fourn_origine = new CommandeFournisseur($db);
+						$commande_fourn_origine->fetch($object->origin_id);
+						
+						$object->fetch_lines();
+						
+						$keys = array_keys($object->lines);
+						$last_key = $keys[count($keys)-1];
+						
+						$originid = $commande_fourn_origine->lines[$last_key]->id;
+					}
 				}
 				
 				$resql = $db->query("SELECT devise_pu, devise_mt_ligne 
@@ -456,10 +529,24 @@ class TMultidevise{
 				$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 							SET devise_pu = '.$res->devise_pu.', devise_mt_ligne = '.$res->devise_mt_ligne.' 
 							WHERE rowid = '.(($object->rowid) ? $object->rowid : $object->id )); //TODO check id si rowid vide
-
-			}
+				
+				$sql = 'SELECT SUM(f.devise_mt_ligne) as total_devise 
+					FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)';
 			
-			
+				//MAJ du total devise de la commande/facture/propale
+				if($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT'){
+					$sql .= 'WHERE m.rowid = '.$object->{'fk_'.$element};
+				}
+				else{
+					$sql .= 'WHERE m.rowid = '.$object->id;
+				}
+				
+				$resql = $db->query($sql);
+				$res = $db->fetch_object($resql);
+				
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".(($object->{'fk_'.$element})? $object->{'fk_'.$element} : $object->id) );
+					
+				}			
 		}
 		else{
 			/* ***************************
@@ -531,7 +618,6 @@ class TMultidevise{
 					
 				//exit($fournprice);	
 					if($fournprice) {
-//exit("1");
 						$object->pa_ht = price(TMultidevise::_getMarge($db,$fournprice, $buyingprice));
 						$object->fk_fournprice = 0; //mise a zero obligatoire sinon affiche le prix fournisseur non modifé
 					}
@@ -569,11 +655,20 @@ class TMultidevise{
 			}
 			elseif($idProd==0 && !$dp_pu_devise && $_REQUEST['action'] == 'setabsolutediscount'){
 				// autre ligne, ex : acompte
+				$devise_taux = TMultidevise::getElementCurrency($element,$object);
 				
-				// TODO function
-				$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
-				$res = $db->fetch_object($resql);
-				$devise_taux = __val($res->devise_taux,1);
+				$devise_pu = round($object->subprice * $devise_taux ,2);
+				
+				$devise_mt_ligne = $devise_pu * $object->qty;
+				
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				
+				
+				
+			}
+			else{
+
+				$devise_taux = TMultidevise::getElementCurrency($element,$object);
 				
 				$devise_pu = round($object->subprice * $devise_taux ,2);
 				
@@ -612,13 +707,14 @@ class TMultidevise{
 		$resql = $db->query("SELECT pfp.fk_soc FROM ".MAIN_DB_PREFIX."product_fournisseur_price as pfp WHERE pfp.rowid = ".$fk_fournprice);
 		$res = $db->fetch_object($resql);
 		$fk_soc = $res->fk_soc;
+		
 //		exit($fk_soc);
 		//Récupération du taux de la devise fournisseur
 		$sql = "SELECT cr.rate
 				FROM ".MAIN_DB_PREFIX."currency_rate as cr
 					LEFT JOIN ".MAIN_DB_PREFIX."currency as c ON (c.rowid = cr.id_currency)
-					LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON (cr.rowid = s.fk_devise)
-				WHERE s.rowid = ".$fk_soc."
+					LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON (c.rowid = s.fk_devise)
+				WHERE s.rowid = " . $fk_soc . "
 				ORDER BY cr.dt_sync DESC
 				LIMIT 1";
 		//echo $sql;exit;
@@ -627,7 +723,8 @@ class TMultidevise{
 		
 		//Calcul du prix d'achat devisé
 		$buyingprice = (defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY) ? price2num($buyingprice) / $res->rate : $buyingprice ;
-//		echo $buyingprice;exit;
+		
+		//		echo $buyingprice;exit;
 		return $buyingprice;
 	}
 
