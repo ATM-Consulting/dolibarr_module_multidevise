@@ -260,6 +260,7 @@ class InterfaceMultideviseWorkflow
 			$idprodfournprice = __get('idprodfournprice',0);	 
 			$fournprice=__get('fournprice_predef','');
 			$buyingprice=__get('buying_price','');
+			if(empty($buyingprice)) $buyingprice=__get('buying_price_predef',''); // Compatibilité 3.5
 			
 			$actioncard = __get('action','');
 				
