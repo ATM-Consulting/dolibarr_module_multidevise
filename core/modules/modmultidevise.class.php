@@ -268,15 +268,14 @@ class modmultidevise extends DolibarrModules
 		$sql = array();
 
 		$result=$this->load_tables();
-
+        
+        define('INC_FROM_DOLIBARR', true);
+        dol_include_once('/multidevise/config.php');
+        
 		// Création des tables
-		$url = dol_buildpath('/multidevise/script/create-maj-base.php',2);
-		file_get_contents($url);
-		
-		// 1ère récupération des taux
-		$url = dol_buildpath('/multidevise/cron/1day/sync.php',2);
-		file_get_contents($url);
-
+		dol_include_once('/multidevise/script/create-maj-base.php');
+        dol_include_once('/multidevise/cron/1day/sync.php');
+        
 		return $this->_init($sql, $options);
 	}
 

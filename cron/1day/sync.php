@@ -4,9 +4,15 @@
 	//TODO récupérer les taux pour chaque entité en fonction de leur devise respective
 	//TODO récupérer les taux de conversion uniquement pour les devises sélectionné en conf
 	
-	define('INC_FROM_CRON_SCRIPT', true);
-	chdir(dirname(__FILE__));
-	require('../../config.php');
+	
+	if(!defined('INC_FROM_DOLIBARR')) {
+	       
+	   define('INC_FROM_CRON_SCRIPT', true);
+	   chdir(dirname(__FILE__));
+	   require('../../config.php');
+       
+    }
+	
 	dol_include_once('/multidevise/class/class.currency.php');
 	
 	$url_list = TCurrenty_list_source;
