@@ -15,7 +15,9 @@ class ActionsMultidevise
 			
 			dol_include_once('/multidevise/class/multidevise.class.php');
 			
-			TMultidevise::preparePDF($object);
+
+			if(isset($parameters['object']))TMultidevise::preparePDF($parameters['object']);
+			else TMultidevise::preparePDF($object);
 		}
 		
     }
