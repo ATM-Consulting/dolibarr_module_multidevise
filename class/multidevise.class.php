@@ -364,7 +364,7 @@ class TMultidevise{
 			if (!empty($_REQUEST['valuedeposit']) && $_REQUEST['typedeposit'] == 'amount') {
 				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '. $_REQUEST['valuedeposit'] .' WHERE rowid = '.$object->id);
 			} else {
-				$resql = $db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$originid);
+				$resql = $db->query("SELECT devise_mt_total FROM ".MAIN_DB_PREFIX.$table_origin." WHERE rowid = ".$object->origin_id);
 				$res = $db->fetch_object($resql);
 
 				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.' SET devise_mt_total = '.$res->devise_mt_total.' WHERE rowid = '.$object->id);
