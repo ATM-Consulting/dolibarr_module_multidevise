@@ -272,7 +272,7 @@ class InterfaceMultideviseWorkflow
 			else {
 				//Spécifique nomadic : récupération des services pour la facturation depuis une expédition   ticket 1774
 				if ($conf->clinomadic->enabled) {
-					if ($object->product_type == 1 && empty($object->origin)) {
+					if ($object->product_type == 1 && empty($origin)) {
 						$object->origin = 'shipping';
 					}
 				}
