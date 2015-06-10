@@ -851,8 +851,8 @@ class ActionsMultidevise
 						$(ligne).find('> td[class=taux_devise]').append('<?php echo price($devise_taux); ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $devise_taux; ?>" name="taux_devise" />');
 						$(ligne).find('> td[class=recu_devise]').append('<?php echo price($total_recu_devise,'MT'); ?>');
-						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(round($facture->total_ttc * $devise_taux,2),'MT'); ?>');
-						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(round(($facture->total_ttc * $devise_taux) - $total_recu_devise,2),'MT'); ?>');
+						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(round($res->total_devise,2),'MT'); ?>');
+						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(round(($res->total_devise) - $total_recu_devise,2),'MT'); ?>');
 
 						if($('td[class=total_reste_devise]').length > 0){
 
