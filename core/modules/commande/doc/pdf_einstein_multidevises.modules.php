@@ -396,7 +396,7 @@ class pdf_einstein_multidevises extends ModelePDFCommandes
 					if ((! isset($localtax1_type) || $localtax1_type=='' || ! isset($localtax2_type) || $localtax2_type=='') // if tax type not defined
 					&& (! empty($localtax1_rate) || ! empty($localtax2_rate))) // and there is local tax
 					{
-						$localtaxtmp_array=getLocalTaxesFromRate($vatrate,0,$mysoc);
+						$localtaxtmp_array= (DOL_VERSION >= 3.7) ? getLocalTaxesFromRate($vatrate,0,$mysoc,$mysoc) : getLocalTaxesFromRate($vatrate,0,$mysoc);
 						$localtax1_type = $localtaxtmp_array[0];
 						$localtax2_type = $localtaxtmp_array[2];
 					}
