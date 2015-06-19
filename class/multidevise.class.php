@@ -288,10 +288,11 @@ class TMultidevise{
 		return array($table_origin, $tabledet_origin, $originid);
 		
 	}
-	static function getElementCurrency($element,$object) {
+	static function getElementCurrency($element,$object,$useDefaultAttrId=false) {
 		global $db;
 		
-		$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
+		if ($useDefaultAttrId) $resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->rowid);
+		else $resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
 		$res = $db->fetch_object($resql);
 		$devise_taux = __val($res->devise_taux,1);
 		
@@ -669,15 +670,32 @@ class TMultidevise{
 			}
 			else{
 
-				$devise_taux = TMultidevise::getElementCurrency($element,$object);
-				
-				$devise_pu = round($object->subprice * $devise_taux ,2);
-				
-				$devise_mt_ligne = $devise_pu * $object->qty;
-				
-				$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
-				
-				
+				//inspiration de la ligne 567 - FIX tk2539
+				if($action == 'LINEORDER_SUPPLIER_CREATE')
+				{
+					$ligne = new CommandeFournisseurLigne($db);
+					$ligne->fetch($object->rowid);
+					$object_last = $object;
+					$object = $ligne;
+					
+					$devise_taux = TMultidevise::getElementCurrency($element,$object_last,1);
+					
+					$pu = $dp_pu_devise ? $dp_pu_devise : $object->subprice;
+					
+					$devise_pu = round($pu * $devise_taux ,2);
+					$devise_mt_ligne = $devise_pu * $object->qty;
+					
+					$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+					
+					$object = $object_last;
+				}
+				else 
+				{
+					$devise_taux = TMultidevise::getElementCurrency($element,$object);
+					$devise_pu = round($object->subprice * $devise_taux ,2);
+					$devise_mt_ligne = $devise_pu * $object->qty;
+					$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+				}
 				
 			}
 			
