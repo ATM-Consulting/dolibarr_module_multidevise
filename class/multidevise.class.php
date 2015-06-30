@@ -572,13 +572,13 @@ class TMultidevise{
 					$object = $ligne;
 				}
 				elseif($action == 'LINEBILL_SUPPLIER_CREATE'){
+					
 					$ligne = new ProductFournisseur($db);
 					$ligne->fetch_product_fournisseur_price($idprodfournprice);
 					
-					//pre($ligne,true);
-					
 					$object->subprice = $ligne->fourn_price;
-					$object->qty = $ligne->fourn_qty;
+					$lastline = array_pop($object->lines);
+					$object->qty = $lastline->qty;
 					//$object = $ligne;
 				}
 				
