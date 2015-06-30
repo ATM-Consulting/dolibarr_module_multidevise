@@ -574,7 +574,11 @@ class TMultidevise{
 				elseif($action == 'LINEBILL_SUPPLIER_CREATE'){
 					$ligne = new ProductFournisseur($db);
 					$ligne->fetch_product_fournisseur_price($idprodfournprice);
+					
+					//pre($ligne,true);
+					
 					$object->subprice = $ligne->fourn_price;
+					$object->qty = $ligne->fourn_qty;
 					//$object = $ligne;
 				}
 				
@@ -590,15 +594,16 @@ class TMultidevise{
 					$subprice = $object->subprice;
 					$devise_pu = !empty($object->devise_pu) ? $object->devise_pu : $object->subprice * $devise_taux;
 				}
-				
+				//echo $devise_pu.'<br>';
 				$devise_pu = round($devise_pu,2);
+				//pre($object,true).'<br>';
 				$devise_mt_ligne = $devise_pu * (($object->qty) ? $object->qty : $quantity_predef);
 //print $devise_mt_ligne;exit;
 				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 						SET devise_pu = '.$devise_pu.'
 						, devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ((($object->remise_percent) ? $object->remise_percent : $remise_percent) / 100))).' 
 						WHERE rowid = '.$object->rowid;
-//exit($sql);
+				//echo $sql;exit;
 				$db->query($sql);
 				
 				list($object->total_ht, $object->total_tva, $object->total_ttc) = calcul_price_total($object->qty, $object->subprice, $object->remise_percent, $object->tva_tx, 0, 0, 0, 'HT', $object->info_bits, $object->fk_product_type);
@@ -626,12 +631,15 @@ class TMultidevise{
 				}
 				
 				if(get_class($object)=='CommandeFournisseur') {
+					echo "2";exit;
 					$object->updateline($object->rowid, $ligne->desc, $subprice, $ligne->qty, $ligne->remise_percent, $ligne->tva_tx,0,0,'HT',0, 0, true);
 				}
 				elseif(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY && $action == 'LINEBILL_SUPPLIER_CREATE'){
+					echo "3";exit;
 					$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$_REQUEST['qty'],$ligne->product_id,'HT',0,0,0,true);
 				}
 				else {
+					//echo $action;exit;
 					//var_dump($object); exit;
 					$qty = price2num(GETPOST('qty_predef'));
 					if($qty==0)$qty = $_REQUEST['qty'];
@@ -860,7 +868,7 @@ class TMultidevise{
 				$pu_devise = round($pu_devise,2);
 				
 				$devise_mt_ligne = $pu_devise * $res->qty;
-
+				
 				if($rateApplication=='PU_DOLIBARR') {
 						
 						$subprice = $pu_devise / $devise_taux;
