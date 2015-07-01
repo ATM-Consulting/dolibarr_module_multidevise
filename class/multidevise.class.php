@@ -577,7 +577,7 @@ class TMultidevise{
 					$ligne->fetch_product_fournisseur_price($idprodfournprice);
 					
 					$object->subprice = $ligne->fourn_price;
-					$lastline = array_pop($object->lines);
+					$lastline = $object->lines[count($object->lines)-1];
 					$object->qty = $lastline->qty;
 					//$object = $ligne;
 				}
