@@ -631,11 +631,11 @@ class TMultidevise{
 				}
 				
 				if(get_class($object)=='CommandeFournisseur') {
-					echo "2";exit;
+					//echo "2";exit;
 					$object->updateline($object->rowid, $ligne->desc, $subprice, $ligne->qty, $ligne->remise_percent, $ligne->tva_tx,0,0,'HT',0, 0, true);
 				}
 				elseif(defined('BUY_PRICE_IN_CURRENCY') && BUY_PRICE_IN_CURRENCY && $action == 'LINEBILL_SUPPLIER_CREATE'){
-					echo "3";exit;
+					//echo "3";exit;
 					$object->updateline($object->rowid, $ligne->description, $object->subprice, $ligne->tva_tx,0,0,$_REQUEST['qty'],$ligne->product_id,'HT',0,0,0,true);
 				}
 				else {
