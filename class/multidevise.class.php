@@ -220,7 +220,7 @@ class TMultidevise{
 	}
 	
 	static function deleteLine(&$db, &$object, $action, $id, $lineid) {
-		global $conf;
+		global  $user, $conf;
 		
 		if ($action === 'LINEORDER_SUPPLIER_DELETE' || $action === 'LINEBILL_SUPPLIER_DELETE') {
 			
@@ -260,6 +260,7 @@ class TMultidevise{
 	}
 	
 	static function getTableByOrigin(&$object, $origin = '') {
+		global  $user, $conf;
 		
 		if(empty($origin)) $origin = $object->origin;
 		
@@ -289,7 +290,7 @@ class TMultidevise{
 		
 	}
 	static function getElementCurrency($element,$object,$useDefaultAttrId=false) {
-		global $db;
+		global $db, $user, $conf;
 		
 		if ($useDefaultAttrId) $resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->rowid);
 		else $resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
@@ -300,7 +301,7 @@ class TMultidevise{
 	}
 	static function getThirdCurrency($socid) {
 		
-		global $db;
+		global $db, $user, $conf;
 		
 		$sql = 'SELECT fk_devise
 				FROM '.MAIN_DB_PREFIX.'societe 
@@ -325,7 +326,7 @@ class TMultidevise{
 	
 	static function getDocumentCurrency(&$object) {
 		
-		global $db;
+		global  $user, $conf, $db;
 		
 		list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object);
 		
@@ -351,7 +352,8 @@ class TMultidevise{
 	}
 
 	static function createDoc(&$db, &$object,$currency,$origin) {
-
+		global  $user, $conf;
+		
 		if($currency){	
 			
 			TMultidevise::_setCurrencyRate($db,$object,$currency);
@@ -376,7 +378,7 @@ class TMultidevise{
 	}
 	
 	static function _setCurrencyRate(&$db,&$object,$currency,$get=0){
-		global $conf;
+		global  $user, $conf;
 		//pre($object,true);
 		$multidevise_use_rate=false;
 		if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
@@ -422,7 +424,7 @@ class TMultidevise{
 
 	static function insertLine(&$db, &$object,&$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice) {
 		
-		global $conf;
+		global  $user, $conf;
 
 		// TODO replace by updateLine
 
@@ -432,7 +434,7 @@ class TMultidevise{
 			$object->update($user,true);
 		}
 		elseif($action != 'LINEORDER_SUPPLIER_CREATE'){
-			$object->update(true);
+			$object->update($user,true);
 		}
 		else{
 			$db->commit();
@@ -756,7 +758,7 @@ class TMultidevise{
 	}
 
 	static function updateLine(&$db, &$object,&$user, $action,$id_line,$remise_percent, $devise_taux=0, $fk_parent=0,$rateApplication='PU_DEVISE') {
-		global $conf;
+		global $conf,$user;
 	//var_dump($object);
 	
 			list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
@@ -768,7 +770,7 @@ class TMultidevise{
 			}
 			elseif($action != 'LINEORDER_SUPPLIER_UPDATE' && $action!='LINEORDER_SUPPLIER_CREATE' && $action!='ORDER_SUPPLIER_CREATE' && $action!='BILL_SUPPLIER_CREATE' && $action!='LINEBILL_SUPPLIER_UPDATE'){
 			
-				$object->update(true);
+				$object->update($user,true);
 				
 			}
 			
@@ -845,7 +847,7 @@ class TMultidevise{
 						$object->update($user,true);
 					}
 					else{
-						$object->update(true);
+						$object->update($user,true);
 					}			
 				} 
 				//$db->query($sql); ???
@@ -951,7 +953,7 @@ class TMultidevise{
 	 * Mise à jour de la devise du client
 	 */
 	static function updateCompany(&$db,&$object, $currency) {
-		
+		global  $user, $conf;
 			if($currency){
 				$resql = $db->query('SELECT rowid FROM '.MAIN_DB_PREFIX.'currency WHERE code = "'.$currency.'" LIMIT 1');
 				if($res = $db->fetch_object($resql)){
@@ -1026,7 +1028,7 @@ class TMultidevise{
 	}
 
 	static function preparePDF(&$object) {
-	global $conf, $db;
+			global $conf,$user, $db;
 				
 			$req = $db->query('SELECT devise_code, devise_taux FROM ' . MAIN_DB_PREFIX .$object->table_element. ' WHERE rowid = ' . $object->id);
 			$result = $db->fetch_object($req);
