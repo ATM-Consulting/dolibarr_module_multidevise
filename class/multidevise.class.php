@@ -1097,7 +1097,6 @@ class TMultidevise{
 			}
 			
 			//$object = $object_old;
-			$conf->currency = $object->origin_currency;
 
 			return array(
 				$paid
