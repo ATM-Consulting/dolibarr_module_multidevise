@@ -25,11 +25,12 @@ class ActionsMultidevise
     }
 	
 	function afterPDFCreation($parameters, &$object, &$action, $hookmanager) {
-    	
+    	global $conf;
 		// pour implementation dans Dolibarr 3.7
 		if (in_array('pdfgeneration',explode(':',$parameters['context']))) {
 			//echo '<pre>';
 			$parameters['object']->fetch($parameters['object']->id);
+			$conf->currency = $parameters['object']->origin_currency;
 		}
 		
     }
