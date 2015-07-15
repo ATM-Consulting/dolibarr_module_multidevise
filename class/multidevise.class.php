@@ -1030,7 +1030,7 @@ class TMultidevise{
 				
 			$req = $db->query('SELECT devise_code, devise_taux FROM ' . MAIN_DB_PREFIX .$object->table_element. ' WHERE rowid = ' . $object->id);
 			$result = $db->fetch_object($req);
-			
+
 			if(empty($object->origin_currency))$object->origin_currency = $conf->currency;
 			$conf->currency  = $result->devise_code;
 			
@@ -1094,7 +1094,9 @@ class TMultidevise{
 				
 			}
 			
-		
+			//$object = $object_old;
+			$conf->currency = $object->origin_currency;
+
 			return array(
 				$paid
 			);

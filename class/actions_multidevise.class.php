@@ -24,6 +24,16 @@ class ActionsMultidevise
 		
     }
 	
+	function afterPDFCreation($parameters, &$object, &$action, $hookmanager) {
+    	
+		// pour implementation dans Dolibarr 3.7
+		if (in_array('pdfgeneration',explode(':',$parameters['context']))) {
+			//echo '<pre>';
+			$parameters['object']->fetch($parameters['object']->id);
+		}
+		
+    }
+	
     
     function doActions($parameters, &$object, &$action, $hookmanager) 
     {
