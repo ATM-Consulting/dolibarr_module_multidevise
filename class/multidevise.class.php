@@ -1039,15 +1039,24 @@ class TMultidevise{
 			$devise_rate = $result->devise_taux;
 			
 			$paid = 0;
-			if($object->table_element=='facture') {
+			if($object->table_element=='facture') 
+			{
 				/* paiements */
 				$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiement_facture WHERE fk_facture = ' . $object->id);
-				
 				
 				while ($result = $db->fetch_object($req)) {
 					$paid += $result->devise_mt_paiement;
 				}
 				
+			}
+			elseif($object->table_element=='facture_fourn') 
+			{
+				/* paiements */
+				$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiementfourn_facturefourn WHERE fk_facture = ' . $object->id);
+				
+				while ($result = $db->fetch_object($req)) {
+					$paid += $result->devise_mt_paiement;
+				}
 				
 			}
 			
