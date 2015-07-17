@@ -647,6 +647,7 @@ class ActionsMultidevise
 		 * Création de règlements
 		 * 
 		 */
+		 
 		if(in_array('paiementcard',explode(':',$parameters['context'])) || in_array('paymentsupplier',explode(':',$parameters['context']))){
 			
 			if(in_array('paiementcard',explode(':',$parameters['context']))){

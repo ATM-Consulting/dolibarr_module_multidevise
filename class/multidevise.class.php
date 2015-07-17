@@ -1052,7 +1052,7 @@ class TMultidevise{
 			elseif($object->table_element=='facture_fourn') 
 			{
 				/* paiements */
-				$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiementfourn_facturefourn WHERE fk_facture = ' . $object->id);
+				$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiementfourn_facturefourn WHERE fk_facturefourn = ' . $object->id);
 				
 				while ($result = $db->fetch_object($req)) {
 					$paid += $result->devise_mt_paiement;

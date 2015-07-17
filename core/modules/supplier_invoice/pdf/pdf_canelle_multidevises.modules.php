@@ -70,7 +70,7 @@ class pdf_canelle_multidevises extends ModelePDFSuppliersInvoices
 		$langs->load("bills");
 
 		$this->db = $db;
-		$this->name = "canelle_multidevises";
+		$this->name = "canelle_multicurrency";
 		$this->description = $langs->trans('SuppliersInvoiceModel');
 
 		// Dimension page pour format A4
