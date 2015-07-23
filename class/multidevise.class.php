@@ -574,13 +574,22 @@ class TMultidevise{
 					$object = $ligne;
 				}
 				elseif($action == 'LINEBILL_SUPPLIER_CREATE'){
+					$dol_version = (float) DOL_VERSION;
 					
 					$ligne = new ProductFournisseur($db);
 					$ligne->fetch_product_fournisseur_price($idprodfournprice);
-					
 					$object->subprice = $ligne->fourn_price;
-					$lastline = $object->lines[count($object->lines)-1];
-					$object->qty = $lastline->qty;
+					
+					if ($dol_version <= 3.6) 
+					{
+						$object->qty = $_REQUEST['qty'];
+					}
+					else 
+					{
+						$lastline =  $object->lines[count($object->lines)-1];
+						$object->qty = $lastline->qty;
+					}
+					
 					//$object = $ligne;
 				}
 				
