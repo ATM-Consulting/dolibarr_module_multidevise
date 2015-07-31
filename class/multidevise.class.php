@@ -493,11 +493,35 @@ class TMultidevise{
 				$db->commit();
 				$db->commit(); // J'ai été obligé mais je sais pas pourquoi // TODO AA beh savoir pourquoi et me virer cette merde
 
-				$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."facture WHERE rowid = ".$object->fk_facture);
+				// Récupération du prix devise de la ligne de commande correspondant à la ligne d'expédition, pour remultiplier par la quantité
+				// car il est possible que l'expédition soit partielle, et pour prise en compte de la remise
+				$sql = "SELECT cdet.devise_pu, cdet.devise_mt_ligne 
+						FROM ".MAIN_DB_PREFIX.$tabledet_origin." cdet
+						LEFT JOIN ".MAIN_DB_PREFIX."expeditiondet edet ON (edet.fk_origin_line = cdet.rowid)
+						WHERE edet.rowid = ".$object->origin_id;
+				$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
-				$devise_taux = __val($res->devise_taux,1);
+				
+				$devise_pu = $res->devise_pu;
+				$devise_mt_ligne = $devise_pu * $object->qty * (100 - $object->remise_percent) / 100;
 
-				$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
+				$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($devise_pu,2).', devise_mt_ligne = '.round($devise_mt_ligne,2).' WHERE rowid = '.$object->rowid);
+				
+				$sql = 'SELECT SUM(f.devise_mt_ligne) as total_devise 
+					FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)';
+				
+				//MAJ du total devise de la commande/facture/propale
+				if($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT' || $action == 'LINEBILL_INSERT'){
+					$sql .= 'WHERE m.rowid = '.$object->{'fk_'.$element};
+				}
+				else{
+					$sql .= 'WHERE m.rowid = '.$object->id;
+				}
+				
+				$resql = $db->query($sql);
+				$res = $db->fetch_object($resql);
+				
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".(($object->{'fk_'.$element})? $object->{'fk_'.$element} : $object->id) );
 				
 			}
 			else{
