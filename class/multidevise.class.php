@@ -380,6 +380,7 @@ class TMultidevise{
 	static function _setCurrencyRate(&$db,&$object,$currency,$get=0){
 		global  $user, $conf;
 		//pre($object,true);
+		$devise_taux_origin=false;
 		$multidevise_use_rate=false;
 		if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
 			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
@@ -395,10 +396,31 @@ class TMultidevise{
 				$multidevise_use_rate = true;
 			}
 		}
+		else
+		{
+			if ($object->origin_id > 0)
+			{
+				if ($object->origin == 'commande') $table_cmd = 'commande';
+				elseif ($object->origin == 'order_supplier') $table_cmd = 'commande_fournisseur';
+				elseif ($object->origin == 'propal') $table_cmd = 'propal';
+				else $table_cmd = '';
+				
+				if (!empty($table_cmd))
+				{
+					$sql = 'SELECT devise_taux FROM '.MAIN_DB_PREFIX.$table_cmd.' WHERE rowid = '.$object->origin_id;
+					$resql = $db->query($sql);
+					if ($resql && ($row = $db->fetch_object($resql)))
+					{
+						$devise_taux_origin = $row->devise_taux;						
+					}	
+				}
+				
+			}
+		}
 
 		if(!$multidevise_use_rate){
 
-			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
+			$sql = 'SELECT c.rowid AS rowid, c.code AS code, '.($devise_taux_origin === false ? 'cr.rate' : $devise_taux_origin).' AS rate
 					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
 					 WHERE c.code = "'.$currency.'" 
 					 AND cr.id_entity = '.$conf->entity.' ORDER BY cr.dt_sync DESC LIMIT 1';
@@ -407,7 +429,7 @@ class TMultidevise{
 			//echo $sql."<br>";exit;
 			$resql = $db->query($sql);
 		}
-		
+	
 		if($res = $db->fetch_object($resql)){
 			
 			$rowid = $res->rowid;
