@@ -630,9 +630,13 @@ class TMultidevise{
 					$devise_pu = !empty($object->devise_pu) ? $object->devise_pu : $object->subprice * $devise_taux;
 				}
 				//echo $devise_pu.'<br>';
-				$devise_pu = round($devise_pu,2);
+				// OMG OMFG, pas de round maintenant !!!!
+				//$devise_pu = round($devise_pu,2);
+				
 				//pre($object,true).'<br>';
-				$devise_mt_ligne = $devise_pu * (($object->qty) ? $object->qty : $quantity_predef);
+				//Mais un round ici - sur le montant total
+				$devise_mt_ligne = round($devise_pu * (($object->qty) ? $object->qty : $quantity_predef),2);
+				
 //print $devise_mt_ligne;exit;
 				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
 						SET devise_pu = '.$devise_pu.'
