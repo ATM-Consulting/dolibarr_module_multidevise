@@ -1123,30 +1123,31 @@ class TMultidevise{
 				
 			// 2 - Dans les lignes
 			foreach($object->lines as &$line){
-				//Modification des montant si la devise a changé
-				$lineid = (($line->rowid) ? $line->rowid : $line->id);
-				
-				$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.$lineid );
-				$res = $db->fetch_object($resl);
-
-				if($res){
+				 if ($line->special_code < 9) {
+					//Modification des montant si la devise a changé
+					$lineid = (($line->rowid) ? $line->rowid : $line->id);
 					
-					if(empty($line->total_tva_devise)) {
-						$line->total_tva_devise = $line->total_tva * $devise_rate;
+					$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.$lineid );
+					$res = $db->fetch_object($resl);
+	
+					if($res){
 						
+						if(empty($line->total_tva_devise)) {
+							$line->total_tva_devise = $line->total_tva * $devise_rate;
+							
+						}
+						
+				//		$line->tva_tx = 0;
+						$line->subprice = round($res->devise_pu,2);
+						$line->price = round($res->devise_pu,2);
+						$line->pu_ht = round($res->devise_pu,2);
+						$line->total_ht = round($res->devise_mt_ligne,2);
+						$line->total_ttc = round($res->devise_mt_ligne + $line->total_tva_devise,2);
+						$line->total_tva = $line->total_ttc - $line->total_ht; 
+						
+						$total_tva+= $line->total_tva;
 					}
-					
-			//		$line->tva_tx = 0;
-					$line->subprice = round($res->devise_pu,2);
-					$line->price = round($res->devise_pu,2);
-					$line->pu_ht = round($res->devise_pu,2);
-					$line->total_ht = round($res->devise_mt_ligne,2);
-					$line->total_ttc = round($res->devise_mt_ligne + $line->total_tva_devise,2);
-					$line->total_tva = $line->total_ttc - $line->total_ht; 
-					
-					$total_tva+= $line->total_tva;
-				}
-			
+				 }
 			}
 
 
