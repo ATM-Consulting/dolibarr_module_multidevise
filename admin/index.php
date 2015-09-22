@@ -81,6 +81,9 @@ function showParameters(&$form) {
 			<tr>
 				<td><?php echo $langs->trans('UseRateOnInvoiceDate') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_USE_RATE_ON_INVOICE_DATE]',array('0'=>'Non','1'=>'Oui'),$conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE); ?></td>				
 			</tr>
+			<tr>
+				<td><?php echo $langs->trans('UseOriginTx') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_USE_ORIGIN_TX]',array('0'=>'Non','1'=>'Oui'),$conf->global->MULTIDEVISE_USE_ORIGIN_TX); ?></td>				
+			</tr>
 			
 		</table>
 		<p align="right">

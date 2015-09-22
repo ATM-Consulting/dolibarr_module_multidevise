@@ -396,7 +396,7 @@ class TMultidevise{
 				$multidevise_use_rate = true;
 			}
 		}
-		else
+		elseif ($conf->global->MULTIDEVISE_USE_ORIGIN_TX)
 		{
 			if ($object->origin_id > 0)
 			{
