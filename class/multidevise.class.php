@@ -283,7 +283,7 @@ class TMultidevise{
 			$table_origin = "commande";
 			$tabledet_origin = "commandedet";
 			$object->fetchObjectLinked();
-			$originid = $object->linkedObjects['shipping'][0]->origine_id;
+			$originid = $object->linkedObjects['shipping'][0]->origin_id;
 		}
 
 		return array($table_origin, $tabledet_origin, $originid);
