@@ -260,7 +260,7 @@ class TMultidevise{
 	}
 	
 	static function getTableByOrigin(&$object, $origin = '') {
-		global  $user, $conf;
+		global  $user, $conf,$db;
 		
 		if(empty($origin)) $origin = $object->origin;
 		
@@ -283,7 +283,19 @@ class TMultidevise{
 			$table_origin = "commande";
 			$tabledet_origin = "commandedet";
 			$object->fetchObjectLinked();
-			$originid = $object->linkedObjects['shipping'][0]->origin_id;
+			
+			//Dans le cas ou on créé automatiquement la facture depuis l'expédition, origin et origin_id sont en $_REQUEST et non directement dans l'objet
+			if(empty($object->origin) && empty($object->origin_id)){
+				$shipping = new Expedition($db);
+				$shipping->fetch(GETPOST('originid'));
+				$shipping->fetch_origin();
+			}
+			
+			//pre($object,true);
+			
+			//Dans le cas de création depuis facture, c'est l'objet ligne qui est passé et non l'objet facture donc on prend le lien dans l'objet shipping	
+			$originid = (get_class($object) == 'Facture') ? $object->linkedObjects['shipping'][0]->origin_id : $shipping->origin_id;
+			//echo $originid.'<br>';
 		}
 
 		return array($table_origin, $tabledet_origin, $originid);
@@ -461,13 +473,17 @@ class TMultidevise{
 		else{
 			$db->commit();
 		}
-
+		
+		//echo $origin." ".$originid.'<br>';
+		
 		//Création a partir d'un objet d'origine (propale,commande client ou commande fournisseur)
 		if($origin && $originid){
 			if ($origin == 'commande' && !empty($originid)) $originidcommande = $originid;
-			if ($origin == "propal" && !empty($originid))$originidpropal = $originid; // cas propal c'est l'idpropal qui est là;
+			if ($origin == "propal" && !empty($originid)) $originidpropal = $originid; // cas propal c'est l'idpropal qui est là;
 
 			list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object, $origin);
+			
+			//echo $table_origin." ".$tabledet_origin." ".$originid;exit;
 			
 			if($origin == "propal" && empty($originid)){
 				$propal = new Propal($db);
@@ -521,6 +537,8 @@ class TMultidevise{
 						FROM ".MAIN_DB_PREFIX.$tabledet_origin." cdet
 						LEFT JOIN ".MAIN_DB_PREFIX."expeditiondet edet ON (edet.fk_origin_line = cdet.rowid)
 						WHERE edet.rowid = ".$object->origin_id;
+						//pre($_REQUEST,true);
+
 				$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
 				
