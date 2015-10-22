@@ -367,8 +367,9 @@ class TMultidevise{
 		global  $user, $conf;
 		
 		if($currency){	
-			
+			//var_dump($currency);
 			TMultidevise::_setCurrencyRate($db,$object,$currency);
+		//	exit;
 		}
 		
 		//Création a partir d'un objet d'origine (propale ou commande)
@@ -394,6 +395,7 @@ class TMultidevise{
 		//pre($object,true);
 		$devise_taux_origin=false;
 		$multidevise_use_rate=false;
+		
 		if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
 			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
 					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
@@ -404,7 +406,7 @@ class TMultidevise{
 					 
 			$resql = $db->query($sql);
 			
-			if($res = $db->fetch_object($resql)){
+			if($db->num_rows($resql) > 0){
 				$multidevise_use_rate = true;
 			}
 		}
