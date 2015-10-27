@@ -118,14 +118,15 @@ function _getproductfournprice(&$ATMdb,&$id) {
 }
 
 function _numberformat($price, $type='price2num'){
-	
+	global $conf;
+    
 	switch ($type) {
 		case 'price2num':
-			return array('montant'=>strtr(price2num($price,2),array(','=>''))); //conversion d'un prix en nombre
+			return array('montant'=>strtr(price2num($price,$conf->global->MAIN_MAX_DECIMALS_TOT),array(','=>''))); //conversion d'un prix en nombre
 			break;
 
 		case 'price':
-			return array('montant'=>strtr(price($price,'MT','',1,2,2),array("&nbsp;"=>" ")));//conversion d'un nombre en prix
+			return array('montant'=>strtr(price($price,'MT','',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT),array("&nbsp;"=>" ")));//conversion d'un nombre en prix
 			break;
 
 		default:
@@ -146,7 +147,7 @@ function _getcurrencyrate(&$ATMdb,$currency_code){
 	$ATMdb->Execute($sql);
 	$ATMdb->Get_line();
 	
-	$Tres["currency_rate"] = round($ATMdb->Get_field('rate'),2);
+	$Tres["currency_rate"] = round($ATMdb->Get_field('rate'),$conf->global->MAIN_MAX_DECIMALS_UNIT);
 	
 	return $Tres;
 }

@@ -4,144 +4,12 @@ class TMultidevise{
 	static function doActionsMultidevise(&$parameters, &$object, &$action, &$hookmanager) {
 		global $langs, $db, $conf, $user;
 		
-		//pre($object);exit;
 		
-//ini_set('display_errors',1);
-//error_reporting(E_ALL);
-//print "la";		
 		if (in_array('ordercard',explode(':',$parameters['context'])) || in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('expeditioncard',explode(':',$parameters['context'])) || in_array('invoicecard',explode(':',$parameters['context']))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context'])) || in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
-			 
-			/* jusqu'à la 3.7
-        	if ($action == 'builddoc')
-			{
-				//Compatibilité SelectBank	
-				$object->fk_bank = __get('fk_bank');
-				
-				
-				// 1 - Dans le haut du document
-				$devise_change = false;
-				//Modification des prix si la devise est différente
-				if(!in_array('expeditioncard',explode(':',$parameters['context']))){
-					
-					$resl = $db->query('SELECT devise_code FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
-					$res = $db->fetch_object($resl);
-					$last_devise = 0;
-					
-					if($res){
-						
-						if($conf->currency != $res->devise_code){
-							$last_devise = $conf->currency;
-							$conf->currency  = $res->devise_code;
-							$devise_change = true;
-						}
-					}
-				}
-				
-				// 2 - Dans les lignes
-				foreach($object->lines as $line){
-					
-					//Modification des montant si la devise a changé
-					if($devise_change){
-						
-						$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.(($line->rowid) ? $line->rowid : $line->id) );
-						$res = $db->fetch_object($resl);
-
-						if($res){
-							//$line->tva_tx = 0; TODO WTF ???
-							$line->subprice = round($res->devise_pu,2);
-							$line->price = round($res->devise_pu,2);
-							$line->pu_ht = round($res->devise_pu,2);
-							$line->total_ht = round($res->devise_mt_ligne,2);
-							$line->total_ttc = round($res->devise_mt_ligne,2);
-							//$line->total_tva = 0; TODO WTF ???
-						}
-					}
-				}
-				
-				// 3 - Dans le bas du document
-				//Modification des TOTAUX si la devise a changé
-				if($devise_change){
-					
-					$resl = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
-					$res = $db->fetch_object($resl);
-
-					if($res){
-						
-						$object->total_ht = round($res->devise_mt_total,2);
-						$object->total_ttc = round($res->devise_mt_total,2);
-						$object->total_tva = 0;
-					}
-				}
-				
-				//Si le module est actif sans module spécifique client alors on reproduit la génération standard dolibarr sinon on retourne l'objet modifié
-				if(!$conf->global->USE_SPECIFIC_CLIENT){
-					//exit($object->element);	
-					// ***********************************************
-					// On reproduis le traitement standard de dolibarr
-					// ***********************************************
-					
-					if (GETPOST('model'))
-					{
-						$object->setDocModel($user, GETPOST('model'));
-					}
-					
-					// Define output language
-					$outputlangs = $langs;
-					if (! empty($conf->global->MAIN_MULTILANGS))
-					{
-						$outputlangs = new Translate("",$conf);
-						$newlang=(GETPOST('lang_id') ? GETPOST('lang_id') : $object->client->default_lang);
-						$outputlangs->setDefaultLang($newlang);
-					}
-					
-					switch ($object->element) {
-						case 'propal':
-							$result= propale_pdf_create($db, $object, $object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-							break;
-						case 'facture':
-							$result= facture_pdf_create($db, $object, $object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-							break;
-						case 'commande':
-							$result= commande_pdf_create($db, $object, $object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-							break;
-						case 'shipping':
-							$result= expedition_pdf_create($db, $object, $object->modelpdf, $outputlangs);
-							break;
-						case 'delivery':
-							$result= delivery_order_pdf_create($db, $object, $object->modelpdf, $outputlangs);
-							break;
-						case 'order_supplier':
-							$result= supplier_order_pdf_create($db, $object, $object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-							break;
-						case 'invoice_supplier':
-							$result= supplier_invoice_pdf_create($db, $object, $object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-							//echo $result; exit;
-							break;
-
-						default:
-							
-							break;
-					}
-					
-					if ($result <= 0)
-					{
-						dol_print_error($db,$result);
-						exit;
-					}
-					elseif(!in_array('ordercard',explode(':',$parameters['context'])))
-					{
-						header('Location: '.$_SERVER["PHP_SELF"].'?id='.$object->id.(empty($conf->global->MAIN_JUMP_TAG)?'':'#builddoc'));
-						exit;
-					}
-				}
-				
-				//Devise retrouve ça valeur d'origine
-				if($last_devise != $conf->currency && $last_devise != 0)
-					$conf->currency = $last_devise;
-			}*/
+			 null; // AA  après avoir supprimé les commentaire... beh vlà quoi
 		}
 	}
 	static function getActionByTable($table) {
@@ -523,7 +391,7 @@ class TMultidevise{
 					
 					//On part du principe que le montant acompte est dans la devise du client et non celle de Dolibarr
 					$object->pu_ht = $object->subprice = $object->subprice / $devise_taux;
-					$object->total_ht = round($object->pu_ht * $object->qty,2);
+					$object->total_ht = round($object->pu_ht * $object->qty,$conf->global->MAIN_MAX_DECIMALS_TOT);
 					$object->total_ttc = $object->total_ht * (1 + ( $object->tva_tx / 100));
 					//echo $object->pu_ht;exit;
 					
@@ -560,7 +428,7 @@ class TMultidevise{
 				$devise_pu = $res->devise_pu;
 				$devise_mt_ligne = $devise_pu * $object->qty * (100 - $object->remise_percent) / 100;
 
-                $sql = 'UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($devise_pu,2).', devise_mt_ligne = '.round($devise_mt_ligne,2).' WHERE rowid = '.$object->rowid;
+                $sql = 'UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT).', devise_mt_ligne = '.round($devise_mt_ligne,$conf->global->MAIN_MAX_DECIMALS_TOT).' WHERE rowid = '.$object->rowid;
 				$db->query($sql);
 				
 				$sql = 'SELECT SUM(f.devise_mt_ligne) as total_devise 
@@ -692,7 +560,7 @@ class TMultidevise{
 				
 				//pre($object,true).'<br>';
 				//Mais un round ici - sur le montant total
-				$devise_mt_ligne = round($devise_pu * (($object->qty) ? $object->qty : $quantity_predef),2);
+				$devise_mt_ligne = round($devise_pu * (($object->qty) ? $object->qty : $quantity_predef),$conf->global->MAIN_MAX_DECIMALS_TOT);
 				
 //print $devise_mt_ligne;exit;
 				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element_line.' 
@@ -752,7 +620,7 @@ class TMultidevise{
 			//Ligne libre
 			elseif($idProd==0 && $dp_pu_devise){
 				
-				$devise_pu = round(price2num($dp_pu_devise) ,2);
+				$devise_pu = round(price2num($dp_pu_devise) ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 				
 				$devise_mt_ligne = $devise_pu * $quantity;
 				
@@ -763,7 +631,7 @@ class TMultidevise{
 				// autre ligne, ex : acompte
 				$devise_taux = TMultidevise::getElementCurrency($element,$object);
 				
-				$devise_pu = round($object->subprice * $devise_taux ,2);
+				$devise_pu = round($object->subprice * $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 				
 				$devise_mt_ligne = $devise_pu * $object->qty;
 				
@@ -786,7 +654,7 @@ class TMultidevise{
 					
 					$pu = $dp_pu_devise ? $dp_pu_devise : $object->subprice;
 					
-					$devise_pu = round($pu * $devise_taux ,2);
+					$devise_pu = round($pu * $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 					$devise_mt_ligne = $devise_pu * $object->qty;
 					
 					$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
@@ -796,7 +664,7 @@ class TMultidevise{
 				else 
 				{
 					$devise_taux = TMultidevise::getElementCurrency($element,$object);
-					$devise_pu = round($object->subprice * $devise_taux ,2);
+					$devise_pu = round($object->subprice * $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 					$devise_mt_ligne = $devise_pu * $object->qty;
 					$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 				}
@@ -900,7 +768,7 @@ class TMultidevise{
 					else {
 
 						$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet 
-									SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' 
+									SET devise_pu = '.round($object->subprice * $devise_taux,$conf->global->MAIN_MAX_DECIMALS_UNIT).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,$conf->global->MAIN_MAX_DECIMALS_TOT).' 
 									WHERE rowid = '.$object->rowid);
 						
 					}
@@ -913,7 +781,7 @@ class TMultidevise{
 				
 				$tva_devise = !empty($object->total_tva_device) ? $$object->total_tva_device : $object->total_tva * $devise_taux;
 				
-				$pu_devise = round($pu_devise,2);
+				$pu_devise = round($pu_devise,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 
 				$devise_mt_ligne = $pu_devise * $object->qty;
 				
@@ -961,7 +829,7 @@ class TMultidevise{
 				$pu_devise = !empty($object->device_pu) ? $object->device_pu : $res->subprice * $devise_taux;
 				$tva_devise = !empty($object->total_tva_device) ? $$object->total_tva_device : $object->total_tva * $devise_taux;
 			
-				$pu_devise = round($pu_devise,2);
+				$pu_devise = round($pu_devise,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 				
 				$devise_mt_ligne = $pu_devise * $res->qty;
 				
@@ -1173,11 +1041,11 @@ class TMultidevise{
 						}
 						
 				//		$line->tva_tx = 0;
-						$line->subprice = round($res->devise_pu,2);
-						$line->price = round($res->devise_pu,2);
-						$line->pu_ht = round($res->devise_pu,2);
-						$line->total_ht = round($res->devise_mt_ligne,2);
-						$line->total_ttc = round($res->devise_mt_ligne + $line->total_tva_devise,2);
+						$line->subprice = round($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT);
+						$line->price = round($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT);
+						$line->pu_ht = round($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT);
+						$line->total_ht = round($res->devise_mt_ligne,$conf->global->MAIN_MAX_DECIMALS_TOT);
+						$line->total_ttc = round($res->devise_mt_ligne + $line->total_tva_devise,$conf->global->MAIN_MAX_DECIMALS_TOT);
 						$line->total_tva = $line->total_ttc - $line->total_ht; 
 						
 						$total_tva+= $line->total_tva;
@@ -1194,9 +1062,9 @@ class TMultidevise{
 			$res = $db->fetch_object($resl);
 
 			if($res){
-				$object->total_ht = round($res->devise_mt_total,2);
-				$object->total_tva = round($total_tva,2);
-				$object->total_ttc = round($object->total_ht + $object->total_tva,2);
+				$object->total_ht = round($res->devise_mt_total,$conf->global->MAIN_MAX_DECIMALS_TOT);
+				$object->total_tva = round($total_tva,$conf->global->MAIN_MAX_DECIMALS_TOT);
+				$object->total_ttc = round($object->total_ht + $object->total_tva,$conf->global->MAIN_MAX_DECIMALS_TOT);
 				
 			}
 			
@@ -1269,10 +1137,10 @@ class TMultidevise{
 						// TODO Ecriture comptable à enregistrer dans un compte. En dessous la note n'a pas de sens : ($_REQUEST['amount_'.$facture->id] - $facture->total_ttc) ne correspond jamais à un gain ou à une perte suite à une conversion
 
 						//Ajout de la note si des écarts sont lié aux conversions de devises
-						if(round(strtr($TRequest['amount_'.$facture->id],array(','=>'.')),2) < strtr(round($facture->total_ttc,2),array(','=>'.'))){
+						if(round(strtr($TRequest['amount_'.$facture->id],array(','=>'.')),$conf->global->MAIN_MAX_DECIMALS_TOT) < strtr(round($facture->total_ttc,$conf->global->MAIN_MAX_DECIMALS_TOT),array(','=>'.'))){
 							$note .= "facture : ".$facture->ref." => PERTE après conversion : ".($facture->total_ttc - price2num($TRequest['amount_'.$facture->id]))." ".$conf->currency."\n";
 						}
-						elseif(round(strtr($TRequest['amount_'.$facture->id],array(','=>'.')),2) > strtr(round($facture->total_ttc,2),array(','=>'.'))){
+						elseif(round(strtr($TRequest['amount_'.$facture->id],array(','=>'.')),$conf->global->MAIN_MAX_DECIMALS_TOT) > strtr(round($facture->total_ttc,$conf->global->MAIN_MAX_DECIMALS_TOT),array(','=>'.'))){
 							$note .= "facture : ".$facture->ref." => GAIN après conversion : ".(price2num($TRequest['amount_'.$facture->id]) - $facture->total_ttc)." ".$conf->currency."\n";
 						}
 					}

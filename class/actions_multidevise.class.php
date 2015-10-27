@@ -213,15 +213,15 @@ class ActionsMultidevise
 							</td>';	
 						}
 						else {
-							print '<td colspan="3"><span title="'.$res->devise_taux.'">'.price(__val($res->devise_taux,1),0,'',1,2,2).'</span><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></td>';	
+							print '<td colspan="3"><span title="'.$res->devise_taux.'">'.price(__val($res->devise_taux,1),0,'',1,$conf->global->MAIN_MAX_DECIMALS_UNIT,$conf->global->MAIN_MAX_DECIMALS_UNIT).'</span><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></td>';	
 						}
 						print '</tr>';
 						//pre($object);exit;
-						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,2,2).'</td></tr>';
+						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
 						
-						print '<tr><td>'.$langs->trans('CurrencyVAT').'</td><td colspan="3">'.price($object->total_tva*$res->devise_taux,0,'',1,2,2).'</td></tr>';
+						print '<tr><td>'.$langs->trans('CurrencyVAT').'</td><td colspan="3">'.price($object->total_tva*$res->devise_taux,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
 						
-						print '<tr><td>'.$langs->trans('CurrencyTotalVAT').'</td><td colspan="3">'.price($res->devise_mt_total + ($object->total_tva*$res->devise_taux),0,'',1,2,2).'</td></tr>';
+						print '<tr><td>'.$langs->trans('CurrencyTotalVAT').'</td><td colspan="3">'.price($res->devise_mt_total + ($object->total_tva*$res->devise_taux),0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
 					}
 					elseif($action=='edit_currency'){
 						print '<input type="submit" value="'.$langs->trans('Modify').'" />';
@@ -247,6 +247,7 @@ class ActionsMultidevise
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
+						console.log('formObjectOptions::columnsAndLines');
 						
 						$('#tablelines tr').each(function(iLigne) {
 								if(!$(this).attr('numeroLigne')) {
@@ -304,8 +305,8 @@ class ActionsMultidevise
 								$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
 								$res = $db->fetch_object($resql);
 								if($line->product_type!=9) {
-			         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
-									echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
+			         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,$conf->global->MAIN_MAX_DECIMALS_UNIT,$conf->global->MAIN_MAX_DECIMALS_UNIT)."');";
+									echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT)."');";
 								}
 								
 								if($line->error != '') echo "alert('".$line->error."');";
@@ -606,11 +607,11 @@ class ActionsMultidevise
 							if($line->product_type != 9 && $line->id == (($_REQUEST['lineid']) ? $_REQUEST['lineid'] : $_REQUEST['rowid'])) {
 									
 								if(in_array('invoicesuppliercard',explode(':',$parameters['context'])) || in_array('ordersuppliercard',explode(':',$parameters['context']))){
-									echo "$('input[value=".$line->id."]').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
+									echo "$('input[value=".$line->id."]').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT)."\" name=\"dp_pu_devise\" size=\"6\">');";
 								}
 								else{
 									echo "$('#line_".$line->id."').parent().parent().find(' > td[numerocolonne=5]').attr('colspan','4'); ";
-									echo "$('#line_".$line->id."').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,2)."\" name=\"dp_pu_devise\" size=\"6\">');";
+									echo "$('#line_".$line->id."').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT)."\" name=\"dp_pu_devise\" size=\"6\">');";
 								}
 
 							}
@@ -863,8 +864,8 @@ class ActionsMultidevise
 						$(ligne).find('> td[class=taux_devise]').append('<?php echo price($devise_taux); ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $devise_taux; ?>" name="taux_devise" />');
 						$(ligne).find('> td[class=recu_devise]').append('<?php echo price($total_recu_devise,'MT'); ?>');
-						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(round($res->total_devise,2),'MT'); ?>');
-						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(round(($res->total_devise) - $total_recu_devise,2),'MT'); ?>');
+						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(round($res->total_devise,$conf->global->MAIN_MAX_DECIMALS_TOT),'MT'); ?>');
+						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(round(($res->total_devise) - $total_recu_devise,$conf->global->MAIN_MAX_DECIMALS_TOT),'MT'); ?>');
 
 						if($('td[class=total_reste_devise]').length > 0){
 
@@ -877,6 +878,8 @@ class ActionsMultidevise
 						
 						//Modification du montant règlement devise
 						$("#payment_form").find("input[name*=\"devise[<?php echo $champ."_".$facture->id; ?>\"]").blur(function() {
+							$('.button').hide();
+							
 							total = 0;
 							
 							$("#payment_form").find("input[name*=\"devise[<?php echo $champ."_".$facture->id; ?>\"]").each(function(){
@@ -892,17 +895,22 @@ class ActionsMultidevise
 							mt_devise = mt_devise / parseFloat($(ligne).find('> td[class=taux_devise]').find('> input[name=taux_devise]').val());
 
 							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise,'price'));
+							
+							$('.button').show();
 						});
 						
 						
 						//Modification du montant règlement
 						$("#payment_form").find("input[name*=\"<?php echo $champ."_".$facture->id; ?>\"]").blur(function() {
 							
+							$('.button').hide();
+							
 							mt_rglt = number_format($(this).val(),'price2num');
 							mt_rglt = mt_rglt * $(ligne).find('> td[class=taux_devise]').find('> input[name=taux_devise]').val();
 							
 							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt,'price'));
 							
+							$('.button').show();
 						});
 					});
 				</script>
@@ -946,7 +954,7 @@ class ActionsMultidevise
 							break;
 
 						case 2:
-							$(element).after('<td align="right"><?php echo price(round($res->devise_mt_total + ($facture->total_tva * $res->devise_taux),2),'MT');?></td>');
+							$(element).after('<td align="right"><?php echo price(round($res->devise_mt_total + ($facture->total_tva * $res->devise_taux),$conf->global->MAIN_MAX_DECIMALS_TOT),'MT');?></td>');
 							break;
 						
 						case 3:
@@ -954,7 +962,7 @@ class ActionsMultidevise
 							break;
 
 						case 4:
-							$(element).after('<td align="right"><?php echo round($res->devise_mt_total + ($facture->total_tva * $res->devise_taux) - $res->devise_mt_paiement,2);?></td>');
+							$(element).after('<td align="right"><?php echo round($res->devise_mt_total + ($facture->total_tva * $res->devise_taux) - $res->devise_mt_paiement,$conf->global->MAIN_MAX_DECIMALS_TOT);?></td>');
 							break;
 					}
 				});
@@ -989,8 +997,8 @@ class ActionsMultidevise
 			<?php
 			
 			if($object->product_type!=9) {
-				echo "$('#row-".$object->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,2,2)."');";
-				echo "$('#row-".$object->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,2,2)."');";
+				echo "$('#row-".$object->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT)."');";
+				echo "$('#row-".$object->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT)."');";
 			}
 			
 			?>
