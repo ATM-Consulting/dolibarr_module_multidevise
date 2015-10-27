@@ -367,8 +367,9 @@ class TMultidevise{
 		global  $user, $conf;
 		
 		if($currency){	
-			
+			//var_dump($currency);
 			TMultidevise::_setCurrencyRate($db,$object,$currency);
+		//	exit;
 		}
 		
 		//Création a partir d'un objet d'origine (propale ou commande)
@@ -394,6 +395,7 @@ class TMultidevise{
 		//pre($object,true);
 		$devise_taux_origin=false;
 		$multidevise_use_rate=false;
+		
 		if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
 			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
 					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
@@ -404,7 +406,7 @@ class TMultidevise{
 					 
 			$resql = $db->query($sql);
 			
-			if($res = $db->fetch_object($resql)){
+			if($db->num_rows($resql) > 0){
 				$multidevise_use_rate = true;
 			}
 		}
@@ -475,9 +477,12 @@ class TMultidevise{
 		}
 		
 		//echo $origin." ".$originid.'<br>';
-		
+//var_dump($object);		
 		//Création a partir d'un objet d'origine (propale,commande client ou commande fournisseur)
+
 		if($origin && $originid){
+
+//	var_dump($origin, $originid);
 			if ($origin == 'commande' && !empty($originid)) $originidcommande = $originid;
 			if ($origin == "propal" && !empty($originid)) $originidpropal = $originid; // cas propal c'est l'idpropal qui est là;
 
@@ -508,7 +513,7 @@ class TMultidevise{
 				}	
 			}
 			
-			// Dans le cas d'un acompte
+
 			if (!empty($_REQUEST['valuedeposit']) && $_REQUEST['typedeposit'] == 'amount') {
 				if ($origin == 'commande') {
 					$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."facture WHERE rowid = " . $object->fk_facture);
@@ -526,18 +531,28 @@ class TMultidevise{
 					
 					//$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
 				}	
-			} else if($object->origin == 'shipping'){
+			} else if($origin == 'shipping'){
 				$db->commit();
 				$db->commit();
 				$db->commit(); // J'ai été obligé mais je sais pas pourquoi // TODO AA beh savoir pourquoi et me virer cette merde
 
 				// Récupération du prix devise de la ligne de commande correspondant à la ligne d'expédition, pour remultiplier par la quantité
 				// car il est possible que l'expédition soit partielle, et pour prise en compte de la remise
-				$sql = "SELECT cdet.devise_pu, cdet.devise_mt_ligne 
+
+				if($object->origin == 'commande') {
+                                        $sql = "SELECT cdet.devise_pu, cdet.devise_mt_ligne 
+                                                FROM ".MAIN_DB_PREFIX."commandedet cdet
+                                                WHERE cdet.rowid = ".$object->origin_id;
+
+				}
+				else {
+
+					$sql = "SELECT cdet.devise_pu, cdet.devise_mt_ligne 
 						FROM ".MAIN_DB_PREFIX.$tabledet_origin." cdet
 						LEFT JOIN ".MAIN_DB_PREFIX."expeditiondet edet ON (edet.fk_origin_line = cdet.rowid)
 						WHERE edet.rowid = ".$object->origin_id;
 						//pre($_REQUEST,true);
+				}
 
 				$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
