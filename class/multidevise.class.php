@@ -545,7 +545,8 @@ class TMultidevise{
 				$devise_pu = $res->devise_pu;
 				$devise_mt_ligne = $devise_pu * $object->qty * (100 - $object->remise_percent) / 100;
 
-				$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($devise_pu,2).', devise_mt_ligne = '.round($devise_mt_ligne,2).' WHERE rowid = '.$object->rowid);
+                $sql = 'UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($devise_pu,2).', devise_mt_ligne = '.round($devise_mt_ligne,2).' WHERE rowid = '.$object->rowid;
+				$db->query($sql);
 				
 				$sql = 'SELECT SUM(f.devise_mt_ligne) as total_devise 
 					FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)';
@@ -561,7 +562,8 @@ class TMultidevise{
 				$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
 				
-				$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".(($object->{'fk_'.$element})? $object->{'fk_'.$element} : $object->id) );
+				$sql = 'UPDATE '.MAIN_DB_PREFIX.$element.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".(($object->{'fk_'.$element})? $object->{'fk_'.$element} : $object->id);
+				$db->query( $sql );
 				
 			}
 			else{
