@@ -292,6 +292,7 @@ class InterfaceMultideviseWorkflow
 			switch ($action) {
 				case "LINEORDER_SUPPLIER_UPDATE":
 					$id_line = __get('elrowid',0);
+					if((float)DOL_VERSION >= 3.8) $id_line = __get('lineid',0);
 					break;
 				case 'LINEBILL_SUPPLIER_UPDATE':
 					$id_line = __get('lineid',0);
