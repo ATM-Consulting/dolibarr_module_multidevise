@@ -79,10 +79,10 @@ function showParameters(&$form) {
 			</tr>
 			
 			<tr>
-				<td><?php echo $langs->trans('UseRateOnInvoiceDate') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_USE_RATE_ON_INVOICE_DATE]',array('0'=>'Non','1'=>'Oui'),$conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE); ?></td>				
+				<td><?php echo $langs->trans('UseRateOnInvoiceDate') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_USE_RATE_ON_INVOICE_DATE]',array('0'=>$langs->trans('No'),'1'=>$langs->trans('Yes')),$conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE); ?></td>				
 			</tr>
 			<tr>
-				<td><?php echo $langs->trans('UseOriginTx') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_USE_ORIGIN_TX]',array('0'=>'Non','1'=>'Oui'),$conf->global->MULTIDEVISE_USE_ORIGIN_TX); ?></td>				
+				<td><?php echo $langs->trans('UseOriginTx') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_USE_ORIGIN_TX]',array('0'=>$langs->trans('No'),'1'=>$langs->trans('Yes')),$conf->global->MULTIDEVISE_USE_ORIGIN_TX); ?></td>				
 			</tr>
 			
 		</table>
@@ -100,7 +100,7 @@ function showParameters(&$form) {
 print '<br>';
 
 print '<div class="tabsAction">';
-print '<a class="butAction" href="?action=updateall">Actualiser les taux</a>';
+print '<a class="butAction" href="?action=updateall">'.$langs->trans('refreshRates').'</a>';
 print '</div>';
 
 ?>
