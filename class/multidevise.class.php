@@ -93,7 +93,13 @@ class TMultidevise{
 		if ($action === 'LINEORDER_SUPPLIER_DELETE' || $action === 'LINEBILL_SUPPLIER_DELETE') {
 			
 			//Obligé puisque dans le cas d'une suppresion le trigger est appelé avant et non après
-			$object->deleteline($lineid, TRUE); // TODO est si on echappe simplement la ligne dans ce qui suit
+			if (get_class($object) == 'SupplierInvoiceLine')
+			{
+				$facturefourn = new FactureFournisseur($db);
+				$facturefourn->fetch(GETPOST('id'));
+				$facturefourn->deleteline($object->id, TRUE);
+			}
+			else $object->deleteline($lineid, TRUE); // TODO est si on echappe simplement la ligne dans ce qui suit
 			$db->commit();
 			
 			$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne 
