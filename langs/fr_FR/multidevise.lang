@@ -13,3 +13,14 @@ CurrencyTotalVAT = Total TTC Devise
 UseRateOnInvoiceDate = Utiliser le taux correspondant à la date de facture si existant
 UseOriginTx=Conserver le taux du document d'origine
 refreshRates=Actualiser les taux
+
+mulicurrency_currency=Devise
+mulicurrency_current_rate=Taux Devise actuel
+mulicurrency_amount_ttc_currency=Montant TTC Devise
+mulicurrency_currency_received=Reçu devise
+mulicurrency_rest_to_cash_currency=Reste à encaisser devise
+mulicurrency_paid_amount_currency=Montant règlement devise
+
+mulicurrency_payment_amount_currency=Paiement devisé attendu
+mulicurrency_already_paid_currency=Règlement devisé pour ce paiement
+mulicurrency_rest_to_pay_currency=Reste devisé à payer

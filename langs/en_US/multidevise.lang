@@ -13,3 +13,14 @@ CurrencyTotalVAT = Total ATI Devise
 UseRateOnInvoiceDate = Use invoice date currency rate if exist
 UseOriginTx=Keep the rate of original document
 refreshRates=Refresh currency rates
+
+mulicurrency_currency=Currency
+mulicurrency_current_rate=Current rate
+mulicurrency_amount_ttc_currency=TTC amount (currency)
+mulicurrency_currency_received=Currency received
+mulicurrency_rest_to_cash_currency=Rest to cash
+mulicurrency_paid_amount_currency=Paid amount (currency)
+
+mulicurrency_payment_amount_currency=Payment amount (currency)
+mulicurrency_already_paid_currency=Already paid (currency)
+mulicurrency_rest_to_pay_currency=Rest to pay (currency)

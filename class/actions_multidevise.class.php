@@ -87,15 +87,14 @@ class ActionsMultidevise
 		define('INC_FROM_DOLIBARR',true);
 		dol_include_once("/multidevise/config.php");
 		dol_include_once("/multidevise/class/multidevise.class.php");
-
+		$langs->load('multidevise@multidevise');
+		
 		if (in_array('thirdpartycard',explode(':',$parameters['context']))
 			|| in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
 			|| in_array('invoicecard',explode(':',$parameters['context']))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
-
-			$langs->load('multidevise@multidevise');
 			
 	    	/* ***********************
 			 * EDIT
@@ -304,7 +303,9 @@ class ActionsMultidevise
 								
 								$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
 								$res = $db->fetch_object($resql);
+								
 								if($line->product_type!=9) {
+									
 			         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,$conf->global->MAIN_MAX_DECIMALS_UNIT,$conf->global->MAIN_MAX_DECIMALS_UNIT)."');";
 									echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT)."');";
 								}
@@ -329,19 +330,19 @@ class ActionsMultidevise
 					$(".liste_titre").find('>td').each(function(i,element){
 						switch (i){
 							case 0:
-								$(element).after('<td align="right">Devise</td>');
+								$(element).after('<td align="right"><?php echo $langs->trans('mulicurrency_currency'); ?></td>');
 								break;
 	
 							case 2:
-								$(element).after('<td align="right">Paiement devisé attendu</td>');
+								$(element).after('<td align="right"><?php echo $langs->trans('mulicurrency_payment_amount_currency'); ?></td>');
 								break;
 							
 							case 3:
-								$(element).after('<td align="right">Règlement devisé pour ce paiement</td>');
+								$(element).after('<td align="right"><?php echo $langs->trans('mulicurrency_already_paid_currency'); ?></td>');
 								break;
 								
 							case 4:
-								$(element).after('<td align="right">Reste devisé à payer</td>');
+								$(element).after('<td align="right"><?php echo $langs->trans('mulicurrency_rest_to_pay_currency'); ?></td>');
 								break;
 						}
 					});
@@ -633,7 +634,7 @@ class ActionsMultidevise
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
 		
 		global $db, $user, $conf, $langs;
-		
+	
 		/*echo '<pre>';
 		print_r($object);
 		echo '</pre>'; exit;*/
@@ -648,8 +649,9 @@ class ActionsMultidevise
 		 * Création de règlements
 		 * 
 		 */
-		 
+		
 		if(in_array('paiementcard',explode(':',$parameters['context'])) || in_array('paymentsupplier',explode(':',$parameters['context']))){
+			$langs->load('multidevise@multidevise');
 			
 			if(in_array('paiementcard',explode(':',$parameters['context']))){
 				$context = 'paiementcard';
@@ -701,12 +703,12 @@ class ActionsMultidevise
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
-						$('.liste_titre').children().eq(1).after('<td align="right" >Devise</td>');
-						$('.liste_titre').children().eq(2).after('<td align="right" >Taux Devise actuel</td>');
-						$('.liste_titre').children().eq(4).after('<td align="right" >Montant TTC Devise</td>');
-						$('.liste_titre').children().eq(6).after('<td align="right" >Reçu devise</td>');
-						$('.liste_titre').children().eq(7).after('<td align="right" >Reste à encaisser devise</td>');
-						$('.liste_titre > td:last-child').before('<td align="right" >Montant règlement devise</td>');
+						$('.liste_titre').children().eq(1).after('<td align="right" ><?php echo $langs->transnoentitiesnoconv('mulicurrency_currency'); ?></td>');
+						$('.liste_titre').children().eq(2).after('<td align="right" ><?php echo $langs->transnoentitiesnoconv('mulicurrency_current_rate'); ?></td>');
+						$('.liste_titre').children().eq(4).after('<td align="right" ><?php echo $langs->transnoentitiesnoconv('mulicurrency_amount_ttc_currency'); ?></td>');
+						$('.liste_titre').children().eq(6).after('<td align="right" ><?php echo $langs->transnoentitiesnoconv('mulicurrency_currency_received'); ?></td>');
+						$('.liste_titre').children().eq(7).after('<td align="right" ><?php echo $langs->transnoentitiesnoconv('mulicurrency_rest_to_cash_currency'); ?></td>');
+						$('.liste_titre > td:last-child').before('<td align="right" ><?php echo $langs->transnoentitiesnoconv('mulicurrency_paid_amount_currency'); ?></td>');
 						
 						$('tr[class=impair], tr[class=pair]').each(function(){
 							$(this).children().eq(1).after('<td align="right" class="devise"></td>');
@@ -947,6 +949,7 @@ class ActionsMultidevise
 			$res = $db->fetch_object($resql);
 			?>
 			<script type="text/javascript">
+			
 				$('#row-<?php echo $object->facid; ?>').find('>td').each(function(i,element){
 					switch (i){
 						case 0:
