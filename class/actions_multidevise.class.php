@@ -177,7 +177,7 @@ class ActionsMultidevise
 	    		$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
 
-				if($res->fk_devise && !is_null($res->devise_code)){
+				if(($res->fk_devise && !is_null($res->devise_code)) || !empty($conf->global->MULTIDEVISE_ALLOW_UPDATE_FK_DEVISE_ON_OLD_DOC)){
 					
 					print '
 					<form name="saveCurrecy" action="#" />
