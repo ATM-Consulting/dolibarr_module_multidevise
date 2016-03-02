@@ -1169,6 +1169,32 @@ class TMultidevise{
 			}
 		}
 	}
+
+	static function updateAmountBankLine(&$db, &$payment_object, $mt_devise, $type='client')
+	{
+		if ($type == 'client')
+		{
+			$sql = 'UPDATE '.MAIN_DB_PREFIX.'bank b INNER JOIN '.MAIN_DB_PREFIX.'paiement p ON (p.fk_bank = b.rowid) SET b.amount = "'.$mt_devise.'" WHERE p.rowid = '.$payment_object->id;
+			return $db->query($sql);
+		}
+		
+		return false;
+	}
+	
+	static function getInfoMultidevise(&$db, $id, $type='client')
+	{
+		if ($type == 'client')
+		{
+			$sql = 'SELECT devise_mt_total, devise_code, devise_taux FROM '.MAIN_DB_PREFIX.'facture WHERE rowid = '.$id;
+			$resql = $db->query($sql);
+			
+			if ($resql && ($res = $db->fetch_object($resql))) return $res;
+			else return false;
+		}
+		
+		return false;
+	}
+	
 }
 
 

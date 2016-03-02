@@ -321,11 +321,27 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * AJOUT D'UN PAIEMENT 
 		 */
-		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE"){
-			//pre($_REQUEST);
-			
+		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE")
+		{
 			TMultidevise::addpaiement($db,$_REQUEST,$object,$action);
-
+		}
+		
+		if ($action == 'PAYMENT_ADD_TO_BANK') // Paiement client
+		{
+			$account = new Account($db);
+			$account->fetch($object->fk_account);
+			
+			if (!empty($object->amounts))
+			{
+				foreach ($object->amounts as $fk_facture => $amount)
+				{
+					$TInfo = TMultidevise::getInfoMultidevise($db, $fk_facture, 'client');
+					if (!empty($TInfo) && $account->currency_code == $TInfo->devise_code) // Si même devise alors update avec le montant de la devise
+					{
+						TMultidevise::updateAmountBankLine($db, $object, $_REQUEST['devise']['amount_'.$fk_facture], 'client');
+					}
+				}
+			}
 		}
 	
 		if($action == "BEFORE_PROPAL_BUILDDOC" || $action == "BEFORE_ORDER_BUILDDOC"  || $action == "BEFORE_BILL_BUILDDOC" || $action == "BEFORE_ORDER_SUPPLIER_BUILDDOC" || $action == "BEFORE_BILL_SUPPLIER_BUILDDOC"){
