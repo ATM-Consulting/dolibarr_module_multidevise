@@ -13,6 +13,7 @@ CurrencyTotalVAT = Total TTC Devise
 UseRateOnInvoiceDate = Utiliser le taux correspondant à la date de facture si existant
 UseOriginTx=Conserver le taux du document d'origine
 refreshRates=Actualiser les taux
+MulticurrencyDontUserOnSell= Ne pas utiliser le module pour la partie vente
 
 mulicurrency_currency=Devise
 mulicurrency_current_rate=Taux Devise actuel

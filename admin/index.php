@@ -84,7 +84,9 @@ function showParameters(&$form) {
 			<tr>
 				<td><?php echo $langs->trans('UseOriginTx') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_USE_ORIGIN_TX]',array('0'=>$langs->trans('No'),'1'=>$langs->trans('Yes')),$conf->global->MULTIDEVISE_USE_ORIGIN_TX); ?></td>				
 			</tr>
-			
+			<tr>
+				<td><?php echo $langs->trans('MulticurrencyDontUserOnSell') ?></td><td><?php echo $html->selectarray('TMultidevise[MULTIDEVISE_DONT_USE_ON_SELL]',array('0'=>$langs->trans('No'),'1'=>$langs->trans('Yes')),$conf->global->MULTIDEVISE_DONT_USE_ON_SELL); ?></td>				
+			</tr>
 		</table>
 		<p align="right">
 			
