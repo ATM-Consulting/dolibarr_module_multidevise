@@ -323,7 +323,7 @@ class ActionsMultidevise
 			}
 		}
 
-		elseif(in_array('viewpaiementcard',explode(':',$parameters['context'])) && !$conf->MULTIDEVISE_DONT_USE_ON_SELL){
+		elseif(in_array('viewpaiementcard',explode(':',$parameters['context'])) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL)){
 			
 			?>
 			<script type="text/javascript">
@@ -500,7 +500,7 @@ class ActionsMultidevise
 		global $db,$user,$conf;
 		if (((in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
-			|| in_array('invoicecard',explode(':',$parameters['context']))) && !$conf->MULTIDEVISE_DONT_USE_ON_SELL)
+			|| in_array('invoicecard',explode(':',$parameters['context']))) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
@@ -573,7 +573,7 @@ class ActionsMultidevise
 		
 		if (((in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
-			|| in_array('invoicecard',explode(':',$parameters['context']))) && !$conf->MULTIDEVISE_DONT_USE_ON_SELL)
+			|| in_array('invoicecard',explode(':',$parameters['context']))) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
@@ -651,7 +651,7 @@ class ActionsMultidevise
 		 * 
 		 */
 		
-		if((in_array('paiementcard',explode(':',$parameters['context'])) && !$conf->MULTIDEVISE_DONT_USE_ON_SELL) || in_array('paymentsupplier',explode(':',$parameters['context']))){
+		if((in_array('paiementcard',explode(':',$parameters['context'])) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL)) || in_array('paymentsupplier',explode(':',$parameters['context']))){
 			$langs->load('multidevise@multidevise');
 			
 			if(in_array('paiementcard',explode(':',$parameters['context']))){
@@ -925,7 +925,7 @@ class ActionsMultidevise
 		 * Fiche règlement
 		 * 
 		 */	
-		elseif(in_array('viewpaiementcard',explode(':',$parameters['context'])) && !$conf->MULTIDEVISE_DONT_USE_ON_SELL){
+		elseif(in_array('viewpaiementcard',explode(':',$parameters['context'])) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL)){
 
 			//Cas facture fournisseur
 			if($object->ref_supplier){
