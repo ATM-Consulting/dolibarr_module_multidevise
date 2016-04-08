@@ -93,7 +93,7 @@ class ActionsMultidevise
 		if (in_array('thirdpartycard',explode(':',$parameters['context']))
 			|| ((in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
-			|| in_array('invoicecard',explode(':',$parameters['context']))) && $conf->MULTIDEVISE_DONT_USE_ON_SELL)
+			|| in_array('invoicecard',explode(':',$parameters['context']))) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
 			
