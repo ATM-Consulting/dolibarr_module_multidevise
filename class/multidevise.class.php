@@ -274,7 +274,7 @@ class TMultidevise{
 			$sql = 'SELECT c.rowid AS rowid, c.code AS code, cr.rate AS rate
 					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
 					 WHERE c.code = "'.$currency.'" 
-					 	AND cr.id_entity = '.$conf->entity.'
+					 	AND cr.id_entity IN (0, 1)
 					  	AND cr.date_cre LIKE "'.date('Y-m-d',($object->date) ? $object->date : time()).'%"
 					 ORDER BY cr.dt_sync DESC LIMIT 1';
 					 
@@ -311,7 +311,7 @@ class TMultidevise{
 			$sql = 'SELECT c.rowid AS rowid, c.code AS code, '.($devise_taux_origin === false ? 'cr.rate' : $devise_taux_origin).' AS rate
 					 FROM '.MAIN_DB_PREFIX.'currency AS c LEFT JOIN '.MAIN_DB_PREFIX.'currency_rate AS cr ON (cr.id_currency = c.rowid)
 					 WHERE c.code = "'.$currency.'" 
-					 AND cr.id_entity = '.$conf->entity.' ORDER BY cr.dt_sync DESC LIMIT 1';
+					 AND cr.id_entity IN (0, 1) ORDER BY cr.dt_sync DESC LIMIT 1';
 	
 			
 			//echo $sql."<br>";exit;
@@ -520,7 +520,7 @@ class TMultidevise{
                 $resql = $db->query($sql);
                 $res = $db->fetch_object($resql);
 				$devise_taux = __val($res->devise_taux,1);
-				
+			
 				//obligatoire sur partie achat car c'est l'objet parent et non l'object ligne qui est transmis au trigger
 				if($action == 'LINEORDER_SUPPLIER_CREATE'){
 					$ligne = new CommandeFournisseurLigne($db);
