@@ -20,18 +20,18 @@
 	
 	$TCurrency = url_get_content($url_list);
 	
-	$db=new TPDOdb;	
+	$PDOdb=new TPDOdb;	
 		
 	foreach($TCurrency as $currency=>$label) {
 		
 		$c=new TCurrency;
 	
-		$c->loadByCode($db, $currency);
+		$c->loadByCode($PDOdb, $currency);
 		
 		$c->name = $label;
 		$c->code = $currency;
 		
-		$c->save($db);
+		$c->save($PDOdb);
 		
 	}
 
@@ -68,10 +68,10 @@
 					
 					$c=new TCurrency;
 				
-					if($c->loadByCode($db, $currency)) {
+					if($c->loadByCode($PDOdb, $currency)) {
 						$c->addRate($rate,$id_entity);
 						
-						$c->save($db);
+						$c->save($PDOdb);
 					}
 				}
 			}
@@ -83,10 +83,10 @@
 				
 				$c=new TCurrency;
 			
-				if($c->loadByCode($db, $currency)) {
+				if($c->loadByCode($PDOdb, $currency)) {
 					$c->addRate($rate,$id_entity);
 					
-					$c->save($db);
+					$c->save($PDOdb);
 				}
 			}
 		}
