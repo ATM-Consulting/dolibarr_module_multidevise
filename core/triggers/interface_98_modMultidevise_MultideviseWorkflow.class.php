@@ -113,7 +113,7 @@ class InterfaceMultideviseWorkflow
 		dol_include_once('/compta/facture/class/facture.class.php');
 		dol_include_once('/comm/propal/class/propal.class.php');
 		dol_include_once("/societe/class/societe.class.php");
-		dol_include_once("/core/lib/functions.lib.class.php");
+		dol_include_once("/core/lib/functions.lib.php");
 		dol_include_once('/fourn/class/fournisseur.facture.class.php');
 		dol_include_once('/fourn/class/fournisseur.commande.class.php');
 		dol_include_once('/fourn/class/fournisseur.product.class.php');

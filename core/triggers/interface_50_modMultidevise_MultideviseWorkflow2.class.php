@@ -113,7 +113,7 @@ class InterfaceMultideviseWorkflow2
 		dol_include_once('/compta/facture/class/facture.class.php');
 		dol_include_once('/comm/propal/class/propal.class.php');
 		dol_include_once("/societe/class/societe.class.php");
-		dol_include_once("/core/lib/functions.lib.class.php");
+		dol_include_once("/core/lib/functions.lib.php");
 		
 		$db = &$this->db;
 		
