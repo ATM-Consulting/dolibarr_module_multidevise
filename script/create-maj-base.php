@@ -62,3 +62,30 @@
 	$o=new TCurrencyRate;
 	$o->init_db_by_vars($ATMdb);
 	
+	$ATMdb->Execute("UPDATE ".MAIN_DB_PREFIX."propal 
+		SET devise_taux = 1, devise_mt_total = total_ht
+		WHERE fk_devise = 0");
+
+	$ATMdb->Execute("UPDATE ".MAIN_DB_PREFIX."propaldet
+		SET devise_pu = subprice,	devise_mt_ligne = total_ht
+ 		WHERE  fk_devise = 0");
+	
+	$ATMdb->Execute("UPDATE ".MAIN_DB_PREFIX."commande 
+		SET devise_taux = 1, devise_mt_total = total_ht
+		WHERE fk_devise = 0");
+
+	$ATMdb->Execute("UPDATE ".MAIN_DB_PREFIX."commandedet
+		SET devise_pu = subprice,	devise_mt_ligne = total_ht
+ 		WHERE  fk_devise = 0");
+	
+	
+	$ATMdb->Execute("UPDATE ".MAIN_DB_PREFIX."facture 
+		SET devise_taux = 1, devise_mt_total = total
+		WHERE fk_devise = 0");
+
+	$ATMdb->Execute("UPDATE ".MAIN_DB_PREFIX."facturedet
+		SET devise_pu = subprice,	devise_mt_ligne = total_ht
+ 		WHERE  fk_devise = 0");
+	
+	
+	
