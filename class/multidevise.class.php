@@ -216,13 +216,16 @@ class TMultidevise{
 		
 		list($table_origin, $tabledet_origin, $originid) = TMultidevise::getTableByOrigin($object);
 		
+		if(empty($originid))return false;
+
 		$sql = 'SELECT fk_devise
 				FROM '.MAIN_DB_PREFIX.$table_origin.' 
 				WHERE rowid = '.$originid;
 		
 		$resql = $db->query($sql);
 		$res = $db->fetch_object($resql);
-		
+
+		$code_currency=false;
 		if($res->fk_devise > 0) {
 			$sql = 'SELECT code 
 					FROM '.MAIN_DB_PREFIX.'currency 
