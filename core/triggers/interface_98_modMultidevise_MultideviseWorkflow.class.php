@@ -362,28 +362,33 @@ class InterfaceMultideviseWorkflow
 			
 			$db->commit();
 			
+			$accountid = GETPOST('accountid');
+			if (empty($accountid) && !empty($object->fk_account)) $accountid = $object->fk_account;
+			
 			//Récupération du taux de la devise du compte bancaire
 			$sql = "SELECT cr.rate
 					FROM ".MAIN_DB_PREFIX."currency_rate as cr
 						LEFT JOIN ".MAIN_DB_PREFIX."currency as c ON (c.rowid = cr.id_currency)
 						LEFT JOIN ".MAIN_DB_PREFIX."bank_account as ba ON (ba.currency_code = c.code)
-					WHERE ba.rowid = ".$_REQUEST['accountid']."
+					WHERE ba.rowid = ".$accountid."
 					ORDER BY cr.dt_sync DESC LIMIT 1";
 
-			$resql = $db->query($sql);
-			$res = $db->fetch_object($resql);
-
-			$rate = $res->rate;
+			if ($resql)	
+			{
+				$res = $db->fetch_object($resql);
 			
-			//Mise à jour de l'objet avec le total * taux
-			$total = $object->total * $rate;
-
-			$db->query('UPDATE '.MAIN_DB_PREFIX.'bank SET amount = "'.$total.'"
-						WHERE rowid = (SELECT rowid 
-									   FROM '.MAIN_DB_PREFIX.'bank 
-									   WHERE amount = '.$object->total.'
-									   		AND fk_account = '.$_REQUEST['accountid'].' 
-									   ORDER BY rowid DESC LIMIT 1)');
+				$rate = $res->rate;
+			
+				//Mise à jour de l'objet avec le total * taux
+				$total = $object->total * $rate;
+	
+				$db->query('UPDATE '.MAIN_DB_PREFIX.'bank SET amount = "'.$total.'"
+							WHERE rowid = (SELECT rowid 
+										   FROM '.MAIN_DB_PREFIX.'bank 
+										   WHERE amount = '.$object->total.'
+										   		AND fk_account = '.$accountid.' 
+										   ORDER BY rowid DESC LIMIT 1)');
+			}
 		}
 		
 		if($action == "DISCOUNT_CREATE") {
