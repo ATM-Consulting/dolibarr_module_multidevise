@@ -213,9 +213,9 @@ class InterfaceMultideviseWorkflow2
 				$db->query($sql);
 			} else if ($table == 'facture' && !empty($_REQUEST['fac_replacement'])) { // ACOMPTE
 				// Récupération de la devise de la commande de base
-				$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$_REQUEST['origin']." WHERE rowid = ". $_REQUEST['originid'];
+				$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.GETPOST('origin')." WHERE rowid = ".GETPOST('originid');
 				$res = $db->query($sql);
-				$obj = $db->fetch_object($res);
+				if ($res) $obj = $db->fetch_object($res);
 
 				if (!empty($obj)) {
 					$devise_code = $obj->devise_code;
