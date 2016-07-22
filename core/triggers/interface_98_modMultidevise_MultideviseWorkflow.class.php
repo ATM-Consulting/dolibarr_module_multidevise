@@ -345,9 +345,7 @@ class InterfaceMultideviseWorkflow
 		}
 	
 		if($action == "BEFORE_PROPAL_BUILDDOC" || $action == "BEFORE_ORDER_BUILDDOC"  || $action == "BEFORE_BILL_BUILDDOC" || $action == "BEFORE_ORDER_SUPPLIER_BUILDDOC" || $action == "BEFORE_BILL_SUPPLIER_BUILDDOC"){
-			
-			
-			TMultidevise::preparePDF($object,$object->societe);
+			if (!empty($object->id)) TMultidevise::preparePDF($object,$object->societe);
 			
 		}	
 		
