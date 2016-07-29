@@ -321,12 +321,12 @@ class InterfaceMultideviseWorkflow
 		/*
 		 * AJOUT D'UN PAIEMENT 
 		 */
-		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE")
+		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE" && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL))
 		{
 			TMultidevise::addpaiement($db,$_REQUEST,$object,$action);
 		}
 		
-		if ($action == 'PAYMENT_ADD_TO_BANK') // Paiement client
+		if ($action == 'PAYMENT_ADD_TO_BANK' && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL)) // Paiement client
 		{
 			$account = new Account($db);
 			$account->fetch($object->fk_account);
@@ -342,21 +342,8 @@ class InterfaceMultideviseWorkflow
 					}
 				}
 			}
-		}
-	
-		if($action == "BEFORE_PROPAL_BUILDDOC" || $action == "BEFORE_ORDER_BUILDDOC"  || $action == "BEFORE_BILL_BUILDDOC" || $action == "BEFORE_ORDER_SUPPLIER_BUILDDOC" || $action == "BEFORE_BILL_SUPPLIER_BUILDDOC"){
-			if (!empty($object->id)) TMultidevise::preparePDF($object,$object->societe);
-			
-		}	
 		
-		if($action == "PROPAL_BUILDDOC" || $action == "ORDER_BUILDDOC"  || $action == "BILL_BUILDDOC" || $action == "ORDER_SUPPLIER_BUILDDOC" || $action == "BILL_SUPPLIER_BUILDDOC") {
-			
-			$object->fetch($object->id);
-
-		}
-		
-		//Sur l'ajout du paiement dans le compte bancaire on multiplie toujours le montant dolibarr par le taux de la devise du compte bancaire
-		if($action == "PAYMENT_ADD_TO_BANK"){
+			//Sur l'ajout du paiement dans le compte bancaire on multiplie toujours le montant dolibarr par le taux de la devise du compte bancaire
 			
 			$db->commit();
 			
@@ -387,6 +374,17 @@ class InterfaceMultideviseWorkflow
 										   		AND fk_account = '.$accountid.' 
 										   ORDER BY rowid DESC LIMIT 1)');
 			}
+		}
+	
+		if($action == "BEFORE_PROPAL_BUILDDOC" || $action == "BEFORE_ORDER_BUILDDOC"  || $action == "BEFORE_BILL_BUILDDOC" || $action == "BEFORE_ORDER_SUPPLIER_BUILDDOC" || $action == "BEFORE_BILL_SUPPLIER_BUILDDOC"){
+			if (!empty($object->id)) TMultidevise::preparePDF($object,$object->societe);
+			
+		}	
+		
+		if($action == "PROPAL_BUILDDOC" || $action == "ORDER_BUILDDOC"  || $action == "BILL_BUILDDOC" || $action == "ORDER_SUPPLIER_BUILDDOC" || $action == "BILL_SUPPLIER_BUILDDOC") {
+			
+			$object->fetch($object->id);
+
 		}
 		
 		if($action == "DISCOUNT_CREATE") {
