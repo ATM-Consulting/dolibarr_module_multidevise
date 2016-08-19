@@ -1002,65 +1002,71 @@ class TMultidevise{
 	static function preparePDF(&$object) {
 			global $conf,$user, $db;
 
-			$req = $db->query('SELECT devise_code, devise_taux FROM ' . MAIN_DB_PREFIX .$object->table_element. ' WHERE rowid = ' . $object->id);
-			$result = $db->fetch_object($req);
-
-			if(empty($object->origin_currency))$object->origin_currency = $conf->currency;
-			$conf->currency  = $result->devise_code;
-
-			$devise_rate = $result->devise_taux;
-
 			$paid = 0;
-			if($object->table_element=='facture')
-			{
-				/* paiements */
-				$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiement_facture WHERE fk_facture = ' . $object->id);
 
-				while ($result = $db->fetch_object($req)) {
-					$paid += $result->devise_mt_paiement;
-				}
+			$req = $db->query('SELECT devise_code, devise_taux FROM ' . MAIN_DB_PREFIX .$object->table_element. ' WHERE rowid = ' . $object->id);
+			if ($req) {
+				$result = $db->fetch_object($req);
 
-			}
-			elseif($object->table_element=='facture_fourn')
-			{
-				/* paiements */
-				$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiementfourn_facturefourn WHERE fk_facturefourn = ' . $object->id);
+				if(empty($object->origin_currency))$object->origin_currency = $conf->currency;
+				$conf->currency  = $result->devise_code;
 
-				while ($result = $db->fetch_object($req)) {
-					$paid += $result->devise_mt_paiement;
-				}
+				$devise_rate = $result->devise_taux;
 
-			}
 
-			$total_tva = 0;
+				if($object->table_element=='facture')
+				{
+					/* paiements */
+					$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiement_facture WHERE fk_facture = ' . $object->id);
 
-			// 2 - Dans les lignes
-			foreach($object->lines as &$line){
-				 if ($line->special_code < 9) {
-					//Modification des montant si la devise a changé
-					$lineid = (($line->rowid) ? $line->rowid : $line->id);
-
-					$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.$lineid );
-					$res = $db->fetch_object($resl);
-
-					if($res){
-
-						if(empty($line->total_tva_devise)) {
-							$line->total_tva_devise = $line->total_tva * $devise_rate;
-
-						}
-
-				//		$line->tva_tx = 0;
-						$line->subprice = round($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT);
-						$line->price = round($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT);
-						$line->pu_ht = round($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT);
-						$line->total_ht = round($res->devise_mt_ligne,$conf->global->MAIN_MAX_DECIMALS_TOT);
-						$line->total_ttc = round($res->devise_mt_ligne + $line->total_tva_devise,$conf->global->MAIN_MAX_DECIMALS_TOT);
-						$line->total_tva = $line->total_ttc - $line->total_ht;
-
-						$total_tva+= $line->total_tva;
+					while ($result = $db->fetch_object($req)) {
+						$paid += $result->devise_mt_paiement;
 					}
-				 }
+
+				}
+				elseif($object->table_element=='facture_fourn')
+				{
+					/* paiements */
+					$req = $db->query('SELECT devise_mt_paiement FROM ' . MAIN_DB_PREFIX . 'paiementfourn_facturefourn WHERE fk_facturefourn = ' . $object->id);
+
+					while ($result = $db->fetch_object($req)) {
+						$paid += $result->devise_mt_paiement;
+					}
+
+				}
+
+				$total_tva = 0;
+
+				// 2 - Dans les lignes
+				foreach($object->lines as &$line){
+					 if ($line->special_code < 9) {
+						//Modification des montant si la devise a changé
+						$lineid = (($line->rowid) ? $line->rowid : $line->id);
+
+						$resl = $db->query('SELECT devise_pu, devise_mt_ligne FROM '.MAIN_DB_PREFIX.$object->table_element_line.' WHERE rowid = '.$lineid );
+						$res = $db->fetch_object($resl);
+
+						if($res){
+
+							if(empty($line->total_tva_devise)) {
+								$line->total_tva_devise = $line->total_tva * $devise_rate;
+
+							}
+
+					//		$line->tva_tx = 0;
+							$line->subprice = round($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT);
+							$line->price = round($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT);
+							$line->pu_ht = round($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT);
+							$line->total_ht = round($res->devise_mt_ligne,$conf->global->MAIN_MAX_DECIMALS_TOT);
+							$line->total_ttc = round($res->devise_mt_ligne + $line->total_tva_devise,$conf->global->MAIN_MAX_DECIMALS_TOT);
+							$line->total_tva = $line->total_ttc - $line->total_ht;
+
+							$total_tva+= $line->total_tva;
+						}
+					 }
+				}
+			} else {
+				dol_syslog(__METHOD__.' ERROR:'.$db->lasterror);
 			}
 
 
@@ -1069,13 +1075,17 @@ class TMultidevise{
 
 
 			$resl = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
-			$res = $db->fetch_object($resl);
+			if ($resl) {
+				$res = $db->fetch_object($resl);
 
-			if($res){
-				$object->total_ht = round($res->devise_mt_total,$conf->global->MAIN_MAX_DECIMALS_TOT);
-				$object->total_tva = round($total_tva,$conf->global->MAIN_MAX_DECIMALS_TOT);
-				$object->total_ttc = round($object->total_ht + $object->total_tva,$conf->global->MAIN_MAX_DECIMALS_TOT);
+				if($res){
+					$object->total_ht = round($res->devise_mt_total,$conf->global->MAIN_MAX_DECIMALS_TOT);
+					$object->total_tva = round($total_tva,$conf->global->MAIN_MAX_DECIMALS_TOT);
+					$object->total_ttc = round($object->total_ht + $object->total_tva,$conf->global->MAIN_MAX_DECIMALS_TOT);
 
+				}
+			} else {
+				dol_syslog(__METHOD__.' ERROR:'.$db->lasterror);
 			}
 
 			//$object = $object_old;
