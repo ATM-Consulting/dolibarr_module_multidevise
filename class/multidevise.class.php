@@ -98,20 +98,28 @@ class TMultidevise{
 				$facturefourn = new FactureFournisseur($db);
 				$facturefourn->fetch(GETPOST('id'));
 				$facturefourn->deleteline($object->id, TRUE);
+				
+				$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne
+				    FROM '.MAIN_DB_PREFIX.$facturefourn->table_element_line.'
+				    WHERE '.$facturefourn->fk_element.' = '.$id;
 			}
-			else $object->deleteline($lineid, TRUE); // TODO est si on echappe simplement la ligne dans ce qui suit
-			$db->commit();
-
-			$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne
+			else
+			{
+				$object->deleteline($lineid, TRUE); // TODO est si on echappe simplement la ligne dans ce qui suit
+				
+				$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne
 				    FROM '.MAIN_DB_PREFIX.$object->table_element_line.'
 				    WHERE '.$object->fk_element.' = '.$id;
+			}
+			$db->commit();
 
 			$resql = $db->query($sql);
-			$res = $db->fetch_object($resql);
-
-			$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.'
-			SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : 0 /* Si y a 0, on met 0 sinon c'est pas sûr hein */)."
-			WHERE rowid = ".(($object->{'fk_'.$object->table_element}) ? $object->{'fk_'.$object->table_element} : $id )); // TODO c'est la même chose qu'en dessous non ?
+			if ($resql && ($res = $db->fetch_object($resql)))
+			{
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.'
+				SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : 0 /* Si y a 0, on met 0 sinon c'est pas sûr hein */)."
+				WHERE rowid = ".(($object->{'fk_'.$object->table_element}) ? $object->{'fk_'.$object->table_element} : $id )); // TODO c'est la même chose qu'en dessous non ?	
+			}
 
 		}
 		else {
