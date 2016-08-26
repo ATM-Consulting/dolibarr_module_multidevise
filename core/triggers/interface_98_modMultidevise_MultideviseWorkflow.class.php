@@ -233,6 +233,7 @@ class InterfaceMultideviseWorkflow
 			$dp_pu_devise = __get('dp_pu_devise');
 			
 			$idProd=__get('idprodfournprice', __get('productid', __get('idprod', __get('id', 0)) )  ); 
+			
 			if(empty($idProd) && isset($_REQUEST['valid']) && !empty($object->lines)){
 				$idProd = $object->lines[count($object->lines)-1]->fk_product;
 				
@@ -276,6 +277,8 @@ class InterfaceMultideviseWorkflow
 						$object->origin = 'shipping';
 					}
 				}
+				
+				if (get_class($object) == 'FactureFournisseur')	$object->fk_soc = $object->socid;
 				
 				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
 				
