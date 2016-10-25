@@ -1179,7 +1179,7 @@ class TMultidevise{
 					$db->query('UPDATE '.MAIN_DB_PREFIX.'paiement_facture SET devise_mt_paiement = "'.price2num($mt_devise).'" , devise_taux = "'.$devise_taux.'", devise_code = "'.$res->devise_code.'"
 								WHERE fk_paiement = '.$object->id.' AND fk_facture = '.$facture->id);
 
-					$db->query('UPDATE '.MAIN_DB_PREFIX."paiement SET note = '".$note."' WHERE rowid = ".$object->id);
+					$db->query('UPDATE '.MAIN_DB_PREFIX."paiement SET note = CONCAT(note,' ', '".$note."') WHERE rowid = ".$object->id);
 				}
 				else{
 					//MAJ du montant paiement_facturefourn
