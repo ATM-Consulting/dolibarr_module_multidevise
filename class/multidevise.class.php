@@ -190,6 +190,7 @@ class TMultidevise{
 		else $resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$object->{'fk_'.$element});
 		$res = $db->fetch_object($resql);
 		$devise_taux = __val($res->devise_taux,1);
+		if ($devise_taux == 0) $devise_taux = 1;
 
 		return $devise_taux;
 	}
@@ -405,6 +406,7 @@ class TMultidevise{
 					$res = $db->fetch_object($resql);
 
 					$devise_taux = __val($res->devise_taux, 1);
+					if ($devise_taux == 0) $devise_taux = 1;
 
 					//On part du principe que le montant acompte est dans la devise du client et non celle de Dolibarr
 					$object->pu_ht = $object->subprice = $object->subprice / $devise_taux;
@@ -532,6 +534,7 @@ class TMultidevise{
                 $resql = $db->query($sql);
                 $res = $db->fetch_object($resql);
 				$devise_taux = __val($res->devise_taux,1);
+				if ($devise_taux == 0) $devise_taux = 1;
 
 				//obligatoire sur partie achat car c'est l'objet parent et non l'object ligne qui est transmis au trigger
 				if($action == 'LINEORDER_SUPPLIER_CREATE'){
@@ -771,7 +774,7 @@ class TMultidevise{
 	            $resql = $db->query($sql);
 	            $res = $db->fetch_object($resql);
 	            $devise_taux = __val($res->devise_taux,1);
-
+				if ($devise_taux == 0) $devise_taux = 1;
 			}
 
 
