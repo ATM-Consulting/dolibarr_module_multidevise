@@ -1085,7 +1085,8 @@ class TMultidevise{
 				// 3 - Dans le bas du document
 			//Modification des TOTAUX si la devise a changé
 
-
+			//pre($object,true);exit;
+			
 			$resl = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
 			if ($resl) {
 				$res = $db->fetch_object($resl);
@@ -1094,6 +1095,9 @@ class TMultidevise{
 					$object->total_ht = round($res->devise_mt_total,$conf->global->MAIN_MAX_DECIMALS_TOT);
 					$object->total_tva = round($total_tva,$conf->global->MAIN_MAX_DECIMALS_TOT);
 					$object->total_ttc = round($object->total_ht + $object->total_tva,$conf->global->MAIN_MAX_DECIMALS_TOT);
+					
+					if($object->total_localtax1) $object->total_ttc += $object->total_localtax1;
+					if($object->total_localtax2) $object->total_ttc += $object->total_localtax2;
 
 				}
 			} else {
