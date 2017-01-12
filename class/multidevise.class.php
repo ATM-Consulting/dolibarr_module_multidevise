@@ -414,12 +414,35 @@ class TMultidevise{
 					$object->pu_ht = $object->subprice = $object->subprice / $devise_taux;
 					$object->total_ht = round($object->pu_ht * $object->qty,$conf->global->MAIN_MAX_DECIMALS_TOT);
 					$object->total_ttc = $object->total_ht * (1 + ( $object->tva_tx / 100));
+					$id_line = $object->rowid;
 					//echo $object->pu_ht;exit;
 
 					TMultidevise::updateLine($db, $object, $user, $action, $id_line, $remise_percent);
 
 					//$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
 				}
+			} else if ($_REQUEST['typedeposit'] == 'variable') {
+				if ($origin == 'commande') {
+					$valuedeposit = 100;
+					if(!empty($_REQUEST['valuedeposit'])) $valuedeposit = $_REQUEST['valuedeposit'];
+					$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."facture WHERE rowid = " . $object->fk_facture);
+					$res = $db->fetch_object($resql);
+
+					$devise_taux = __val($res->devise_taux, 1);
+					if ($devise_taux == 0) $devise_taux = 1;
+
+					//On part du principe que le montant acompte est dans la devise du client et non celle de Dolibarr
+					$object->pu_ht = $object->subprice = ($object->subprice / $devise_taux) * $valuedeposit / 100;
+					$object->total_ht = round($object->pu_ht * $object->qty,$conf->global->MAIN_MAX_DECIMALS_TOT* $valuedeposit / 100);
+					$object->total_ttc = $object->total_ht * (1 + ( $object->tva_tx / 100));
+					$id_line = $object->rowid;
+					//echo $object->pu_ht;exit;
+					
+					TMultidevise::updateLine($db, $object, $user, $action, $id_line, $remise_percent);
+
+					//$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
+				}
+				
 			} else if($origin == 'shipping'){
 				$db->commit();
 				$db->commit();
@@ -820,7 +843,6 @@ class TMultidevise{
 				$pu_devise = round($pu_devise,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 
 				$devise_mt_ligne = $pu_devise * $object->qty;
-
 				if($rateApplication=='PU_DOLIBARR') {
 
 					$object->subprice = $pu_devise / $devise_taux;
@@ -856,7 +878,7 @@ class TMultidevise{
 					$sql = "SELECT subprice, qty, remise_percent as remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 				}
 				else{
-					$sql = "SELECT pu_ht as subprice, qty, remise_percent as remise  FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
+					$sql = "SELECT subprice, qty, remise_percent as remise  FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 				}
 
 				$resql = $db->query($sql);
@@ -866,7 +888,6 @@ class TMultidevise{
 				$tva_devise = !empty($object->total_tva_device) ? $$object->total_tva_device : $object->total_tva * $devise_taux;
 
 				$pu_devise = round($pu_devise,$conf->global->MAIN_MAX_DECIMALS_UNIT);
-
 				$devise_mt_ligne = $pu_devise * $res->qty;
 
 				if($rateApplication=='PU_DOLIBARR') {
