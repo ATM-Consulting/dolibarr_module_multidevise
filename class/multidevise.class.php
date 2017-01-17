@@ -710,22 +710,29 @@ class TMultidevise{
 				}
 				else
 				{
-					$ligne = new SupplierInvoiceLine($db);
-					$ligne->fetch($object->rowid);
-					$object_last = $object;
-					$object = $ligne;
-					
-					$devise_taux = TMultidevise::getElementCurrency($element,$object_last,1,'id');
-					
-					$pu = $dp_pu_devise ? $dp_pu_devise : $object->subprice;
-
-					$devise_pu = round($pu / $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
-					$devise_mt_ligne = $dp_pu_devise * $object->qty;
-					//var_dump($devise_mt_ligne);exit;
-					$object_last->updateline($ligne->rowid, '', $devise_pu, $ligne->tva, 0, 0, $ligne->qty, $ligne->fk_product);
-					$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$dp_pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
-
-					$object = $object_last;
+					if((float) DOL_VERSION < 3.8) {
+						$devise_taux = TMultidevise::getElementCurrency($element,$object,1,'id');
+						$devise_pu = round($object->subprice * $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
+						$devise_mt_ligne = $devise_pu * $object->qty;
+						$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+					}else{
+						$ligne = new SupplierInvoiceLine($db);
+						$ligne->fetch($object->rowid);
+						$object_last = $object;
+						$object = $ligne;
+						
+						$devise_taux = TMultidevise::getElementCurrency($element,$object_last,1,'id');
+						
+						$pu = $dp_pu_devise ? $dp_pu_devise : $object->subprice;
+	
+						$devise_pu = round($pu / $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
+						$devise_mt_ligne = $dp_pu_devise * $object->qty;
+						//var_dump($devise_mt_ligne);exit;
+						$object_last->updateline($ligne->rowid, '', $devise_pu, $ligne->tva, 0, 0, $ligne->qty, $ligne->fk_product);
+						$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$dp_pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+	
+						$object = $object_last;
+					}
 				}
 
 			}
