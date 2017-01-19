@@ -881,13 +881,13 @@ class TMultidevise{
 			}
 			else{
 
-				if($action == 'LINEORDER_SUPPLIER_UPDATE' || $action=='LINEORDER_SUPPLIER_CREATE' || $action=='ORDER_SUPPLIER_CREATE'){
-					$sql = "SELECT subprice, qty, remise_percent as remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
+				if($action == 'LINEBILL_SUPPLIER_UPDATE' || $action=='LINEBILL_SUPPLIER_CREATE' || $action=='LINEBILL_SUPPLIER_CREATE'){
+					$sql = "SELECT pu_ht as subprice, qty, remise_percent as remise FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 				}
 				else{
 					$sql = "SELECT subprice, qty, remise_percent as remise  FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 				}
-
+				
 				$resql = $db->query($sql);
 	            $res = $db->fetch_object($resql);
 
