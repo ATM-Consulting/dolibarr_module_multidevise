@@ -334,7 +334,8 @@ class InterfaceMultideviseWorkflow
 			$account = new Account($db);
 			$account->fetch($object->fk_account);
 			
-			if (!empty($object->amounts))
+			// TODO pour moi Ce bout de code sert à rien, et il est même plantogène
+			/*if (!empty($object->amounts))
 			{
 				foreach ($object->amounts as $fk_facture => $amount)
 				{
@@ -344,7 +345,7 @@ class InterfaceMultideviseWorkflow
 						TMultidevise::updateAmountBankLine($db, $object, $_REQUEST['devise']['amount_'.$fk_facture], 'client');
 					}
 				}
-			}
+			}*/
 		
 			//Sur l'ajout du paiement dans le compte bancaire on multiplie toujours le montant dolibarr par le taux de la devise du compte bancaire
 			
