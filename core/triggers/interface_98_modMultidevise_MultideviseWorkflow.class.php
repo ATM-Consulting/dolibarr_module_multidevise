@@ -316,7 +316,7 @@ class InterfaceMultideviseWorkflow
 		 */
 		if ($action == 'LINEORDER_DELETE' || $action == 'LINEPROPAL_DELETE' || $action == 'LINEBILL_DELETE'
 		|| $action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE') {
-
+			
 			TMultidevise::deleteLine($db, $object,$action,__get('id'),__get('lineid') );
 
 		}

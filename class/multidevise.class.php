@@ -117,7 +117,7 @@ class TMultidevise{
 			if ($resql && ($res = $db->fetch_object($resql)))
 			{
 				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.'
-				SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : 0 /* Si y a 0, on met 0 sinon c'est pas sûr hein */)."
+				SET devise_mt_total = '.(($res->total_ligne != 0 ) ? $res->total_ligne : 0 /* Si y a 0, on met 0 sinon c'est pas sûr hein */)."
 				WHERE rowid = ".(($object->{'fk_'.$object->table_element}) ? $object->{'fk_'.$object->table_element} : $id )); // TODO c'est la même chose qu'en dessous non ?	
 			}
 
@@ -135,7 +135,7 @@ class TMultidevise{
 				$res = $db->fetch_object($resql);
 
 				$db->query('UPDATE '.MAIN_DB_PREFIX.$parent_object.'
-						SET devise_mt_total = '.(($res->total_ligne > 0 ) ? $res->total_ligne : "0")."
+						SET devise_mt_total = '.(($res->total_ligne != 0 ) ? $res->total_ligne : "0")."
 						WHERE rowid = ".(($object->{'fk_'.$parent_object}) ? $object->{'fk_'.$parent_object} : $id ));
 			}
 		}
