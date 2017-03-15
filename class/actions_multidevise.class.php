@@ -877,15 +877,15 @@ class ActionsMultidevise
 						$(ligne).find('> td[class=taux_devise]').append('<?php echo price($devise_taux); ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<input type="hidden" value="<?php echo $devise_taux; ?>" name="taux_devise" />');
 						$(ligne).find('> td[class=recu_devise]').append('<?php echo price($total_recu_devise,'MT'); ?>');
-						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(round($res->total_devise,$conf->global->MAIN_MAX_DECIMALS_TOT),'MT'); ?>');
-						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(round(($res->total_devise) - $total_recu_devise,$conf->global->MAIN_MAX_DECIMALS_TOT),'MT'); ?>');
+						$(ligne).find('> td[class=ttc_devise]').append('<?php echo price(round($res->total_devise + ($facture->total_tva * $devise_taux),$conf->global->MAIN_MAX_DECIMALS_TOT),'MT'); ?>');
+						$(ligne).find('> td[class=reste_devise]').append('<?php echo price(round(($res->total_devise + ($facture->total_tva * $devise_taux)) - $total_recu_devise,$conf->global->MAIN_MAX_DECIMALS_TOT),'MT'); ?>');
 
 						if($('td[class=total_reste_devise]').length > 0){
 
 							$('td[class=total_recu_devise]').html(number_format($('td[class=total_recu_devise]').val() + <?php echo price2num($total_recu_devise,'MT'); ?>,'price'));
 
 							total_reste_devise = number_format($('td[class=total_reste_devise]').html(),'price2num');
-
+							
 							$('td[class=total_reste_devise]').html(number_format(total_reste_devise + <?php echo price2num(($facture->total_ttc * $devise_taux) - $total_recu_devise,'MT'); ?>,'price'));
 						}
 						
