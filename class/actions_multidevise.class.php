@@ -778,11 +778,11 @@ class ActionsMultidevise
 					?>
 					<script type="text/javascript">
 						$(document).ready(function(){
-							$('.liste_titre').children().eq(2).after('<td align="right" >Devise</td>');
-							$('.liste_titre').children().eq(3).after('<td align="right" >Taux Devise actuel</td>');
-							$('.liste_titre').children().eq(6).after('<td align="right" >Montant TTC Devise</td>');
-							$('.liste_titre').children().eq(7).after('<td align="right" >Reçu devise</td>');
-							$('.liste_titre').children().eq(9).after('<td align="right" >Reste à encaisser devise</td>');
+							$('.liste_titre').children().eq(1).after('<td align="right" >Devise</td>');
+							$('.liste_titre').children().eq(2).after('<td align="right" >Taux Devise actuel</td>');
+							$('.liste_titre').children().eq(5).after('<td align="right" >Montant TTC Devise</td>');
+							$('.liste_titre').children().eq(6).after('<td align="right" >Reçu devise</td>');
+							$('.liste_titre').children().eq(8).after('<td align="right" >Reste à encaisser devise</td>');
 							$('.liste_titre > td:last-child').after('<td align="right" >Montant règlement devise</td>');
 							
 							$('tr[class=impair], tr[class=pair]').each(function(){
