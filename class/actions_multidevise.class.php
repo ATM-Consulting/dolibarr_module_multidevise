@@ -9,7 +9,8 @@ class ActionsMultidevise
       */ 
     
     function beforePDFCreation($parameters, &$object, &$action, $hookmanager) {
-    	
+    	global $conf;
+		
 		// pour implementation dans Dolibarr 3.7
 		if (in_array('pdfgeneration',explode(':',$parameters['context']))
 			&& !in_array('expeditioncard',explode(':',$parameters['context']))
@@ -18,9 +19,14 @@ class ActionsMultidevise
 			define('INC_FROM_DOLIBARR',true);
 			dol_include_once('/multidevise/config.php');
 			dol_include_once('/multidevise/class/multidevise.class.php');
-
-			if(isset($parameters['object']))TMultidevise::preparePDF($parameters['object']);
-			else TMultidevise::preparePDF($object);
+			
+			if(isset($parameters['object'])){
+				if(!$conf->global->MULTIDEVISE_DONT_USE_ON_SELL && ($object->element == 'propal' || $object->element == 'facture' || $object->element == 'commande'))
+					TMultidevise::preparePDF($parameters['object']);
+			}
+			else{
+				TMultidevise::preparePDF($object);
+			}
 		}
 		
     }
