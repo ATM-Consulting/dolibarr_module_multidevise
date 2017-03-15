@@ -734,7 +734,7 @@ class TMultidevise{
 						$devise_pu = round($object->subprice * $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 						$devise_mt_ligne = $devise_pu * $object->qty;
 						$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
-					}else{
+					}elseif($action == 'LINEBILL_SUPPLIER_CREATE'){
 						$ligne = new SupplierInvoiceLine($db);
 						$ligne->fetch($object->rowid);
 						$object_last = $object;
