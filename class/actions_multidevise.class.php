@@ -638,6 +638,10 @@ class ActionsMultidevise
         return 0;
     }
 
+	function paymentsupplierinvoices($parameters, &$object, &$action, $hookmanager){
+		$this->printObjectLine($parameters, $object, $action, $hookmanager);
+	}
+
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
 		
 		global $db, $user, $conf, $langs;
