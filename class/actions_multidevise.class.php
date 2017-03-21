@@ -21,8 +21,12 @@ class ActionsMultidevise
 			dol_include_once('/multidevise/class/multidevise.class.php');
 			
 			if(isset($parameters['object'])){
-				if(!$conf->global->MULTIDEVISE_DONT_USE_ON_SELL && ($object->element == 'propal' || $object->element == 'facture' || $object->element == 'commande'))
+				if(!$conf->global->MULTIDEVISE_DONT_USE_ON_SELL && ($object->element == 'propal' || $object->element == 'facture' || $object->element == 'commande')){
 					TMultidevise::preparePDF($parameters['object']);
+				}
+				elseif($conf->global->MULTIDEVISE_DONT_USE_ON_SELL){
+					TMultidevise::preparePDF($parameters['object']);
+				}
 			}
 			else{
 				TMultidevise::preparePDF($object);
