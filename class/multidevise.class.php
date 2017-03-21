@@ -358,6 +358,7 @@ class TMultidevise{
 		}
 		elseif($action != 'LINEORDER_SUPPLIER_CREATE'){
 			if(empty($object->entity)) $object->entity = $conf->entity;
+			$object->fetch($object->id);
 			$object->update($user,true);
 		}
 		else{
