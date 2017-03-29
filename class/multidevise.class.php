@@ -825,7 +825,7 @@ class TMultidevise{
 				$fk_parent = __val($object->oldline->{"fk_".$element}, __val($object->{"fk_".$element}, $object->id) );
 
 			}
-			elseif($action === 'LINEBILL_SUPPLIER_UPDATE' && DOL_VERSION > 3.8){
+			elseif($action === 'LINEBILL_SUPPLIER_UPDATE' && DOL_VERSION >= 3.8){
 				$fk_parent = $_REQUEST['id'];
 			}
 			else{
