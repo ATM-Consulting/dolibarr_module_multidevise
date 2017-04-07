@@ -861,7 +861,7 @@ class TMultidevise{
 
 		}
 		elseif($action === 'LINEORDER_UPDATE' || $action ==='LINEPROPAL_UPDATE' || $action === 'LINEBILL_UPDATE'
-		|| $action==='PROPAL_CREATE' || $action==='BILL_CREATE' || $action==='ORDER_CREATE' ){
+		|| $action==='PROPAL_CREATE' || $action==='BILL_CREATE' || $action==='ORDER_CREATE' || $action === 'BILL_SUPPLIER_CREATE'){
 
 		    $pu_devise = !empty($object->device_pu) ? $object->device_pu : $object->subprice * $devise_taux;
 
@@ -992,7 +992,6 @@ class TMultidevise{
 
 
 		}
-
 	}
 
 	/*
