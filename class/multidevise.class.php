@@ -116,9 +116,12 @@ class TMultidevise{
 			$resql = $db->query($sql);
 			if ($resql && ($res = $db->fetch_object($resql)))
 			{
-				$db->query('UPDATE '.MAIN_DB_PREFIX.$object->table_element.'
+				// WARNING : sur la suppression d'une ligne de facture fourn, l'objet donné est SupplierInvoiceLine (l'objet enfant) sauf qu'on souhaite modifier le montant du document (donc la facture fourn)
+				$objToUse = (get_class($object) == 'SupplierInvoiceLine') ? $facturefourn : $object;
+				
+				$db->query('UPDATE '.MAIN_DB_PREFIX.$objToUse->table_element.'
 				SET devise_mt_total = '.(($res->total_ligne != 0 ) ? $res->total_ligne : 0 /* Si y a 0, on met 0 sinon c'est pas sûr hein */)."
-				WHERE rowid = ".(($object->{'fk_'.$object->table_element}) ? $object->{'fk_'.$object->table_element} : $id )); // TODO c'est la même chose qu'en dessous non ?	
+				WHERE rowid = ".(($objToUse->{'fk_'.$objToUse->table_element}) ? $objToUse->{'fk_'.$object->table_element} : $id )); // TODO c'est la même chose qu'en dessous non ?	
 			}
 
 		}
