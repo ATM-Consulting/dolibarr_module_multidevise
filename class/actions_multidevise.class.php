@@ -187,7 +187,7 @@ class ActionsMultidevise
 
 	    		$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
-
+				
 				if(($res->fk_devise && !is_null($res->devise_code)) || !empty($conf->global->MULTIDEVISE_ALLOW_UPDATE_FK_DEVISE_ON_OLD_DOC)){
 					
 					print '
@@ -226,12 +226,12 @@ class ActionsMultidevise
 							print '<td colspan="3"><span title="'.$res->devise_taux.'">'.price(__val($res->devise_taux,1),0,'',1,$conf->global->MAIN_MAX_DECIMALS_UNIT,$conf->global->MAIN_MAX_DECIMALS_UNIT).'</span><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></td>';	
 						}
 						print '</tr>';
-						//pre($object);exit;
-						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
+						//var_dump($object);exit;
+						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3">'.price($object->total_ht*$res->devise_taux,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
 						
 						print '<tr><td>'.$langs->trans('CurrencyVAT').'</td><td colspan="3">'.price($object->total_tva*$res->devise_taux,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
 						
-						print '<tr><td>'.$langs->trans('CurrencyTotalVAT').'</td><td colspan="3">'.price($res->devise_mt_total + ($object->total_tva*$res->devise_taux),0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
+						print '<tr><td>'.$langs->trans('CurrencyTotalVAT').'</td><td colspan="3">'.price($object->total_ht*$res->devise_taux + ($object->total_tva*$res->devise_taux),0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
 					}
 					elseif($action=='edit_currency'){
 						print '<input type="submit" value="'.$langs->trans('Modify').'" />';
