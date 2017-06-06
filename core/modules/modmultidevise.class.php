@@ -58,7 +58,7 @@ class modmultidevise extends DolibarrModules
 		// Module description, used if translation string 'ModuleXXXDesc' not found (where XXX is value of numeric property 'numero' of module)
 		$this->description = "Gestion de devises multiple";
 		// Possible values for version are: 'development', 'experimental', 'dolibarr' or version
-		$this->version = '2.5.4';
+		$this->version = '2.5.5';
 		// Key used in llx_const table to save module status enabled/disabled (where MYMODULE is value of property name of module in uppercase)
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		// Where to store the module in setup page (0=common,1=interface,2=others,3=very specific)
@@ -87,7 +87,7 @@ class modmultidevise extends DolibarrModules
 		//							'dir' => array('output' => 'othermodulename'),      // To force the default directories names
 		//							'workflow' => array('WORKFLOW_MODULE1_YOURACTIONTYPE_MODULE2'=>array('enabled'=>'! empty($conf->module1->enabled) && ! empty($conf->module2->enabled)', 'picto'=>'yourpicto@mymodule')) // Set here all workflow context managed by module
 		//);
-		
+
 		$this->module_parts = array(
 			'hooks'=>array(
 				'thirdpartycard',
@@ -134,9 +134,9 @@ class modmultidevise extends DolibarrModules
 		// Example: $this->tabs = array('objecttype:+tabname1:Title1:mylangfile@mymodule:$user->rights->mymodule->read:/mymodule/mynewtab1.php?id=__ID__',  	// To add a new tab identified by code tabname1
         //                              'objecttype:+tabname2:Title2:mylangfile@mymodule:$user->rights->othermodule->read:/mymodule/mynewtab2.php?id=__ID__',  	// To add another new tab identified by code tabname2
         //                              'objecttype:-tabname':NU:conditiontoremove);                                                     						// To remove an existing tab identified by code tabname
-        
+
         //$this->tabs = array('product:+tabTarif1:Tarifs Conditionnement:@tarif:/tarif/liste.php?fk_product=__ID__');
-        
+
 		// where objecttype can be
 		// 'thirdparty'       to add a tab in third party view
 		// 'intervention'     to add a tab in intervention view
@@ -268,14 +268,14 @@ class modmultidevise extends DolibarrModules
 		$sql = array();
 
 		$result=$this->load_tables();
-        
+
         define('INC_FROM_DOLIBARR', true);
         dol_include_once('/multidevise/config.php');
-        
+
 		// Création des tables
 		dol_include_once('/multidevise/script/create-maj-base.php');
         dol_include_once('/multidevise/cron/1day/sync.php');
-        
+
 		return $this->_init($sql, $options);
 	}
 
