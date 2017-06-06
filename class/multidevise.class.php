@@ -98,7 +98,7 @@ class TMultidevise{
 				$facturefourn = new FactureFournisseur($db);
 				$facturefourn->fetch(GETPOST('id'));
 				$facturefourn->deleteline($object->id, TRUE);
-				
+
 				$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne
 				    FROM '.MAIN_DB_PREFIX.$facturefourn->table_element_line.'
 				    WHERE '.$facturefourn->fk_element.' = '.$id;
@@ -106,7 +106,7 @@ class TMultidevise{
 			else
 			{
 				$object->deleteline($lineid, TRUE); // TODO est si on echappe simplement la ligne dans ce qui suit
-				
+
 				$sql = 'SELECT SUM(devise_mt_ligne) as total_ligne
 				    FROM '.MAIN_DB_PREFIX.$object->table_element_line.'
 				    WHERE '.$object->fk_element.' = '.$id;
@@ -118,10 +118,10 @@ class TMultidevise{
 			{
 				// WARNING : sur la suppression d'une ligne de facture fourn, l'objet donné est SupplierInvoiceLine (l'objet enfant) sauf qu'on souhaite modifier le montant du document (donc la facture fourn)
 				$objToUse = (get_class($object) == 'SupplierInvoiceLine') ? $facturefourn : $object;
-				
+
 				$db->query('UPDATE '.MAIN_DB_PREFIX.$objToUse->table_element.'
 				SET devise_mt_total = '.(($res->total_ligne != 0 ) ? $res->total_ligne : 0 /* Si y a 0, on met 0 sinon c'est pas sûr hein */)."
-				WHERE rowid = ".(($objToUse->{'fk_'.$objToUse->table_element}) ? $objToUse->{'fk_'.$object->table_element} : $id )); // TODO c'est la même chose qu'en dessous non ?	
+				WHERE rowid = ".(($objToUse->{'fk_'.$objToUse->table_element}) ? $objToUse->{'fk_'.$object->table_element} : $id )); // TODO c'est la même chose qu'en dessous non ?
 			}
 
 		}
@@ -429,24 +429,24 @@ class TMultidevise{
 				if ($origin == 'commande') {
 					$valuedeposit = 100;
 					if(!empty($_REQUEST['valuedeposit'])) $valuedeposit = $_REQUEST['valuedeposit'];
-					
+
 					$resql = $db->query("SELECT devise_taux FROM ".MAIN_DB_PREFIX."facture WHERE rowid = " . $object->fk_facture);
 					$res = $db->fetch_object($resql);
 
 					$devise_taux = __val($res->devise_taux, 1);
 					if ($devise_taux == 0) $devise_taux = 1;
-					
+
 					//On part du principe que le montant acompte est dans la devise du client et non celle de Dolibarr
 					$object->pu_ht = $object->subprice = ($object->subprice / $devise_taux);
 					$object->total_ht = round($object->pu_ht * $object->qty,$conf->global->MAIN_MAX_DECIMALS_TOT);
 					$object->total_ttc = $object->total_ht * (1 + ( $object->tva_tx / 100));
 					$id_line = $object->rowid;
 					//echo $object->pu_ht;exit;
-					
+
 					//pre($object,true);exit;
-					
+
 					TMultidevise::updateLine($db, $object, $user, $action, $id_line, $remise_percent);
-					
+
 					//MAJ du total devise de la commande/facture/propale
 					$sql = 'SELECT SUM(f.devise_mt_ligne) as total_devise
 					FROM '.MAIN_DB_PREFIX.$element_line.' as f LEFT JOIN '.MAIN_DB_PREFIX.$element.' as m ON (f.'.$fk_element.' = m.rowid)';
@@ -457,15 +457,15 @@ class TMultidevise{
 					else{
 						$sql .= 'WHERE m.rowid = '.$object->id;
 					}
-	
+
 					$resql = $db->query($sql);
 					$res = $db->fetch_object($resql);
-	
+
 					$db->query('UPDATE '.MAIN_DB_PREFIX.$element.' SET devise_mt_total = '.$res->total_devise." WHERE rowid = ".(($object->{'fk_'.$element})? $object->{'fk_'.$element} : $object->id) );
-					
+
 					//$db->query('UPDATE '.MAIN_DB_PREFIX.'facturedet SET devise_pu = '.round($object->subprice * $devise_taux,2).', devise_mt_ligne = '.round(($object->subprice * $devise_taux) * $object->qty,2).' WHERE rowid = '.$object->rowid);
 				}
-				
+
 			} else if($origin == 'shipping'){
 				$db->commit();
 				$db->commit();
@@ -743,17 +743,17 @@ class TMultidevise{
 						$ligne->fetch($object->rowid);
 						$object_last = $object;
 						$object = $ligne;
-						
+
 						$devise_taux = TMultidevise::getElementCurrency($element,$object_last,1,'id');
-						
+
 						$pu = $dp_pu_devise ? $dp_pu_devise : $object->subprice;
-	
+
 						$devise_pu = round($pu / $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 						$devise_mt_ligne = $dp_pu_devise * $object->qty;
 						//var_dump($devise_mt_ligne);exit;
 						$object_last->updateline($ligne->rowid, '', $devise_pu, $ligne->tva, 0, 0, $ligne->qty, $ligne->fk_product);
 						$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$dp_pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
-	
+
 						$object = $object_last;
 					}
 				}
@@ -822,7 +822,7 @@ class TMultidevise{
 			$object->update($user,true);
 
 		}
-		
+
 		if(empty($fk_parent)){
 			if($action === 'LINEORDER_UPDATE' || $action === 'LINEPROPAL_UPDATE' || $action === 'LINEBILL_UPDATE'){
 				$fk_parent = __val($object->oldline->{"fk_".$element}, __val($object->{"fk_".$element}, $object->id) );
@@ -838,7 +838,7 @@ class TMultidevise{
 		}
 
 		if(empty($devise_taux)) {
-			
+
 			$sql = "SELECT devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".$fk_parent;
             $resql = $db->query($sql);
             $res = $db->fetch_object($resql);
@@ -910,7 +910,7 @@ class TMultidevise{
 			else{
 				$sql = "SELECT subprice, qty, remise_percent as remise  FROM ".MAIN_DB_PREFIX.$element_line." WHERE rowid = ".$id_line;
 			}
-			
+
 			$resql = $db->query($sql);
             $res = $db->fetch_object($resql);
 
@@ -1150,7 +1150,7 @@ class TMultidevise{
 			//Modification des TOTAUX si la devise a changé
 
 			//pre($object,true);exit;
-			
+
 			$resl = $db->query('SELECT devise_mt_total FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id);
 			if ($resl) {
 				$res = $db->fetch_object($resl);
@@ -1159,7 +1159,7 @@ class TMultidevise{
 					$object->total_ht = round($res->devise_mt_total,$conf->global->MAIN_MAX_DECIMALS_TOT);
 					$object->total_tva = round($total_tva,$conf->global->MAIN_MAX_DECIMALS_TOT);
 					$object->total_ttc = round($object->total_ht + $object->total_tva,$conf->global->MAIN_MAX_DECIMALS_TOT);
-					
+
 					if($object->total_localtax1) $object->total_ttc += $object->total_localtax1;
 					if($object->total_localtax2) $object->total_ttc += $object->total_localtax2;
 
@@ -1178,7 +1178,7 @@ class TMultidevise{
 
 
 	static function addpaiement(&$db,&$TRequest,&$object,$action){
-		global $user,$conf; $db;
+		global $user,$conf;
 
 		list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
 
@@ -1229,7 +1229,7 @@ class TMultidevise{
 				$account->fetch($TRequest['accountid']);
 
 				//Règlement total
-				if(price2num($res->devise_mt_total+($facture->total_tva*$devise_taux)) == price2num($mt_devise)){
+				if(price2num($res->devise_mt_total+($facture->total_tva*$devise_taux),'MT') == price2num($mt_devise,'MT')){
 
 					$facture->set_paid($user);
 

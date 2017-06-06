@@ -1,4 +1,4 @@
-<?php /* Copyright (C) 2005-2011 Laurent Destailleur 
+<?php /* Copyright (C) 2005-2011 Laurent Destailleur
 <eldy@users.sourceforge.net>
  * Copyright (C) 2005-2011 Regis Houssin        <regis.houssin@capnetworks.com>
  *
@@ -33,11 +33,11 @@
 /**
  *  Class of triggers for Mantis module
  */
- 
+
 class InterfaceMultideviseWorkflow
 {
     var $db;
-    
+
     /**
      *   Constructor
      *
@@ -46,15 +46,15 @@ class InterfaceMultideviseWorkflow
     function __construct($db)
     {
         $this->db = $db;
-    
+
         $this->name = preg_replace('/^Interface/i','',get_class($this));
         $this->family = "ATM";
         $this->description = "Trigger du module de devise multiple";
         $this->version = 'dolibarr';            // 'development', 'experimental', 'dolibarr' or version
         $this->picto = 'technic';
     }
-    
-    
+
+
     /**
      *   Return name of trigger file
      *
@@ -64,7 +64,7 @@ class InterfaceMultideviseWorkflow
     {
         return $this->name;
     }
-    
+
     /**
      *   Return description of trigger file
      *
@@ -127,16 +127,16 @@ class InterfaceMultideviseWorkflow
 			$currency=__get('currency','');
 			TMultidevise::updateCompany($db, $object, $currency);
 		}
-	
+
 		/*
 		 * ASSOCIATION DEVISE, TAUX PAR COMMANDE, PROPAL OU FACTURE
 		 */
-		if($action === "ORDER_CREATE" || $action  ===  "PROPAL_CREATE" || $action  ===  "BILL_CREATE" 
+		if($action === "ORDER_CREATE" || $action  ===  "PROPAL_CREATE" || $action  ===  "BILL_CREATE"
 		|| $action === "ORDER_SUPPLIER_CREATE" || $action  === "BILL_SUPPLIER_CREATE"){
 
 			//TODO mettre en fonction de là....
 			$origin=__get('origin', $object->origin);
-			
+
 			// Pour le cas où l'on vient de replanish : s'il n'y a pas d'origine, on récupère la devise du tiers
 			if(empty($origin)) $used_currency = TMultidevise::getThirdCurrency($object->socid);
 			else{
@@ -145,130 +145,130 @@ class InterfaceMultideviseWorkflow
 					$used_currency = $conf->currency;
 				}
 			}
-			
+
 			//Il est possible que les tiers n'aient pas de devise assigné car lors de l'import initiale on ne renseigne pas les champs de multidevise
 			$currency = __get('currency',($used_currency) ? $used_currency : $conf->currency );
-			
+
 			//TODO ... à de là !!
-			
+
 			$actioncard = __get('action','');
 
 			if($actioncard=='confirm_clone' && ($action==='ORDER_SUPPLIER_CREATE' || $action==='BILL_SUPPLIER_CREATE' || $action==='PROPAL_CREATE' || $action==='ORDER_CREATE' || $action==='BILL_CREATE') ) {
-				
+
 				$objectid = __get('facid', __get('id'));
 
 				$sql = 'SELECT o.fk_devise, o.devise_code, o.devise_taux
 						 FROM '.MAIN_DB_PREFIX.$object->table_element.' AS o
 						 WHERE o.rowid = '.$objectid;
-				
+
 				$resql = $db->query($sql);
 
 				if($res = $db->fetch_object($resql)){
 					$object->fetch($object->id);
 
-					$fk_parent = $object->id;				
+					$fk_parent = $object->id;
 					$devise_taux = $res->devise_taux;
 
-					$sql="UPDATE ".MAIN_DB_PREFIX.$object->table_element." 
+					$sql="UPDATE ".MAIN_DB_PREFIX.$object->table_element."
 					SET fk_devise=".$res->fk_devise.",devise_code='".$res->devise_code."',devise_taux=".$devise_taux."
 					WHERE rowid=".$fk_parent;
 					$db->query($sql);
 
 					foreach($object->lines as &$line) {
-							
+
 						$id_line = ($action==='BILL_SUPPLIER_CREATE') ? $line->rowid : $line->id ;
 
-						TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);	
+						TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);
 
 					}
-					
-				
+
+
 				}
-				
-				
-				
+
+
+
 			} else {
-				
+
 				// Quand workflow activé et qu'une commande se crée en auto après la signature d'une propal
 				// les PU Devise et Total Devise n'étaient pas récupérés, d'où cette répétition de code : (Ticket 1731)
-			
+
 				if(get_class($object) === "Commande") {
-				
+
 					$object->fetch_lines();
-					
+
 					foreach($object->lines as &$line) {
-							
+
 						$id_line = ($action==='BILL_SUPPLIER_CREATE') ? $line->rowid : $line->id ;
-	
-						TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);	
-	
-					}					
-				}				
+
+						TMultidevise::updateLine($db, $line,$user, $action, $id_line ,$line->remise_percent,$devise_taux,$fk_parent);
+
+					}
+				}
 			}
-			
+
 			//Clonage => On récupère la devise et le taux de l'objet cloné
 			//TODO A quoi ça sert?
 			if(!empty($_REQUEST['action']) && $_REQUEST['action'] == 'confirm_clone'){
-				
+
 				$objectid = ($_REQUEST['id']) ? $_REQUEST['id'] : $_REQUEST['facid'] ;
 
 
 			}
-			
+
 			else{
-				
+
 				TMultidevise::createDoc($db, $object,$currency,$origin);
-				
+
 			}
 		}
-		
+
 		/*
 		 *  CREATION P.U. DEVISE + TOTAL DEVISE PAR LIGNE DE COMMANDE, PROPAL, FACTURE, COMMANDE FOURNISSEUR OU FACTURE FOURNISSEUR
 		 */
-		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT'	|| $action == 'LINEBILL_INSERT' 
+		if ($action == 'LINEORDER_INSERT' || $action == 'LINEPROPAL_INSERT'	|| $action == 'LINEBILL_INSERT'
 		|| $action == 'LINEORDER_SUPPLIER_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE') {
-			
+
 			$origin=__get('origin', $object->origin);
 			$originid=__get('originid', $object->origin_id);
 			$dp_pu_devise = __get('dp_pu_devise');
-			
-			$idProd=__get('idprodfournprice', __get('productid', __get('idprod', __get('id', 0)) )  ); 
-			
+
+			$idProd=__get('idprodfournprice', __get('productid', __get('idprod', __get('id', 0)) )  );
+
 			if(empty($idProd) && isset($_REQUEST['valid']) && !empty($object->lines)){
 				$idProd = $object->lines[count($object->lines)-1]->fk_product;
-				
+
 				if($action==='LINEORDER_SUPPLIER_CREATE') {
 					list($element, $element_line, $fk_element) = TMultidevise::getTableByAction($action);
 					$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".(($object->{"fk_".$element})? $object->{"fk_".$element} : $object->id) ;
-					
+
 	                $resql = $db->query($sql);
 	                $res = $db->fetch_object($resql);
 					$devise_taux = __val($res->devise_taux,1);
-					
-					
+
+
 					if(empty($devise_taux)) {
 						if(empty($origin) && empty($currency)) $currency = TMultidevise::getThirdCurrency($object->socid);
 						TMultidevise::createDoc($db, $object,$currency,$origin);
-					} 
-					
+					}
+
 				}
-			
+
 			}
-			
-			$quantity = __get('qty',0);	 
-			$quantity_predef=__get('qty_predef',0);	
-			$remise_percent =__get('remise_percent',0);	 
-			$idprodfournprice = __get('idprodfournprice',0);	 
+
+			$quantity = __get('qty',0);
+			$quantity_predef=__get('qty_predef',0);
+			$remise_percent =__get('remise_percent',0);
+			$idprodfournprice = __get('idprodfournprice',0);
 			$fournprice=__get('fournprice_predef','');
 			$buyingprice=__get('buying_price','');
 			if(empty($buyingprice)) $buyingprice=__get('buying_price_predef',''); // Compatibilité 3.5
-			
+
 			$actioncard = __get('action','');
-				
+
 			if($actioncard=='confirm_clone') {
-				
+
 				null; //TMultidevise::updateLine($db, $object,$user, $action,$object->rowid,$object->remise_percent);
-				
+
 			}
 			else {
 				//Spécifique nomadic : récupération des services pour la facturation depuis une expédition   ticket 1774
@@ -277,20 +277,20 @@ class InterfaceMultideviseWorkflow
 						$object->origin = 'shipping';
 					}
 				}
-				
+
 				if (get_class($object) == 'FactureFournisseur')	$object->fk_soc = $object->socid;
-				
+
 				TMultidevise::insertLine($db, $object,$user, $action, $origin, $originid, $dp_pu_devise,$idProd,$quantity,$quantity_predef,$remise_percent,$idprodfournprice,$fournprice,$buyingprice);
-				
-			}				
+
+			}
 		}
-	
+
 		/*
 		 * MODIFICATION LIGNE DE COMMANDE, PROPAL OU FACTURE = MAJ DU MONTANT TOTAL DEVISE
 		 */
-		if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE' 
+		if($action == 'LINEORDER_UPDATE' || $action == 'LINEPROPAL_UPDATE' || $action == 'LINEBILL_UPDATE'
 		|| $action == 'LINEORDER_SUPPLIER_UPDATE' || $action == 'LINEBILL_SUPPLIER_UPDATE'){
-			
+
 
 			switch ($action) {
 				case "LINEORDER_SUPPLIER_UPDATE":
@@ -306,34 +306,34 @@ class InterfaceMultideviseWorkflow
 			}
 
 			$remise_percent =__get('remise_percent',0);
-			
+
 			TMultidevise::updateLine($db, $object,$user, $action,$id_line,$remise_percent);
 
 		}
-	
+
 		/*
 		 * SUPPRESSION LIGNE DE COMMANDE, PROPAL OU FACTURE = MAJ DU MONTANT TOTAL DEVISE
 		 */
 		if ($action == 'LINEORDER_DELETE' || $action == 'LINEPROPAL_DELETE' || $action == 'LINEBILL_DELETE'
 		|| $action == 'LINEORDER_SUPPLIER_DELETE' || $action == 'LINEBILL_SUPPLIER_DELETE') {
-			
+
 			TMultidevise::deleteLine($db, $object,$action,__get('id'),__get('lineid') );
 
 		}
-		
+
 		/*
-		 * AJOUT D'UN PAIEMENT 
+		 * AJOUT D'UN PAIEMENT
 		 */
 		if($action == "PAYMENT_CUSTOMER_CREATE" || $action == "PAYMENT_SUPPLIER_CREATE" && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL))
 		{
 			TMultidevise::addpaiement($db,$_REQUEST,$object,$action);
 		}
-		
+
 		if ($action == 'PAYMENT_ADD_TO_BANK' && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL)) // Paiement client
-		{
+		{//var_dump($object);
 			$account = new Account($db);
 			$account->fetch($object->fk_account);
-			
+
 			// TODO pour moi Ce bout de code sert à rien, et il est même plantogène
 			/*if (!empty($object->amounts))
 			{
@@ -346,14 +346,14 @@ class InterfaceMultideviseWorkflow
 					}
 				}
 			}*/
-		
+
 			//Sur l'ajout du paiement dans le compte bancaire on multiplie toujours le montant dolibarr par le taux de la devise du compte bancaire
-			
+
 			$db->commit();
-			
+
 			$accountid = GETPOST('accountid');
 			if (empty($accountid) && !empty($object->fk_account)) $accountid = $object->fk_account;
-			
+
 			//Récupération du taux de la devise du compte bancaire
 			$sql = "SELECT cr.rate
 					FROM ".MAIN_DB_PREFIX."currency_rate as cr
@@ -362,37 +362,40 @@ class InterfaceMultideviseWorkflow
 					WHERE ba.rowid = ".$accountid."
 					ORDER BY cr.dt_sync DESC LIMIT 1";
 
-			if ($resql)	
+			$resql = $db->query($sql);
+			if ($resql)
 			{
 				$res = $db->fetch_object($resql);
-			
+
 				$rate = $res->rate;
-			
+
 				//Mise à jour de l'objet avec le total * taux
-				$total = $object->total * $rate;
-	
+				$total = price2num($object->total * $rate, 'MT');
+
+				$resProut = $db->query("SELECT MAX(rowid) as rowid FROM ".MAIN_DB_PREFIX."bank");
+				$objProut = $db->fetch_object($resProut);
+
+				$fk_bank_row = $object->db->last_insert_id(MAIN_DB_PREFIX.'bank');
+
 				$db->query('UPDATE '.MAIN_DB_PREFIX.'bank SET amount = "'.$total.'"
-							WHERE rowid = (SELECT rowid 
-										   FROM '.MAIN_DB_PREFIX.'bank 
-										   WHERE amount = '.$object->total.'
-										   		AND fk_account = '.$accountid.' 
-										   ORDER BY rowid DESC LIMIT 1)');
+							WHERE rowid = '.$objProut->rowid);
 			}
+
 		}
-	
+
 		if($action == "BEFORE_PROPAL_BUILDDOC" || $action == "BEFORE_ORDER_BUILDDOC"  || $action == "BEFORE_BILL_BUILDDOC" || $action == "BEFORE_ORDER_SUPPLIER_BUILDDOC" || $action == "BEFORE_BILL_SUPPLIER_BUILDDOC"){
 			if (!empty($object->id)) TMultidevise::preparePDF($object,$object->societe);
-			
-		}	
-		
+
+		}
+
 		if($action == "PROPAL_BUILDDOC" || $action == "ORDER_BUILDDOC"  || $action == "BILL_BUILDDOC" || $action == "ORDER_SUPPLIER_BUILDDOC" || $action == "BILL_SUPPLIER_BUILDDOC") {
-			
+
 			$object->fetch($object->id);
 
 		}
-		
+
 		if($action == "DISCOUNT_CREATE") {
-			
+
 			global $conf;
 			/*
 			// On récupère la devise du client
@@ -404,7 +407,7 @@ class InterfaceMultideviseWorkflow
 				$res = $db->fetch_object($resql);
 				$devise_code = $res->devise_code;
 			}
-			
+
 			// On récupère le taux de conversion pour cette devise
 			$sql = "SELECT rate";
 			$sql.= " FROM ".MAIN_DB_PREFIX."currency_rate cr";
@@ -419,12 +422,12 @@ class InterfaceMultideviseWorkflow
 				$rate = $res->rate;
 			}
 			*/
-			
+
 			dol_include_once("/compta/facture/class/facture.class.php");
-			
+
 			$fact = new Facture($this->db);
 			$fact->fetch($_REQUEST['facid']);
-			
+
 			// On récupère la devise de la facture
 			$sql = "SELECT devise_code";
 			$sql.= " FROM ".MAIN_DB_PREFIX."facture";
@@ -432,13 +435,13 @@ class InterfaceMultideviseWorkflow
 			$resql = $this->db->query($sql);
 			$res = $this->db->fetch_object($resql);
 			$monnaie_facture = $res->devise_code;
-			
+
 			// On récupère la monnaie du dolibarr
 			$monnaie_dolibarr = $conf->global->MAIN_MONNAIE;
-			
+
 			// Si la monnaie est différente de celle du dolibarr
 			if($monnaie_dolibarr !== $monnaie_facture) {
-			
+
 				$montant_total_acompte = 0;
 				foreach($fact->lines as $line) {
 					$sql = "SELECT devise_mt_ligne";
@@ -451,19 +454,19 @@ class InterfaceMultideviseWorkflow
 					}
 					$montant_total_acompte += $devise_mt_ligne;
 				}
-				
+
 				/*$sql = " UPDATE ".MAIN_DB_PREFIX."societe_remise_except";
 				$sql.= " SET amount_ht = ".$montant_total_acompte;
 				$sql.= ", amount_ttc = ".$montant_total_acompte;
 				$sql.= " WHERE rowid = ".$object->id;
 				$resql = $this->db->query($sql);
-				
+
 				$this->db->commit();*/
-				
+
 			}
-			
+
 		}
-		
+
 		return 1;
 	}
 }

@@ -1,25 +1,25 @@
 <?php
 class ActionsMultidevise
-{ 
-     /** Overloading the doActions function : replacing the parent's function with the one below 
-      *  @param      parameters  meta datas of the hook (context, etc...) 
-      *  @param      object             the object you want to process (an invoice if you are in invoice module, a propale in propale's module, etc...) 
-      *  @param      action             current action (if set). Generally create or edit or null 
-      *  @return       void 
-      */ 
-    
+{
+     /** Overloading the doActions function : replacing the parent's function with the one below
+      *  @param      parameters  meta datas of the hook (context, etc...)
+      *  @param      object             the object you want to process (an invoice if you are in invoice module, a propale in propale's module, etc...)
+      *  @param      action             current action (if set). Generally create or edit or null
+      *  @return       void
+      */
+
     function beforePDFCreation($parameters, &$object, &$action, $hookmanager) {
     	global $conf;
-		
+
 		// pour implementation dans Dolibarr 3.7
 		if (in_array('pdfgeneration',explode(':',$parameters['context']))
 			&& !in_array('expeditioncard',explode(':',$parameters['context']))
 			&& !in_array('contractcard',explode(':',$parameters['context']))) {
-			
+
 			define('INC_FROM_DOLIBARR',true);
 			dol_include_once('/multidevise/config.php');
 			dol_include_once('/multidevise/class/multidevise.class.php');
-			
+
 			if(isset($parameters['object'])){
 				if(!$conf->global->MULTIDEVISE_DONT_USE_ON_SELL && ($object->element == 'propal' || $object->element == 'facture' || $object->element == 'commande')){
 					TMultidevise::preparePDF($parameters['object']);
@@ -32,9 +32,9 @@ class ActionsMultidevise
 				TMultidevise::preparePDF($object);
 			}
 		}
-		
+
     }
-	
+
 	function afterPDFCreation($parameters, &$object, &$action, $hookmanager) {
     	global $conf;
 		// pour implementation dans Dolibarr 3.7
@@ -43,24 +43,24 @@ class ActionsMultidevise
 			$parameters['object']->fetch($parameters['object']->id);
 			$conf->currency = $parameters['object']->origin_currency;
 		}
-		
+
     }
-	
-    
-    function doActions($parameters, &$object, &$action, $hookmanager) 
+
+
+    function doActions($parameters, &$object, &$action, $hookmanager)
     {
     	global $langs, $db, $conf, $user;
 
 		if($action == 'setinvoicedate' || $action == 'setdate' || $action == 'setdatef'){
-			
+
 			define('INC_FROM_DOLIBARR',true);
 			dol_include_once('/multidevise/config.php');
 			dol_include_once('/multidevise/class/multidevise.class.php');
 
-			if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE && 
+			if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE &&
 				(isset($_REQUEST['invoicedate']) || isset($_REQUEST['re']) || isset($_REQUEST['order_']) || isset($_REQUEST['datef']))){
 
-				if($_REQUEST['re']){	
+				if($_REQUEST['re']){
 					$object->date = dol_mktime(12, 0, 0, $_REQUEST ['remonth'], $_REQUEST ['reday'], $_REQUEST ['reyear']);
 				}
 				elseif($_REQUEST['invoicedate']){
@@ -73,8 +73,8 @@ class ActionsMultidevise
 					$object->date = dol_mktime(12, 0, 0, $_REQUEST ['datefmonth'], $_REQUEST ['datefday'], $_REQUEST ['datefyear']);
 				}
 
-				$sql = "SELECT c.code FROM ".MAIN_DB_PREFIX."currency as c 
-						LEFT JOIN ".MAIN_DB_PREFIX.$object->table_element." as f ON (f.fk_devise = c.rowid) 
+				$sql = "SELECT c.code FROM ".MAIN_DB_PREFIX."currency as c
+						LEFT JOIN ".MAIN_DB_PREFIX.$object->table_element." as f ON (f.fk_devise = c.rowid)
 						WHERE f.rowid = ".$object->id;
 				$resql = $db->query($sql);
 				$res = $db->fetch_object($resql);
@@ -82,13 +82,13 @@ class ActionsMultidevise
 
 				TMultidevise::_setCurrencyRate($db, $object, $currency);
 			}
-			
+
 		}
 
         return 0;
     }
-    
-    function formObjectOptions($parameters, &$object, &$action, $hookmanager) 
+
+    function formObjectOptions($parameters, &$object, &$action, $hookmanager)
     {
 
     	global $db, $user,$conf, $langs;
@@ -99,32 +99,32 @@ class ActionsMultidevise
 		dol_include_once("/multidevise/config.php");
 		dol_include_once("/multidevise/class/multidevise.class.php");
 		$langs->load('multidevise@multidevise');
-		
+
 		if (in_array('thirdpartycard',explode(':',$parameters['context']))
 			|| ((in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
 			|| in_array('invoicecard',explode(':',$parameters['context']))) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
-			
+
 	    	/* ***********************
 			 * EDIT
 			 * ***********************/
 	    	if($action == "edit" || $action == "create"){
-	    		
+
 				$cur = $conf->currency;
 				$id = (!empty($_REQUEST['socid'])) ? $_REQUEST['socid'] : 0 ;
 
 				//cas ou le document créer à une origine
 				if((isset($_REQUEST['origin']) && isset($_REQUEST['originid']))
 					|| ($object->origin && $object->origin_id )){
-					
+
 					$origin = ($_REQUEST['origin']) ? $_REQUEST['origin'] : $object->origin;
-					
+
 					if($origin == 'order_supplier') $origin = "commande_fournisseur";
-					
+
 					$origin_id = ($_REQUEST['originid']) ? $_REQUEST['originid'] : $object->origin_id;
-					
+
 					$sql = 'SELECT fk_devise, devise_code';
 	    			$sql .= ' FROM '.MAIN_DB_PREFIX.$origin.' WHERE rowid = '.$origin_id;
 				}
@@ -139,7 +139,7 @@ class ActionsMultidevise
 						$cur = $res->devise_code;
 					}
 				}
-				
+
 				$form=new Form($db);
 				print '<tr><td>'.$langs->trans('Currency').'</td><td colspan="3">';
 				print $form->select_currency($cur,"currency");
@@ -147,17 +147,17 @@ class ActionsMultidevise
 
 	    	}
 			else{
-				
+
 				/* ***********************
 				 * VIEW
 				 * ***********************/
-				
+
 				if(__get('action')==='save_currency') {
 
 					TMultidevise::updateCurrencyRate($db, $object,__get('currency'),__get('taux_devise',0));
 				}
-				
-				
+
+
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
@@ -180,7 +180,7 @@ class ActionsMultidevise
 					});
 				</script>
 				<?php
-				
+
 				$sql = 'SELECT fk_devise, devise_code';
 	    		$sql .= ($object->table_element != "societe") ? ', devise_taux, devise_mt_total' : "";
 	    		$sql .= ' FROM '.MAIN_DB_PREFIX.$object->table_element.' WHERE rowid = '.$object->id;
@@ -189,7 +189,7 @@ class ActionsMultidevise
 				$res = $db->fetch_object($resql);
 
 				if(($res->fk_devise && !is_null($res->devise_code)) || !empty($conf->global->MULTIDEVISE_ALLOW_UPDATE_FK_DEVISE_ON_OLD_DOC)){
-					
+
 					print '
 					<form name="saveCurrecy" action="#" />
 					<input name="action" value="save_currency" type="hidden" />
@@ -197,16 +197,16 @@ class ActionsMultidevise
 					<input name="id" type="hidden" value="'.__get('id').'" />
 					<input name="socid" type="hidden" value="'.__get('socid').'" />
 					<tr><td>'.$langs->trans('Currency');
-					
+
 					if($action!='edit_currency') {
 						print '<a style="float:right;" href="?id='.__get('id').'&facid='.__get('facid').'&socid='.__get('socid').'&action=edit_currency">'.img_picto('', 'edit').'</a>';
 					}
 					print '</td><td colspan="3">';
-					
+
 					if($action=='edit_currency') {
 						$form=new Form($db);
 						echo $form->select_currency($res->devise_code,"currency");
-						
+
 					}
 					else {
 						print currency_name($res->devise_code,1);
@@ -218,29 +218,29 @@ class ActionsMultidevise
 						print '<tr><td>'.$langs->trans('CurrencyRate').'</td>';
 						if($action=='edit_currency') {
 							print '<td colspan="3"><input type="text" name="taux_devise" id="taux_devise" value="'.__val($res->devise_taux,1).'" size="10" />
-							
+
 							<input type="submit" value="'.$langs->trans('Modify').'" />
-							</td>';	
+							</td>';
 						}
 						else {
-							print '<td colspan="3"><span title="'.$res->devise_taux.'">'.price(__val($res->devise_taux,1),0,'',1,$conf->global->MAIN_MAX_DECIMALS_UNIT,$conf->global->MAIN_MAX_DECIMALS_UNIT).'</span><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></td>';	
+							print '<td colspan="3"><span title="'.$res->devise_taux.'">'.price(__val($res->devise_taux,1),0,'',1,$conf->global->MAIN_MAX_DECIMALS_UNIT,$conf->global->MAIN_MAX_DECIMALS_UNIT).'</span><input type="hidden" id="taux_devise" value="'.__val($res->devise_taux,1).'" /></td>';
 						}
 						print '</tr>';
 						//pre($object);exit;
 						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3">'.price($res->devise_mt_total,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
-						
+
 						print '<tr><td>'.$langs->trans('CurrencyVAT').'</td><td colspan="3">'.price($object->total_tva*$res->devise_taux,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
-						
+
 						print '<tr><td>'.$langs->trans('CurrencyTotalVAT').'</td><td colspan="3">'.price($res->devise_mt_total + ($object->total_tva*$res->devise_taux),0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT).'</td></tr>';
 					}
 					elseif($action=='edit_currency'){
 						print '<input type="submit" value="'.$langs->trans('Modify').'" />';
 					}
 
-					print '</form>';					
+					print '</form>';
 				}
 				else{
-					
+
 					print '<tr><td>'.$langs->trans('Currency').'</td><td colspan="3">';
 					print currency_name($conf->currency,1);
 					print ' ('.$conf->currency.')</td></tr>';
@@ -249,7 +249,7 @@ class ActionsMultidevise
 						print '<tr><td>'.$langs->trans('CurrencyRate').'</td><td colspan="3">1,0<input type="hidden" id="taux_devise" value="1" /></td></tr>';
 						print '<tr><td>'.$langs->trans('CurrencyTotal').'</td><td colspan="3"></td></tr>';
 					}
-					
+
 				}
 				/* *********************************************************************************
 				 * Ajout d'attribut aux lignes et colonne pour accessibilité plus facile avec jquery
@@ -258,10 +258,10 @@ class ActionsMultidevise
 				<script type="text/javascript">
 					$(document).ready(function(){
 						console.log('formObjectOptions::columnsAndLines');
-						
+
 						$('#tablelines tr').each(function(iLigne) {
 								if(!$(this).attr('numeroLigne')) {
-										$(this).attr('numeroLigne', iLigne);	
+										$(this).attr('numeroLigne', iLigne);
 								}
 
 								var iColonne=0;
@@ -269,11 +269,11 @@ class ActionsMultidevise
 								$(this).find('>td').each(function() {
 
 									if(!$(this).attr('numeroColonne')) {
-										$(this).attr('numeroColonne', iColonne);	
+										$(this).attr('numeroColonne', iColonne);
 									}
 
 									if(!$(this).attr('colspan')) {
-										iColonne++;	
+										iColonne++;
 									}
 									else {
 										iColonne+=parseInt($(this).attr('colspan'));
@@ -282,14 +282,14 @@ class ActionsMultidevise
 								});
 
 								if($('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').length) {
-									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').after('<td align="right" numeroColonne="2b"></td>');	
+									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=2]').after('<td align="right" numeroColonne="2b"></td>');
 								}
 								else {
 									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=0]').after('<td align="right" numeroColonne="2c"></td>');
 								}
 
 								if($('tr[numeroLigne='+iLigne+'] td[numeroColonne=5]').length) {
-									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=5]').after('<td align="right" numeroColonne="5b"></td>');	
+									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=5]').after('<td align="right" numeroColonne="5b"></td>');
 								}
 								else {
 									$('tr[numeroLigne='+iLigne+'] td[numeroColonne=0]').after('<td align="right" numeroColonne="5c"></td>');
@@ -304,37 +304,37 @@ class ActionsMultidevise
 
 		         		// Ajout des prix devisé sur les lignes
 	         			<?php
-	         			
+
 	         			if(!empty($object->lines)) {
-	         				
+
 		         			foreach($object->lines as $line){
-								
+
 								if($line->rowid)
 									$line->id = $line->rowid;
-								
+
 								$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
 								$res = $db->fetch_object($resql);
-								
+
 								if($line->product_type!=9) {
-									
+
 			         				echo "$('#row-".$line->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,$conf->global->MAIN_MAX_DECIMALS_UNIT,$conf->global->MAIN_MAX_DECIMALS_UNIT)."');";
 									echo "$('#row-".$line->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT)."');";
 								}
-								
+
 								if($line->error != '') echo "alert('".$line->error."');";
 		         			}
-							
+
 	         			}
-	         			
+
 						?>
 					});
-			    </script>	
+			    </script>
 		    	<?php
 			}
 		}
 
 		elseif(in_array('viewpaiementcard',explode(':',$parameters['context'])) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL)){
-			
+
 			?>
 			<script type="text/javascript">
 				$(document).ready(function(){
@@ -343,15 +343,15 @@ class ActionsMultidevise
 							case 0:
 								$(element).after('<td align="right"><?php echo $langs->trans('mulicurrency_currency'); ?></td>');
 								break;
-	
+
 							case 2:
 								$(element).after('<td align="right"><?php echo $langs->trans('mulicurrency_payment_amount_currency'); ?></td>');
 								break;
-							
+
 							case 3:
 								$(element).after('<td align="right"><?php echo $langs->trans('mulicurrency_already_paid_currency'); ?></td>');
 								break;
-								
+
 							case 4:
 								$(element).after('<td align="right"><?php echo $langs->trans('mulicurrency_rest_to_pay_currency'); ?></td>');
 								break;
@@ -361,7 +361,7 @@ class ActionsMultidevise
 			</script>
 			<?php
 		}
-		
+
 		elseif(in_array('pricesuppliercard',explode(':',$parameters['context']))){
 			//pre($object); exit;
 			?>
@@ -372,22 +372,22 @@ class ActionsMultidevise
 			</script>
 			<?php
 		}
-		
+
 		return 0;
 	}
-	
+
 	/* *********************************************************
 	 * Hook uniquement disponible pour les FACTURES fournisseur
-	 * *********************************************************/ 
+	 * *********************************************************/
 	function formCreateProductSupplierOptions ($parameters, &$object, &$action, $hookmanager){
-		
+
 		global $db,$user,$conf;
 		if (in_array('invoicesuppliercard',explode(':',$parameters['context']))){
-			
+
 			/*echo '<pre>';
 			print_r($object);
 			echo '</pre>';exit;*/
-			
+
 			if($action != "create"){
 				?>
 				<script type="text/javascript">
@@ -396,7 +396,7 @@ class ActionsMultidevise
 						$('#np_desc').parent().parent().find(' > td[numeroColonne=2c]').after('<td></td>');
 		         		//$('#np_desc').parent().parent().find(' > td[numeroColonne=2c]').html('<input type="text" value="" name="np_pu_devise" size="6">');
 						$('#dp_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="dp_pu_devise" size="6">');
-						
+
 						var taux = $('#taux_devise').val();
 						$('#idprodfournprice').change( function(){
 							$.ajax({
@@ -416,46 +416,46 @@ class ActionsMultidevise
 								}*/
 							});
 						});
-						
+
 						$('input[name=amount]').keyup(function(){
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
 							$('input[name=dp_pu_devise]').val(mt);
 						});
-						
+
 						$('input[name=dp_pu_devise]').keyup(function(){
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
 							$('input[name=amount]').val(mt);
 						});
-						
+
 			     	});
-			    </script>	
+			    </script>
 		    	<?php
 	    	}
 	    }
 		return 0;
 	}
-	
+
 	/* *********************************************************
 	 * Hook uniquement disponible pour les COMMANDES fournisseur
 	 * *********************************************************/
 	function formCreateProductOptions($parameters, &$object, &$action, $hookmanager){
-		
+
 		global $db,$user,$conf;
 		if (in_array('ordersuppliercard',explode(':',$parameters['context']))){
-			
+
 			/*echo '<pre>';
 			print_r($object);
 			echo '</pre>';exit;*/
-			
+
 			if($action != "create"){
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
 		         		//$('#np_desc').parent().parent().find(' > td[numeroColonne=2c]').html('<input type="text" value="" name="np_pu_devise" size="6">');
 						$('#dp_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="dp_pu_devise" size="6">');
-						
+
 						var taux = $('#taux_devise').val();
-						
+
 						$('#idprodfournprice').change( function(){
 							$.ajax({
 								type: "POST"
@@ -475,26 +475,26 @@ class ActionsMultidevise
 										else
 											print 'price = select.price * taux.replace(",",".");';
 										?>
-										
+
 										price = price / $('#qty_predef').val();
-										
+
 										/*$("input[name=np_pu_devise]").val(price);
 										$("input[name=np_pu_devise]").attr('value',price);*/
 									}
 								});
 						});
-						
+
 						$('input[name=pu]').keyup(function(){
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
 							$('input[name=dp_pu_devise]').val(mt);
 						});
-						
+
 						$('input[name=dp_pu_devise]').keyup(function(){
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
 							$('input[name=pu]').val(mt);
 						});
 			     	});
-			    </script>	
+			    </script>
 		    	<?php
 	    	}
 	    }
@@ -502,25 +502,25 @@ class ActionsMultidevise
 	}
 
 	function formAddObjectLine($parameters, &$object, &$action, $hookmanager){
-		
+
 		/*echo "<pre>";
 		print_r($parameters);
 		echo "</pre>";exit;*/
-		
+
 		global $db,$user,$conf;
 		if (((in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
 			|| in_array('invoicecard',explode(':',$parameters['context']))) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
-			
+
 			if($action != "create"){
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
 		         		//$('#np_desc').parent().parent().find(' > td[numeroColonne=2c]').html('<input type="text" value="" name="np_pu_devise" size="6">');
 						$('#dp_desc').parent().parent().find(' > td[numeroColonne=2b]').html('<input type="text" value="" name="dp_pu_devise" size="6">');
-						
+
 						var taux = $('#taux_devise').val();
 						$('#idprod').change( function(){
 							$.ajax({
@@ -539,54 +539,54 @@ class ActionsMultidevise
 									}*/
 								});
 						});
-						
+
 						$('input[name=price_ht]').keyup(function(){
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") * taux);
 							$('input[name=dp_pu_devise]').val(mt);
 						});
-						
+
 						$('input[name=dp_pu_devise]').keyup(function(){
 							var mt = parseFloat($(this).val().replace(",",".").replace(" ","") / taux);
 							$('input[name=price_ht]').val(mt);
 						});
-						
+
 						$('input#prod_entry_mode_predef, select#idprod, select#select_type').change(function() {
 							if($('input#prod_entry_mode_predef').is(':checked')) {
-								
+
 								$('input[name=dp_pu_devise]').hide();
-								
+
 							}
 							else{
 								$('input[name=dp_pu_devise]').show();
 							}
-							
+
 						});
 			     	});
-			    </script>	
+			    </script>
 		    	<?php
 	    	}
 	    }
-	    
+
 		return 0;
 	}
-	
-    function formEditProductOptions($parameters, &$object, &$action, $hookmanager) 
+
+    function formEditProductOptions($parameters, &$object, &$action, $hookmanager)
     {
-		
+
     	global $db, $user,$conf;
 		include_once(DOL_DOCUMENT_ROOT."/societe/class/societe.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/core/lib/company.lib.php");
-		
+
 		/*echo '<pre>';
 		print_r($_REQUEST);
 		echo '</pre>'; exit;*/
-		
+
 		if (((in_array('propalcard',explode(':',$parameters['context']))
 			|| in_array('ordercard',explode(':',$parameters['context']))
 			|| in_array('invoicecard',explode(':',$parameters['context']))) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL))
 			|| in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
-			
+
 			if($action == "editline" || $action == "edit_line"){
 				?>
 				<script type="text/javascript">
@@ -612,12 +612,12 @@ class ActionsMultidevise
 
 						<?php
 						foreach($object->lines as $k=>$line){
-							
+
 							$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$object->table_element_line." WHERE rowid = ".$line->id);
 							$res = $db->fetch_object($resql);
-							
+
 							if($line->product_type != 9 && $line->id == (($_REQUEST['lineid']) ? $_REQUEST['lineid'] : $_REQUEST['rowid'])) {
-									
+
 								if(in_array('invoicesuppliercard',explode(':',$parameters['context'])) || in_array('ordersuppliercard',explode(':',$parameters['context']))){
 									echo "$('input[value=".$line->id."]').parent().parent().find(' > td[numeroColonne=2b]').html('<input type=\"text\" value=\"".price2num($res->devise_pu,$conf->global->MAIN_MAX_DECIMALS_UNIT)."\" name=\"dp_pu_devise\" size=\"6\">');";
 								}
@@ -627,16 +627,16 @@ class ActionsMultidevise
 								}
 
 							}
-							
+
 							if($line->error != '') echo "alert('".$line->error."');";
 	         			}
 				        ?>
-				        
+
 					});
 				</script>
 				<?php
 			}
-			
+
 			$this->resprints='';
 		}
         return 0;
@@ -647,34 +647,34 @@ class ActionsMultidevise
 	}
 
 	function printObjectLine ($parameters, &$object, &$action, $hookmanager){
-		
+
 		global $db, $user, $conf, $langs;
-	
+
 		/*echo '<pre>';
 		print_r($object);
 		echo '</pre>'; exit;*/
-		
+
 		include_once(DOL_DOCUMENT_ROOT."/compta/facture/class/facture.class.php");
 		include_once(DOL_DOCUMENT_ROOT."/fourn/class/fournisseur.facture.class.php");
-		
+
 		define('INC_FROM_DOLIBARR',true);
 		dol_include_once("/multidevise/config.php");
 		dol_include_once("/multidevise/class/multidevise.class.php");
 		/*
 		 * Création de règlements
-		 * 
+		 *
 		 */
-		
+
 		if((in_array('paiementcard',explode(':',$parameters['context'])) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL)) || in_array('paymentsupplier',explode(':',$parameters['context']))){
 			$langs->load('multidevise@multidevise');
-			
+
 			if(in_array('paiementcard',explode(':',$parameters['context']))){
 				$context = 'paiementcard';
 			}
 			else{
 				$context = 'paymentsupplier';
 			}
-			
+
 			if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
 				//Récupération du taux en date de la facture
 				?>
@@ -682,7 +682,7 @@ class ActionsMultidevise
 					$(document).ready(function(){
 						$("#reyear").attr('onchange','_changedate();');
 					});
-					
+
 					function _changedate(){
 						$.ajax({
 							type: "POST"
@@ -707,14 +707,14 @@ class ActionsMultidevise
 				</script>
 				<?php
 			}
-			
-			
+
+
 			if(in_array('paiementcard',explode(':',$parameters['context']))){
-				
+
 				if(!defined('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE')) { // à cause du manque d'un hook dans le 3.6
 					define('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE',1);
-				
-				
+
+
 				?>
 				<script type="text/javascript">
 					$(document).ready(function(){
@@ -724,7 +724,7 @@ class ActionsMultidevise
 						$('.liste_titre').children().eq(6).after('<td align="right" ><?php echo $langs->transnoentitiesnoconv('mulicurrency_currency_received'); ?></td>');
 						$('.liste_titre').children().eq(7).after('<td align="right" ><?php echo $langs->transnoentitiesnoconv('mulicurrency_rest_to_cash_currency'); ?></td>');
 						$('.liste_titre > td:last-child').before('<td align="right" ><?php echo $langs->transnoentitiesnoconv('mulicurrency_paid_amount_currency'); ?></td>');
-						
+
 						$('tr[class=impair], tr[class=pair]').each(function(){
 							$(this).children().eq(1).after('<td align="right" class="devise"></td>');
 							$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
@@ -733,7 +733,7 @@ class ActionsMultidevise
 							$(this).children().eq(7).after('<td align="right" class="reste_devise"></td>');
 							$(this).children().eq(10).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(10).children().last().attr('name')+']" size="8"></td>');
 						});
-						
+
 						$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
 						$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
 						$('tr[class=liste_total]').children().eq(3).after('<td align="right" class="total_ttc_devise"></td>');
@@ -743,13 +743,13 @@ class ActionsMultidevise
 					});
 			    </script>
 		    	<?php
-		    	
+
 		    	}
-			
-				
+
+
 				$facture = new Facture($db);
 				$facture->fetch($object->facid);
-			
+
 				//Récupération des règlements déjà effectué
 				$resql = $db->query('SELECT SUM(pf.devise_mt_paiement) as total_paiement
 									 FROM '.MAIN_DB_PREFIX.'paiement_facture as pf
@@ -775,10 +775,10 @@ class ActionsMultidevise
 				}
 			}
 			else{
-				
+
 				if(!defined('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE')) { // à cause du manque d'un hook dans le 3.6
 					define('MULTIDEVISE_ALREADY_INSERT_PAIEMENT_TITLE',1);
-				
+
 					?>
 					<script type="text/javascript">
 						$(document).ready(function(){
@@ -788,7 +788,7 @@ class ActionsMultidevise
 							$('.liste_titre').children().eq(6).after('<td align="right" >Reçu devise</td>');
 							$('.liste_titre').children().eq(8).after('<td align="right" >Reste à encaisser devise</td>');
 							$('.liste_titre > td:last-child').after('<td align="right" >Montant règlement devise</td>');
-							
+
 							$('tr[class=impair], tr[class=pair]').each(function(){
 								$(this).children().eq(1).after('<td align="right" class="devise"></td>');
 								$(this).children().eq(2).after('<td align="right" class="taux_devise"></td>');
@@ -797,7 +797,7 @@ class ActionsMultidevise
 								$(this).children().eq(8).after('<td align="right" class="reste_devise"></td>');
 								$(this).children().eq(11).after('<td align="right" class="montant_devise"><input type="text" value="" name="devise['+$(this).children().eq(11).children().last().attr('name')+']" size="8"></td>');
 							});
-							
+
 							$('tr[class=liste_total]').children().eq(0).after('<td align="right" class="total_devise"></td>');
 							$('tr[class=liste_total]').children().eq(1).after('<td align="right" class="total_taux_devise"></td>');
 							$('tr[class=liste_total]').children().eq(2).after('<td align="right" class="total_ttc_devise"></td>');
@@ -808,11 +808,11 @@ class ActionsMultidevise
 				    </script>
 			    	<?php
 				}
-				
-				
+
+
 				$facture = new FactureFournisseur($db);
 				$facture->fetch($object->facid);
-				
+
 				//Récupération des règlements déjà effectué
 				$resql = $db->query('SELECT SUM(pf.devise_mt_paiement) as total_paiement
 									 FROM '.MAIN_DB_PREFIX.'paiementfourn_facturefourn as pf
@@ -833,13 +833,13 @@ class ActionsMultidevise
 				$champ = "amount";
 				$champ2 = "remain";
 			}
-			
+
 			//Récupération du taux en date de règlement si conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE
 			$devise_taux = $res->taux;
 			if($conf->global->MULTIDEVISE_USE_RATE_ON_INVOICE_DATE){
 				$devise_taux = TMultidevise::_setCurrencyRate($db, $facture, $res->code,1);
 			}
-			
+
 			if($res->code){
 				?>
 				<script type="text/javascript">
@@ -873,9 +873,9 @@ class ActionsMultidevise
 								echo "$('input[name=\"devise[".$id_input."]\"]').parent().append('<input type=\"hidden\" value=\"".price2num($mt_devise,'MT')."\" name=\"devise[".$id_input."]\" />');";
 							}
 						}
-						
+
 						?>
-						
+
 						ligne = $('input[name=<?php echo $champ."_".$facture->id; ?>]').parent().parent();
 						$(ligne).find('> td[class=devise]').append('<?php echo $res->name.' ('.$res->code.')'; ?>');
 						$(ligne).find('> td[class=taux_devise]').append('<?php echo price($devise_taux); ?>');
@@ -889,21 +889,21 @@ class ActionsMultidevise
 							$('td[class=total_recu_devise]').html(number_format($('td[class=total_recu_devise]').val() + <?php echo price2num($total_recu_devise,'MT'); ?>,'price'));
 
 							total_reste_devise = number_format($('td[class=total_reste_devise]').html(),'price2num');
-							
+
 							$('td[class=total_reste_devise]').html(number_format(total_reste_devise + <?php echo price2num(($facture->total_ttc * $devise_taux) - $total_recu_devise,'MT'); ?>,'price'));
 						}
-						
+
 						//Modification du montant règlement devise
 						$("#payment_form").find("input[name*=\"devise[<?php echo $champ."_".$facture->id; ?>\"]").blur(function() {
 							$('.button').hide();
-							
+
 							total = 0;
-							
+
 							$("#payment_form").find("input[name*=\"devise[<?php echo $champ."_".$facture->id; ?>\"]").each(function(){
 								if( $(this).val() != "") total = total + number_format($(this).val(),'price2num');
 							});
-							
-							if($('td[class=total_reste_devise]').length > 0){ 
+
+							if($('td[class=total_reste_devise]').length > 0){
 								$('td[class=total_montant_devise]').empty();
 								$('td[class=total_montant_devise]').html(number_format(total,'price'));
 							}
@@ -912,21 +912,21 @@ class ActionsMultidevise
 							mt_devise = mt_devise / parseFloat($(ligne).find('> td[class=taux_devise]').find('> input[name=taux_devise]').val());
 
 							$(this).parent().prev().find('> input[type=text]').val(number_format(mt_devise,'price'));
-							
+
 							$('.button').show();
 						});
-						
-						
+
+
 						//Modification du montant règlement
 						$("#payment_form").find("input[name*=\"<?php echo $champ."_".$facture->id; ?>\"]").blur(function() {
-							
+
 							$('.button').hide();
-							
+
 							mt_rglt = number_format($(this).val(),'price2num');
 							mt_rglt = mt_rglt * $(ligne).find('> td[class=taux_devise]').find('> input[name=taux_devise]').val();
-							
+
 							$(this).parent().next().find('> input[type=text]').val(number_format(mt_rglt,'price'));
-							
+
 							$('.button').show();
 						});
 					});
@@ -937,8 +937,8 @@ class ActionsMultidevise
 
 		/*
 		 * Fiche règlement
-		 * 
-		 */	
+		 *
+		 */
 		elseif(in_array('viewpaiementcard',explode(':',$parameters['context'])) && empty($conf->global->MULTIDEVISE_DONT_USE_ON_SELL)){
 
 			//Cas facture fournisseur
@@ -950,7 +950,7 @@ class ActionsMultidevise
 
 				$facture = new FactureFournisseur($db);
 				$facture->fetch($object->rowid);
-				
+
 				$object->facid = $object->rowid;
 			}
 			else{ //cas facture client
@@ -964,7 +964,7 @@ class ActionsMultidevise
 			$res = $db->fetch_object($resql);
 			?>
 			<script type="text/javascript">
-			
+
 				$('#row-<?php echo $object->facid; ?>').find('>td').each(function(i,element){
 					switch (i){
 						case 0:
@@ -974,7 +974,7 @@ class ActionsMultidevise
 						case 2:
 							$(element).after('<td align="right"><?php echo price(round($res->devise_mt_total + ($facture->total_tva * $res->devise_taux),$conf->global->MAIN_MAX_DECIMALS_TOT),'MT');?></td>');
 							break;
-						
+
 						case 3:
 							$(element).after('<td align="right"><?php echo $res->devise_mt_paiement;?></td>');
 							break;
@@ -990,35 +990,35 @@ class ActionsMultidevise
 
 		/*
 		 * Affichage des ligne commande et facture fournisseur
-		 * 
+		 *
 		 */
 		elseif(in_array('ordersuppliercard',explode(':',$parameters['context']))
 			|| in_array('invoicesuppliercard',explode(':',$parameters['context']))){
-					
-				
-			
+
+
+
 			if(DOL_VERSION>3.5) {
-				$idLine = $parameters['line']->id;	
+				$idLine = $parameters['line']->id;
 				$tableElement = $object->table_element_line;
 			}
 			else{
 				$idLine = $object->id;
 				$tableElement = $object->table_element;
 			}
-			
-			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tableElement." 
+
+			$resql = $db->query("SELECT devise_pu, devise_mt_ligne FROM ".MAIN_DB_PREFIX.$tableElement."
 			WHERE rowid = ".$idLine);
 			$res = $db->fetch_object($resql);
-			
+
 			?>
 			<script type="text/javascript">
 			<?php
-			
+
 			if($object->product_type!=9) {
 				echo "$('#row-".$object->id." td[numeroColonne=2b]').html('".price($res->devise_pu,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT)."');";
 				echo "$('#row-".$object->id." td[numeroColonne=5b]').html('".price($res->devise_mt_ligne,0,'',1,$conf->global->MAIN_MAX_DECIMALS_TOT,$conf->global->MAIN_MAX_DECIMALS_TOT)."');";
 			}
-			
+
 			?>
 			</script>
 			<?php
@@ -1026,16 +1026,16 @@ class ActionsMultidevise
 
 		}
 		elseif(in_array('pricesuppliercard',explode(':',$parameters['context']))){
-			
+
 			$id_pdf = __val($parameters['id_pfp'], $object->product_fourn_price_id);
-			
-			$resql = $db->query("SELECT s.devise_code 
+
+			$resql = $db->query("SELECT s.devise_code
 								 FROM ".MAIN_DB_PREFIX."societe as s
-									LEFT JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON (pfp.fk_soc = s.rowid)								 
+									LEFT JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON (pfp.fk_soc = s.rowid)
 								 WHERE pfp.rowid = ".(int)$id_pdf);
-								 
+
 			$res = $db->fetch_object($resql);
-			
+
 			?>
 			<script type="text/javascript">
 				$(document).ready(function(){
