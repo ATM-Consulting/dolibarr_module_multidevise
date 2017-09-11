@@ -579,8 +579,8 @@ class TMultidevise{
 
 				$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.$element." WHERE rowid = ".(($object->{"fk_".$element})? $object->{"fk_".$element} : $object->id) ;
 
-                $resql = $db->query($sql);
-                $res = $db->fetch_object($resql);
+		                $resql = $db->query($sql);
+                		$res = $db->fetch_object($resql);
 				$devise_taux = __val($res->devise_taux,1);
 				if ($devise_taux == 0) $devise_taux = 1;
 
@@ -620,6 +620,7 @@ class TMultidevise{
 
 				}
 				else{
+
 					$subprice = $object->subprice;
 					$devise_pu = !empty($object->devise_pu) ? $object->devise_pu : $object->subprice * $devise_taux;
 				}
@@ -733,6 +734,7 @@ class TMultidevise{
 				}
 				else
 				{
+
 					if((float) DOL_VERSION < 3.8) {
 						$devise_taux = TMultidevise::getElementCurrency($element,$object,1,'id');
 						$devise_pu = round($object->subprice * $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
@@ -740,6 +742,7 @@ class TMultidevise{
 						$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 					}elseif($action == 'LINEBILL_SUPPLIER_CREATE'){
 						$ligne = new SupplierInvoiceLine($db);
+
 						$ligne->fetch($object->rowid);
 						$object_last = $object;
 						$object = $ligne;
@@ -749,11 +752,13 @@ class TMultidevise{
 						$pu = $dp_pu_devise ? $dp_pu_devise : $object->subprice;
 
 						$devise_pu = round($pu / $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
-						$devise_mt_ligne = $dp_pu_devise * $object->qty;
+						$devise_mt_ligne = $devise_pu * $object->qty;
 						//var_dump($devise_mt_ligne);exit;
-						$object_last->updateline($ligne->rowid, '', $devise_pu, $ligne->tva, 0, 0, $ligne->qty, $ligne->fk_product);
-						$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$dp_pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
-
+						$object_last->updateline($ligne->rowid, $ligne->description, $devise_pu, $ligne->tva_tx, 0, 0, $ligne->qty, $ligne->fk_product);
+						$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$devise_pu.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
+//pre($object,1);
+//var_dump($dp_pu_devise,$pu,$ligne->tva_tx,$devise_pu);
+//exit('la');
 						$object = $object_last;
 					}
 				}
@@ -920,7 +925,11 @@ class TMultidevise{
 			$pu_devise = round($pu_devise,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 			$devise_mt_ligne = $pu_devise * $res->qty;
 
-			if($rateApplication=='PU_DOLIBARR') {
+/*var_dump($object);
+var_dump($pu_devise,$devise_mt_ligne,$tva_devise,$rateApplication);
+exit('la2');
+
+*/			if($rateApplication=='PU_DOLIBARR') {
 
 					$subprice = $pu_devise / $devise_taux;
 					$object->subprice = $subprice;
@@ -950,6 +959,7 @@ class TMultidevise{
 
 						$parent = new FactureFournisseur($db);
 						$parent->fetch($fk_parent);
+//exit('la');
 						$parent->updateline(
 							$id_line,
 					        $object->description,
