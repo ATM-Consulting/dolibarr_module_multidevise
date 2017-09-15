@@ -38,7 +38,7 @@ foreach ($TEntityId as $fk_entity)
 	if (!$resql)
 	{
 		$error++;
-		$TError[] = $db->lasterror();
+		pre($db->lasterror());
 	}
 }
 
@@ -53,7 +53,7 @@ if (!$error)
 	if (!$resql)
 	{
 		$error++;
-		$TError[] = $db->lasterror();
+		pre($db->lasterror());
 	}
 	
 	if (!$error && $db->num_rows($resql) > 0)
@@ -75,7 +75,7 @@ if (!$error)
 			if (!$resql)
 			{
 				$error++;
-				$TError[] = $db->lasterror();
+				pre($db->lasterror());
 			}
 		}
 	}
@@ -90,13 +90,27 @@ $sql = 'UPDATE '.MAIN_DB_PREFIX.'societe s
 $resql = $db->query($sql);
 if (!$resql)
 {
+	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
-}
+	pre($db->lasterror());
+} else echo 'OK<br />';
 
 // TODO update llx_product_price @see TMultideviseProductPrice
 echo 'Update '.MAIN_DB_PREFIX.'product_price step 1...';
-// 1er update pour avoir le bon code devise + fk_multicurrency
+// 1er update pour init la devise code par défaut
+$sql = 'UPDATE '.MAIN_DB_PREFIX.'product_price pp
+	SET pp.devise_code = (SELECT c.value FROM '.MAIN_DB_PREFIX.'const c WHERE c.name = \'MAIN_MONNAIE\' AND c.entity = pp.entity)
+	WHERE pp.devise_code IS NULL';
+$resql = $db->query($sql);
+if (!$resql)
+{
+	echo 'ERROR<br />';
+	$error++;
+	pre($db->lasterror());
+} else echo 'OK<br />';
+
+echo 'Update '.MAIN_DB_PREFIX.'product_price step 2...';
+// 2eme update pour avoir le bon code devise + fk_multicurrency
 $sql = 'UPDATE '.MAIN_DB_PREFIX.'product_price pp
 		INNER JOIN '.MAIN_DB_PREFIX.'multicurrency m ON (m.code = pp.devise_code AND m.entity = pp.entity)
 		SET	 pp.multicurrency_code = pp.devise_code
@@ -104,32 +118,42 @@ $sql = 'UPDATE '.MAIN_DB_PREFIX.'product_price pp
 $resql = $db->query($sql);
 if (!$resql)
 {
+	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
-}
+	pre($db->lasterror());
+} else echo 'OK<br />';
 
-echo 'Update '.MAIN_DB_PREFIX.'product_price step 2...';
-// 2eme update pour s'occuper du prix HT, taux et prix TTC
+echo 'Update '.MAIN_DB_PREFIX.'product_price step 3...';
+// 3eme update pour s'occuper du prix HT, taux et prix TTC
+
+// TODO requête fausse à débug ... :/
 $sql = 'UPDATE '.MAIN_DB_PREFIX.'product_price pp,
 		(
 			SELECT mr.rate
 			FROM llx_multicurrency_rate mr
-			INNER JOIN llx_product_price pp ON (pp.fk_multicurrency = mr.fk_multicurrency)
+			INNER JOIN llx_product_price pp2 ON (pp2.fk_multicurrency = mr.fk_multicurrency)
 			WHERE mr.date_sync >= ALL (
-				SELECT MAX(mr2.date_sync) FROM llx_multicurrency_rate mr2
-				INNER JOIN llx_product_price pp2 ON (pp2.fk_multicurrency = mr2.fk_multicurrency)
+				SELECT MAX(mr2.date_sync)
+				FROM llx_multicurrency_rate mr2
+				INNER JOIN llx_product_price pp3 ON (pp3.fk_multicurrency = mr2.fk_multicurrency)
 			)
 		) t
 
 		SET pp.multicurrency_price = pp.price * t.rate
 			,pp.multicurrency_tx = t.rate
-			,pp.multicurrency_price_ttc = pp.price_ttc * t.rate';
+			,pp.multicurrency_price_ttc = pp.price_ttc * t.rate
+		
+		WHERE pp.fk_multicurrency = t.fk_multicurrency
+';
+
+
 $resql = $db->query($sql);
 if (!$resql)
 {
+	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
-}
+	pre($db->lasterror());
+} else echo 'OK<br />';
 
 
 // TODO update llx_propal @see TMultidevisePropal
@@ -145,9 +169,10 @@ $sql = 'UPDATE '.MAIN_DB_PREFIX.'propal p
 $resql = $db->query($sql);
 if (!$resql)
 {
+	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
-}
+	pre($db->lasterror());
+} else echo 'OK<br />';
 
 // TODO update llx_propaldet @see TMultidevisePropaldet
 echo 'Update '.MAIN_DB_PREFIX.'propaldet...';
@@ -162,9 +187,10 @@ $sql = 'UPDATE '.MAIN_DB_PREFIX.'propaldet pd
 $resql = $db->query($sql);
 if (!$resql)
 {
+	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
-}
+	pre($db->lasterror());
+} else echo 'OK<br />';
 
 
 // TODO update llx_commande @see TMultideviseCommande
@@ -180,9 +206,10 @@ $sql = 'UPDATE '.MAIN_DB_PREFIX.'commande c
 $resql = $db->query($sql);
 if (!$resql)
 {
+	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
-}
+	pre($db->lasterror());
+} else echo 'OK<br />';
 
 // TODO update llx_commandedet @see TMultideviseCommandedet
 echo 'Update '.MAIN_DB_PREFIX.'commandedet...';
@@ -197,9 +224,10 @@ $sql = 'UPDATE '.MAIN_DB_PREFIX.'commandedet cd
 $resql = $db->query($sql);
 if (!$resql)
 {
+	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
-}
+	pre($db->lasterror());
+} else echo 'OK<br />';
 
 
 // TODO update llx_facture @see TMultideviseFacture
@@ -217,7 +245,7 @@ if (!$resql)
 {
 	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
+	pre($db->lasterror());
 } else echo 'OK<br />';
 
 // TODO update llx_facturedet @see TMultideviseFacturedet
@@ -235,7 +263,7 @@ if (!$resql)
 {
 	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
+	pre($db->lasterror());
 } else echo 'OK<br />';
 
 
@@ -254,7 +282,7 @@ if (!$resql)
 {
 	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
+	pre($db->lasterror());
 } else echo 'OK<br />';
 
 // TODO update llx_commande_fournisseurdet @see TMultideviseCommandeFournisseurdet
@@ -272,7 +300,7 @@ if (!$resql)
 {
 	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
+	pre($db->lasterror());
 } else echo 'OK<br />';
 
 
@@ -291,7 +319,7 @@ if (!$resql)
 {
 	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
+	pre($db->lasterror());
 } else echo 'OK<br />';
 
 // TODO update llx_facture_fourn_det @see TMultideviseFactureFournisseurdet
@@ -302,14 +330,14 @@ $sql = 'UPDATE '.MAIN_DB_PREFIX.'facture_fourn_det ffd
 			,ffd.multicurrency_code = ff.multicurrency_code
 			,ffd.multicurrency_subprice = ffd.devise_pu
 			,ffd.multicurrency_total_ht = ffd.devise_mt_ligne
-			,ffd.multicurrency_total_tva = ffd.total_tva * ff.multicurrency_tx
+			,ffd.multicurrency_total_tva = ffd.tva * ff.multicurrency_tx
 			,ffd.multicurrency_total_ttc = ffd.total_ttc * ff.multicurrency_tx';
 $resql = $db->query($sql);
 if (!$resql)
 {
 	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
+	pre($db->lasterror());
 } else echo 'OK<br />';
 
 
@@ -321,7 +349,7 @@ if (!$resql)
 {
 	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
+	pre($db->lasterror());
 } else echo 'OK<br />';
 
 
@@ -333,20 +361,19 @@ if (!$resql)
 {
 	echo 'ERROR<br />';
 	$error++;
-	$TError[] = $db->lasterror();
+	pre($db->lasterror());
 } else echo 'OK<br />';
 
 
 if (!$error)
 {
-	$db->commit();
+	$db->rollback();
 	echo '<b>COMMIT</b><br />';
 }
 else
 {
 	$db->rollback();
 	echo '<b>ROLLBACK</b><br />';
-	pre($TError, true);
 }
 
 
