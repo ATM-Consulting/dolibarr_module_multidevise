@@ -264,7 +264,6 @@ $sql = 'UPDATE '.MAIN_DB_PREFIX.'commande_fournisseur cf
 		SET cf.devise_code = (SELECT m.code FROM '.MAIN_DB_PREFIX.'multicurrency m INNER JOIN '.MAIN_DB_PREFIX.'multicurrency_rate mr ON (mr.fk_multicurrency = m.rowid AND mr.rate = 1) WHERE m.entity = cf.entity LIMIT 1)
 			,cf.devise_taux = 1
 		WHERE cf.devise_code IS NULL';
-echo $sql;exit;
 $resql = $db->query($sql);
 if (!$resql)
 {
