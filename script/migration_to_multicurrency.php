@@ -295,7 +295,22 @@ if (!$resql)
 
 
 // TODO update llx_facture_fourn @see TMultideviseFactureFournisseur
-echo 'Update '.MAIN_DB_PREFIX.'facture_fourn...';
+// Setp 1 : MAJ des devise_code et devise_taux qui sont à NULL
+echo 'Update '.MAIN_DB_PREFIX.'facture_fourn setp 1...';
+$sql = 'UPDATE '.MAIN_DB_PREFIX.'facture_fourn ff
+		SET ff.devise_code = (SELECT m.code FROM '.MAIN_DB_PREFIX.'multicurrency m INNER JOIN '.MAIN_DB_PREFIX.'multicurrency_rate mr ON (mr.fk_multicurrency = m.rowid AND mr.rate = 1) WHERE m.entity = ff.entity LIMIT 1)
+			,ff.devise_taux = 1
+		WHERE ff.devise_code IS NULL';
+$resql = $db->query($sql);
+if (!$resql)
+{
+	echo 'ERROR<br />';
+	$error++;
+	pre($db->lasterror());
+} else echo 'OK<br />';
+
+echo 'Update '.MAIN_DB_PREFIX.'facture_fourn setp 2...';
+// Setp 2 : MAJ des totaux dans la devise
 $sql = 'UPDATE '.MAIN_DB_PREFIX.'facture_fourn ff
 		INNER JOIN '.MAIN_DB_PREFIX.'multicurrency m ON (m.code = ff.devise_code AND m.entity = ff.entity)
 		SET ff.multicurrency_code = ff.devise_code
@@ -335,6 +350,7 @@ if (!$resql)
 echo 'Update '.MAIN_DB_PREFIX.'paiement_facture...';
 $sql = 'UPDATE '.MAIN_DB_PREFIX.'paiement_facture
 		SET multicurrency_amount = amount * devise_taux';
+$resql = $db->query($sql);
 if (!$resql)
 {
 	echo 'ERROR<br />';
@@ -347,6 +363,7 @@ if (!$resql)
 echo 'Update '.MAIN_DB_PREFIX.'paiementfourn_facturefourn...';
 $sql = 'UPDATE '.MAIN_DB_PREFIX.'paiementfourn_facturefourn
 		SET multicurrency_amount = amount * devise_taux';
+$resql = $db->query($sql);
 if (!$resql)
 {
 	echo 'ERROR<br />';
