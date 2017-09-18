@@ -123,30 +123,20 @@ if (!$resql)
 	pre($db->lasterror());
 } else echo 'OK<br />';
 
+
 echo 'Update '.MAIN_DB_PREFIX.'product_price step 3...';
 // 3eme update pour s'occuper du prix HT, taux et prix TTC
-
-// TODO requête fausse à débug ... :/
-$sql = 'UPDATE '.MAIN_DB_PREFIX.'product_price pp,
-		(
-			SELECT mr.rate
-			FROM llx_multicurrency_rate mr
-			INNER JOIN llx_product_price pp2 ON (pp2.fk_multicurrency = mr.fk_multicurrency)
-			WHERE mr.date_sync >= ALL (
-				SELECT MAX(mr2.date_sync)
-				FROM llx_multicurrency_rate mr2
-				INNER JOIN llx_product_price pp3 ON (pp3.fk_multicurrency = mr2.fk_multicurrency)
-			)
-		) t
-
-		SET pp.multicurrency_price = pp.price * t.rate
-			,pp.multicurrency_tx = t.rate
-			,pp.multicurrency_price_ttc = pp.price_ttc * t.rate
-		
-		WHERE pp.fk_multicurrency = t.fk_multicurrency
-';
-
-
+$sql = 'UPDATE '.MAIN_DB_PREFIX.'product_price pp
+		INNER JOIN '.MAIN_DB_PREFIX.'multicurrency_rate mr ON (mr.fk_multicurrency = pp.fk_multicurrency)
+		SET pp.multicurrency_price = pp.price * mr.rate
+			,pp.multicurrency_tx = mr.rate
+			,pp.multicurrency_price_ttc = pp.price_ttc * mr.rate
+			
+		WHERE mr.date_sync >= ALL (
+			SELECT MAX(mr2.date_sync)
+			FROM '.MAIN_DB_PREFIX.'multicurrency_rate mr2
+			WHERE mr2.fk_multicurrency = pp.fk_multicurrency
+		)';
 $resql = $db->query($sql);
 if (!$resql)
 {
@@ -367,7 +357,7 @@ if (!$resql)
 
 if (!$error)
 {
-	$db->rollback();
+	$db->commit();
 	echo '<b>COMMIT</b><br />';
 }
 else
