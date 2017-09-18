@@ -258,7 +258,23 @@ if (!$resql)
 
 
 // TODO update llx_commande_fournisseur @see TMultideviseCommandeFournisseur
-echo 'Update '.MAIN_DB_PREFIX.'commande_fournisseur...';
+// Setp 1 : MAJ des devise_code et devise_taux qui sont à NULL
+echo 'Update '.MAIN_DB_PREFIX.'commande_fournisseur setp 1...';
+$sql = 'UPDATE '.MAIN_DB_PREFIX.'commande_fournisseur cf
+		SET cf.devise_code = (SELECT m.code FROM '.MAIN_DB_PREFIX.'multicurrency m INNER JOIN '.MAIN_DB_PREFIX.'multicurrency_rate mr ON (mr.fk_multicurrency = m.rowid AND mr.rate = 1) WHERE m.entity = cf.entity LIMIT 1)
+			,cf.devise_taux = 1
+		WHERE cf.devise_code IS NULL';
+echo $sql;exit;
+$resql = $db->query($sql);
+if (!$resql)
+{
+	echo 'ERROR<br />';
+	$error++;
+	pre($db->lasterror());
+} else echo 'OK<br />';
+
+// Setp 2 : MAJ des totaux dans la devise
+echo 'Update '.MAIN_DB_PREFIX.'commande_fournisseur setp 2...';
 $sql = 'UPDATE '.MAIN_DB_PREFIX.'commande_fournisseur cf
 		INNER JOIN '.MAIN_DB_PREFIX.'multicurrency m ON (m.code = cf.devise_code AND m.entity = cf.entity)
 		SET cf.multicurrency_code = cf.devise_code
@@ -274,6 +290,7 @@ if (!$resql)
 	$error++;
 	pre($db->lasterror());
 } else echo 'OK<br />';
+
 
 // TODO update llx_commande_fournisseurdet @see TMultideviseCommandeFournisseurdet
 echo 'Update '.MAIN_DB_PREFIX.'commande_fournisseurdet...';
