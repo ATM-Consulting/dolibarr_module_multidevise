@@ -727,7 +727,7 @@ class TMultidevise{
 					$devise_pu = round($pu / $devise_taux ,$conf->global->MAIN_MAX_DECIMALS_UNIT);
 					$devise_mt_ligne = $dp_pu_devise * $object->qty;
 					//var_dump($devise_mt_ligne);exit;
-					$object_last->updateline($ligne->rowid, '', $devise_pu, $object->qty);
+					$object_last->updateline($ligne->rowid, $ligne->desc, $devise_pu, $object->qty);
 					$db->query('UPDATE '.MAIN_DB_PREFIX.$element_line.' SET devise_pu = '.$dp_pu_devise.', devise_mt_ligne = '.($devise_mt_ligne - ($devise_mt_ligne * ($object->remise_percent / 100))).' WHERE rowid = '.$object->rowid);
 
 					$object = $object_last;
@@ -941,7 +941,7 @@ exit('la2');
 						$parent->fetch($fk_parent);
 						$parent->updateline(
 					        $id_line,
-					        $object->description,
+					        $object->desc,
 					        $object->subprice,
 					        $object->qty,
 					        $object->remise_percent,
@@ -962,7 +962,7 @@ exit('la2');
 //exit('la');
 						$parent->updateline(
 							$id_line,
-					        $object->description,
+					        $object->desc,
 					        $object->pu_ht,
 					        $object->tva_tx,
 					        $object->localtax1_tx,
