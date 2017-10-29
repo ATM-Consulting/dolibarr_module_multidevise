@@ -27,6 +27,9 @@ function _get($case) {
 		case 'getcurrencyrate':
 			__out(_getcurrencyrate($ATMdb,$_POST['currency_code']));
 			break;
+		case 'getthirdcurrency':
+			__out(_getthirdcurrency($ATMdb,$_POST['id_third']));
+			break;
 		case 'getpaymentrate':
 			__out(_getpaymentrate($ATMdb,$_POST['socid'],$_POST['reday'],$_POST['remonth'],$_POST['reyear'],$_POST['context']));
 			break;
@@ -150,4 +153,11 @@ function _getcurrencyrate(&$ATMdb,$currency_code){
 	$Tres["currency_rate"] = round($ATMdb->Get_field('rate'),$conf->global->MAIN_MAX_DECIMALS_UNIT);
 	
 	return $Tres;
+}
+
+function _getthirdcurrency(&$ATMdb,$id_third){
+
+    $Tres["code_currency"] = TMultidevise::getThirdCurrency($id_third);
+
+    return $Tres;
 }

@@ -145,6 +145,28 @@ class ActionsMultidevise
 				print $form->select_currency($cur,"currency");
 				print '</td></tr>';
 
+				?>
+				<script type="text/javascript">
+					$(document).ready(function(){
+					        $('select[name=socid]').change(function(){
+						        $.ajax({
+							        type: "POST"
+             							,url: "<?php echo dol_buildpath('/multidevise/script/interface.php',2); ?>"
+             							,dataType: "json"
+             							,data: {
+                 						get : "getthirdcurrency",
+                 						id_third: $(this).val(),
+                 						json : 1
+             							}
+         						},"json").then(function(select){
+								if(select.currency_rate != ""){
+                  						        $('select[name=currency]').val(select.code_currency);
+              							}
+         						});
+     						});
+ 					});
+				</script>
+    				<?php
 	    	}
 			else{
 
