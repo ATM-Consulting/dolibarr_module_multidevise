@@ -151,7 +151,7 @@ class ActionsMultidevise
 					        $('select[name=socid]').change(function(){
 						        $.ajax({
 							        type: "POST"
-             							,url: "<?php echo dol_buildpath('/multidevise/script/interface.php',2); ?>"
+             							,url: "<?php echo dol_buildpath('/multidevise/script/interface.php',1); ?>"
              							,dataType: "json"
              							,data: {
                  						get : "getthirdcurrency",
