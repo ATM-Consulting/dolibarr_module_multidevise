@@ -132,6 +132,12 @@ class TMultidevise{
 				    FROM '.MAIN_DB_PREFIX.$object->table_element.'
 				    WHERE fk_'.$parent_object.' = '.$object->{"fk_".$parent_object};
 
+
+			if($action === 'LINEBILL_DELETE' && (! empty($object->id) || ! empty($object->rowid))) { // Trigger LINEBILL_DELETE appelé avant suppression, et pas de $notrigger dans FactureLigne::delete() : on filtre la ligne à supprimer
+				$idLigne = ! empty($object->id) ? $object->id : $object->rowid;
+				$sql .= " AND rowid != ".$idLigne;
+			}
+
 			$resql = $db->query($sql);
 
 			if ($resql) {
