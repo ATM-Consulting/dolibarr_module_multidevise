@@ -211,7 +211,7 @@ class InterfaceMultideviseWorkflow2
 				
 				$sql = "UPDATE ".MAIN_DB_PREFIX.$tabledet." SET subprice=".$price.",devise_pu=".$devise_price.",total_ht=subprice*qty,devise_mt_ligne=devise_pu*qty WHERE rowid=".$idligne;
 				$db->query($sql);
-			} else if ($table == 'facture' && !empty($_REQUEST['fac_replacement'])) { // ACOMPTE
+			} else if ($table == 'facture' && (!empty($_REQUEST['fac_replacement']) || ($object->info_bits & 2) == 2 )) { // ACOMPTE OU REMISE
 				// Récupération de la devise de la commande de base
 				$sql = "SELECT devise_code, devise_taux FROM ".MAIN_DB_PREFIX.GETPOST('origin')." WHERE rowid = ".GETPOST('originid');
 				$res = $db->query($sql);
