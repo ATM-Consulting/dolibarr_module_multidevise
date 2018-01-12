@@ -3,7 +3,7 @@
 	error_reporting(E_ALL);
 
 	require("../config.php");
-	require(DOL_DOCUMENT_ROOT."/product/class/product.class.php");
+	require_once DOL_DOCUMENT_ROOT."/product/class/product.class.php";
 
 
 	$get = isset($_REQUEST['get'])?$_REQUEST['get']:'';
